@@ -13,5 +13,9 @@
   <f:entry title="Parameters" help="/plugin/parameterized-trigger/help/properties.html">
     <f:textarea name="properties" value="${instance.properties}"/>
   </f:entry>
+  <f:entry>
+    <f:checkbox name="includeCurrentParameters" checked="${instance.includeCurrentParameters}"/>
+    <label class="attach-previous">Include parameters of the current build</label>
+  </f:entry>
 
 </j:jelly>

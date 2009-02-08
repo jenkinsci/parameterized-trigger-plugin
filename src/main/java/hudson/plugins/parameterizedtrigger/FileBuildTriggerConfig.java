@@ -11,6 +11,7 @@ import hudson.model.Hudson;
 import hudson.model.Items;
 import hudson.model.ParameterValue;
 import hudson.model.ParameterizedProjectTask;
+import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 
 import java.io.IOException;
@@ -27,13 +28,15 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 	private final String projectsValue;
 	private final String propertiesFile;
 	private final ResultCondition condition;
+	private final boolean includeCurrentParameters;
 
 	@DataBoundConstructor
 	public FileBuildTriggerConfig(String projectsValue, String propertiesFile,
-			ResultCondition condition) {
+			ResultCondition condition, boolean includeCurrentParameters) {
 		this.projectsValue = projectsValue;
 		this.propertiesFile = propertiesFile;
 		this.condition = condition;
+		this.includeCurrentParameters = includeCurrentParameters;
 	}
 
 	public void trigger(AbstractBuild<?, ?> build, Launcher launcher,
@@ -60,6 +63,12 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 
 			for (AbstractProject project : getProjects()) {
 				List<ParameterValue> values = new ArrayList<ParameterValue>();
+				if (includeCurrentParameters) {
+					ParametersAction action = build.getAction(ParametersAction.class);
+					if (action != null) {
+						values.addAll(action.getParameters());
+					}
+				}
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
 					values.add(new StringParameterValue(entry.getKey()
 							.toString(), entry.getValue().toString()));
@@ -87,6 +96,10 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 
 	public String getProjectsValue() {
 		return projectsValue;
+	}
+
+	public boolean isIncludeCurrentParameters() {
+		return includeCurrentParameters;
 	}
 
 	public static Descriptor<BuildTriggerConfig> DESCRIPTOR = new DescriptorImpl();

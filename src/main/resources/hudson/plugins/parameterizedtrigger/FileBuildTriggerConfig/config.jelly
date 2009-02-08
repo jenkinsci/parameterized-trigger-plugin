@@ -13,5 +13,9 @@
   <f:entry title="Use properties from file" help="/plugin/parameterized-trigger/help/propertiesFile.html">
     <f:textbox field="propertiesFile"/>
   </f:entry>
-
+  <f:entry>
+    <f:checkbox name="includeCurrentParameters" checked="${instance.includeCurrentParameters}"/>
+    <label class="attach-previous">Include parameters of the current build</label>
+  </f:entry>
+  
 </j:jelly>

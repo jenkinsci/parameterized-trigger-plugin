@@ -13,4 +13,22 @@
     <version>1.1-SNAPSHOT</version>
     <name>Hudson Parameterized Trigger plugin</name>
     <url>http://hudson.gotdns.com/wiki/display/HUDSON/Parameterized+Trigger+Plugin</url>
+    
+    <build>
+      <plugins>
+        <plugin>
+          <!-- make sure our code doesn't have 1.6 dependencies except where we know it -->
+          <groupId>org.jvnet</groupId>
+          <artifactId>animal-sniffer</artifactId>
+          <version>1.2</version>
+          <configuration>
+            <signature>
+              <groupId>org.jvnet.animal-sniffer</groupId>
+              <artifactId>java1.5</artifactId>
+              <version>1.0</version>
+            </signature>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
 </project>

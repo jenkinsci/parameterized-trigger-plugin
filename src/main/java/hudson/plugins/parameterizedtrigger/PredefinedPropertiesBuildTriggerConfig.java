@@ -9,15 +9,16 @@ import hudson.model.Hudson;
 import hudson.model.Items;
 import hudson.model.ParameterValue;
 import hudson.model.ParameterizedProjectTask;
+import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.tools.ant.filters.StringInputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
@@ -25,13 +26,15 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 	private final String projectsValue;
 	private final String properties;
 	private final ResultCondition condition;
+	private final boolean includeCurrentParameters;
 
 	@DataBoundConstructor
 	public PredefinedPropertiesBuildTriggerConfig(String projectsValue, String properties,
-			ResultCondition condition) {
+			ResultCondition condition, boolean includeCurrentParameters) {
 		this.projectsValue = projectsValue;
 		this.properties = properties;
 		this.condition = condition;
+		this.includeCurrentParameters = includeCurrentParameters;
 	}
 
 	public void trigger(AbstractBuild<?, ?> build, Launcher launcher,
@@ -39,10 +42,16 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 
 		if (condition.isMet(build.getResult())) {
 			Properties p = new Properties();
-			p.load(new StringReader(properties));
+			p.load(new StringInputStream(properties));
 
 			for (AbstractProject project : getProjects()) {
 				List<ParameterValue> values = new ArrayList<ParameterValue>();
+				if (includeCurrentParameters) {
+					ParametersAction action = build.getAction(ParametersAction.class);
+					if (action != null) {
+						values.addAll(action.getParameters());
+					}
+				}
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
 					values.add(new StringParameterValue(entry.getKey()
 							.toString(), entry.getValue().toString()));
@@ -66,6 +75,10 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 
 	public ResultCondition getCondition() {
 		return condition;
+	}
+
+	public boolean isIncludeCurrentParameters() {
+		return includeCurrentParameters;
 	}
 
 	public String getProjectsValue() {
