@@ -12,5 +12,5 @@
     <packaging>hpi</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>Hudson Parameterized Trigger plugin</name>
-    <url>http://hudson.gotdns.com/wiki/display/HUDSON/Parameterized-Trigger-Plugin</url>
+    <url>http://hudson.gotdns.com/wiki/display/HUDSON/Parameterized+Trigger+Plugin</url>
 </project>
