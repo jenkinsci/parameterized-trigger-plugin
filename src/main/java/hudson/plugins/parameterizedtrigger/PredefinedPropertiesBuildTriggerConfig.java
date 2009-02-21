@@ -5,21 +5,19 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Items;
 import hudson.model.ParameterValue;
-import hudson.model.ParameterizedProjectTask;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
+import hudson.model.Cause;
+import org.apache.tools.ant.filters.StringInputStream;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import org.apache.tools.ant.filters.StringInputStream;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 
@@ -57,8 +55,7 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 							.toString(), entry.getValue().toString()));
 				}
 
-				Hudson.getInstance().getQueue().add(
-						new ParameterizedProjectTask(project, values), 0);
+                project.scheduleBuild(0, new Cause.UpstreamCause(build), new ParametersAction(values));
 			}
 
 		}

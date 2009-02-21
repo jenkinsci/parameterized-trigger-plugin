@@ -6,14 +6,12 @@ import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.tasks.Publisher;
 import hudson.util.DescriptorList;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
-
-import net.sf.json.JSONObject;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
 
 public class BuildTrigger extends Publisher {
 
@@ -22,6 +20,10 @@ public class BuildTrigger extends Publisher {
 	public BuildTrigger(List<BuildTriggerConfig> configs) {
 		this.configs = configs;
 	}
+
+    public BuildTrigger(BuildTriggerConfig... configs) {
+        this(Arrays.asList(configs));
+    }
 
 	public List<BuildTriggerConfig> getConfigs() {
 		return configs;

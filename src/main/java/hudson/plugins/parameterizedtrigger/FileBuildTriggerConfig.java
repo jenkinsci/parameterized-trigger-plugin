@@ -5,14 +5,13 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Describable;
+import hudson.model.Cause;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Items;
 import hudson.model.ParameterValue;
-import hudson.model.ParameterizedProjectTask;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import org.kohsuke.stapler.DataBoundConstructor;
 
 public class FileBuildTriggerConfig extends BuildTriggerConfig {
 
@@ -74,8 +71,7 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 							.toString(), entry.getValue().toString()));
 				}
 
-				Hudson.getInstance().getQueue().add(
-						new ParameterizedProjectTask(project, values), 0);
+                project.scheduleBuild(0, new Cause.UpstreamCause(build), new ParametersAction(values));
 			}
 
 		}
