@@ -63,6 +63,11 @@ public class ResultConditionTest extends HudsonTestCase {
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(2, projectB.getLastBuild().getNumber());
+
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, false))));
+        projectA.scheduleBuild2(0).get();
+        Thread.sleep(500);
+        Assert.assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
     public void testTriggerByUnstableBuild() throws Exception {
@@ -84,6 +89,11 @@ public class ResultConditionTest extends HudsonTestCase {
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, false))));
+        projectA.scheduleBuild2(0).get();
+        Thread.sleep(500);
+        Assert.assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
     public void testTriggerByFailedBuild() throws Exception {
@@ -102,6 +112,11 @@ public class ResultConditionTest extends HudsonTestCase {
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
 
         projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, false))));
+        projectA.scheduleBuild2(0).get();
+        Thread.sleep(500);
+        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
