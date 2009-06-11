@@ -40,12 +40,13 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 			BuildListener listener) throws IOException, InterruptedException {
 
 		if (condition.isMet(build.getResult())) {
+			String resolvedPropertiesFile = resolveParametersInString(build, listener, propertiesFile);
 			FilePath f = build.getProject().getWorkspace()
-					.child(propertiesFile);
+					.child(resolvedPropertiesFile);
 			if (!f.exists()) {
 				listener.getLogger().println(
 						"Could not trigger downstream project, as properties file"
-								+ propertiesFile + " did not exist.");
+								+ resolvedPropertiesFile + " did not exist.");
 				return;
 			}
 
@@ -68,7 +69,7 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 				}
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
 					values.add(new StringParameterValue(entry.getKey()
-							.toString(), entry.getValue().toString()));
+							.toString(), resolveParametersInString(build, listener, entry.getValue().toString())));
 				}
 
                 project.scheduleBuild(0, new Cause.UpstreamCause(build), new ParametersAction(values));

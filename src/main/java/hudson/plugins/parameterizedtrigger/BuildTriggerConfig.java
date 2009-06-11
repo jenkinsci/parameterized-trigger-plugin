@@ -12,4 +12,15 @@ public abstract class BuildTriggerConfig implements Describable<BuildTriggerConf
 	public abstract void trigger(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException;
 
+	protected static String resolveParametersInString(AbstractBuild<?, ?> build, BuildListener listener, String input) {
+		try {
+			return build.getEnvironment(listener).expand(input);
+		}
+		catch (Exception e) {
+			listener.getLogger().println("Failed to resolve parameters in string \""+
+					input+"\" due to following error:\n"+e.getMessage());
+		}
+		return input;
+	}
+
 }

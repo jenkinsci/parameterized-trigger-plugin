@@ -52,7 +52,7 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 				}
 				for (Map.Entry<Object, Object> entry : p.entrySet()) {
 					values.add(new StringParameterValue(entry.getKey()
-							.toString(), entry.getValue().toString()));
+							.toString(), resolveParametersInString(build, listener, entry.getValue().toString())));
 				}
 
                 project.scheduleBuild(0, new Cause.UpstreamCause(build), new ParametersAction(values));
