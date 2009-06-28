@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -11,7 +12,6 @@ import hudson.model.Items;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class FileBuildTriggerConfig extends BuildTriggerConfig {
 
@@ -99,12 +101,8 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 		return includeCurrentParameters;
 	}
 
-	public static Descriptor<BuildTriggerConfig> DESCRIPTOR = new DescriptorImpl();
-
+	@Extension
 	public static class DescriptorImpl extends Descriptor<BuildTriggerConfig> {
-		public DescriptorImpl() {
-			super(FileBuildTriggerConfig.class);
-		}
 
 		@Override
 		public String getDisplayName() {
@@ -115,10 +113,6 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 			return ResultCondition.values();
 		}
 
-	}
-
-	public Descriptor<BuildTriggerConfig> getDescriptor() {
-		return DESCRIPTOR;
 	}
 
 }

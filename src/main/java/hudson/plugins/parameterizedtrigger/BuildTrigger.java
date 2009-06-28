@@ -1,17 +1,20 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.tasks.Publisher;
 import hudson.util.DescriptorList;
-import net.sf.json.JSONObject;
-import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
+import net.sf.json.JSONObject;
+
+import org.kohsuke.stapler.StaplerRequest;
 
 public class BuildTrigger extends Publisher {
 
@@ -21,9 +24,9 @@ public class BuildTrigger extends Publisher {
 		this.configs = configs;
 	}
 
-    public BuildTrigger(BuildTriggerConfig... configs) {
-        this(Arrays.asList(configs));
-    }
+	public BuildTrigger(BuildTriggerConfig... configs) {
+		this(Arrays.asList(configs));
+	}
 
 	public List<BuildTriggerConfig> getConfigs() {
 		return configs;
@@ -45,27 +48,19 @@ public class BuildTrigger extends Publisher {
 		return true;
 	}
 
-	public static Descriptor<Publisher> DESCRIPTOR = new DescriptorImpl();
-
-	public Descriptor<Publisher> getDescriptor() {
-		return DESCRIPTOR;
-	}
-
+	@Extension
 	public static class DescriptorImpl extends Descriptor<Publisher> {
 
 		@Override
 		public Publisher newInstance(StaplerRequest req, JSONObject json)
 				throws FormException {
-			return new BuildTrigger(newInstancesFromHeteroList(req, json, "configs", CONFIGS));
+			return new BuildTrigger(newInstancesFromHeteroList(req, json,
+					"configs", CONFIGS));
 		}
 
 		@Override
 		public String getHelpFile() {
 			return "/plugin/parameterized-trigger/help/plugin.html";
-		}
-
-		protected DescriptorImpl() {
-			super(BuildTrigger.class);
 		}
 
 		@Override
@@ -79,7 +74,6 @@ public class BuildTrigger extends Publisher {
 	}
 
 	public static final DescriptorList<BuildTriggerConfig> CONFIGS = new DescriptorList<BuildTriggerConfig>(
-			FileBuildTriggerConfig.DESCRIPTOR,
-			PredefinedPropertiesBuildTriggerConfig.DESCRIPTOR);
+			BuildTriggerConfig.class);
 
 }

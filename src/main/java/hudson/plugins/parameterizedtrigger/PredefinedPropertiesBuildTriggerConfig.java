@@ -1,23 +1,25 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Cause;
 import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
-import hudson.model.Cause;
-import org.apache.tools.ant.filters.StringInputStream;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.tools.ant.filters.StringInputStream;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 
@@ -82,13 +84,8 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 		return projectsValue;
 	}
 
-	public static Descriptor<BuildTriggerConfig> DESCRIPTOR = new DescriptorImpl();
-
+	@Extension
 	public static class DescriptorImpl extends Descriptor<BuildTriggerConfig> {
-		public DescriptorImpl() {
-			super(PredefinedPropertiesBuildTriggerConfig.class);
-		}
-
 		@Override
 		public String getDisplayName() {
 			return "Use predefined properties";
@@ -98,10 +95,6 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 			return ResultCondition.values();
 		}
 
-	}
-
-	public Descriptor<BuildTriggerConfig> getDescriptor() {
-		return DESCRIPTOR;
 	}
 
 }

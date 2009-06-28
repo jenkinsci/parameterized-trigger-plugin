@@ -4,6 +4,8 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Describable;
+import hudson.model.Descriptor;
+import hudson.model.Hudson;
 
 import java.io.IOException;
 
@@ -22,5 +24,10 @@ public abstract class BuildTriggerConfig implements Describable<BuildTriggerConf
 		}
 		return input;
 	}
-
+	
+	@Override
+	public Descriptor<BuildTriggerConfig> getDescriptor() {
+        return Hudson.getInstance().getDescriptor(getClass());
+	}
+	
 }
