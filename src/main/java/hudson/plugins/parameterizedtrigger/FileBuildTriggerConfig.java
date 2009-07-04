@@ -24,24 +24,24 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 public class FileBuildTriggerConfig extends BuildTriggerConfig {
 
-	private final String projectsValue;
 	private final String propertiesFile;
 	private final ResultCondition condition;
 	private final boolean includeCurrentParameters;
 
 	@DataBoundConstructor
 	public FileBuildTriggerConfig(String projectsValue, String propertiesFile,
-			ResultCondition condition, boolean includeCurrentParameters) {
+			ResultCondition condition, String batchCondition, boolean includeCurrentParameters) {
 		this.projectsValue = projectsValue;
 		this.propertiesFile = propertiesFile;
 		this.condition = condition;
+		this.batchCondition = batchCondition;
 		this.includeCurrentParameters = includeCurrentParameters;
 	}
 
 	public void trigger(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 
-		if (condition.isMet(build.getResult())) {
+		if (condition.isMet(build.getResult()) && checkBatchCondition(build, launcher, listener)) {
 			String resolvedPropertiesFile = resolveParametersInString(build, listener, propertiesFile);
 			FilePath f = build.getProject().getWorkspace()
 					.child(resolvedPropertiesFile);
@@ -63,6 +63,7 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 
 			for (AbstractProject project : getProjects()) {
 				List<ParameterValue> values = new ArrayList<ParameterValue>();
+				addDefaultParameters(project, values, listener);
 				if (includeCurrentParameters) {
 					ParametersAction action = build.getAction(ParametersAction.class);
 					if (action != null) {

@@ -23,29 +23,30 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 
-	private final String projectsValue;
 	private final String properties;
 	private final ResultCondition condition;
 	private final boolean includeCurrentParameters;
 
 	@DataBoundConstructor
 	public PredefinedPropertiesBuildTriggerConfig(String projectsValue, String properties,
-			ResultCondition condition, boolean includeCurrentParameters) {
+			ResultCondition condition, String batchCondition, boolean includeCurrentParameters) {
 		this.projectsValue = projectsValue;
 		this.properties = properties;
 		this.condition = condition;
+		this.batchCondition = batchCondition;
 		this.includeCurrentParameters = includeCurrentParameters;
 	}
 
 	public void trigger(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws IOException, InterruptedException {
 
-		if (condition.isMet(build.getResult())) {
+		if (condition.isMet(build.getResult()) && checkBatchCondition(build, launcher, listener)) {
 			Properties p = new Properties();
 			p.load(new StringInputStream(properties));
 
 			for (AbstractProject project : getProjects()) {
 				List<ParameterValue> values = new ArrayList<ParameterValue>();
+				addDefaultParameters(project, values, listener);
 				if (includeCurrentParameters) {
 					ParametersAction action = build.getAction(ParametersAction.class);
 					if (action != null) {

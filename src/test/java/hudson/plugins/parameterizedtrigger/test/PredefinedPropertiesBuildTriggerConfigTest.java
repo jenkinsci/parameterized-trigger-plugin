@@ -37,7 +37,7 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 
         Project projectA = createFreeStyleProject("projectA");
         String properties = "KEY=value";
-        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", properties, ResultCondition.SUCCESS, false)));
+        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", properties, ResultCondition.SUCCESS, "", false)));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         Project projectB = createFreeStyleProject("projectB");

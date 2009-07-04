@@ -49,22 +49,22 @@ public class ResultConditionTest extends HudsonTestCase {
         Project projectA = createFreeStyleProject("projectA");
         Project projectB = createFreeStyleProject("projectB");
 
-        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.SUCCESS, false)));
+        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.SUCCESS, "", false)));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.FAILED, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.FAILED, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(2, projectB.getLastBuild().getNumber());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(2, projectB.getLastBuild().getNumber());
@@ -75,22 +75,22 @@ public class ResultConditionTest extends HudsonTestCase {
         projectA.getBuildersList().add(new UnstableBuilder());
         Project projectB = createFreeStyleProject("projectB");
 
-        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.SUCCESS, false)));
+        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.SUCCESS, "", false)));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertNull(projectB.getLastBuild());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.FAILED, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.FAILED, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertNull(projectB.getLastBuild());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(2, projectB.getLastBuild().getNumber());
@@ -101,22 +101,22 @@ public class ResultConditionTest extends HudsonTestCase {
         projectA.getBuildersList().add(new FailureBuilder());
         Project projectB = createFreeStyleProject("projectB");
 
-        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.SUCCESS, false)));
+        projectA.getPublishersList().add(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.SUCCESS, "", false)));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertNull(projectB.getLastBuild());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.FAILED, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.FAILED, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE_OR_BETTER, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());
 
-        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, false))));
+        projectA.getPublishersList().replaceBy(Arrays.asList(new BuildTrigger(new PredefinedPropertiesBuildTriggerConfig("projectB", "", ResultCondition.UNSTABLE, "", false))));
         projectA.scheduleBuild2(0).get();
         Thread.sleep(500);
         Assert.assertEquals(1, projectB.getLastBuild().getNumber());

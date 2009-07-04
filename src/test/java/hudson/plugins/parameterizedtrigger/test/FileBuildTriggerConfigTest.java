@@ -40,7 +40,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         Project projectA = createFreeStyleProject("projectA");
         String properties = "KEY=value";
         projectA.setScm(new SingleFileSCM("properties.txt", properties));
-        projectA.getPublishersList().add(new BuildTrigger(new FileBuildTriggerConfig("projectB", "properties.txt", ResultCondition.SUCCESS, false)));
+        projectA.getPublishersList().add(new BuildTrigger(new FileBuildTriggerConfig("projectB", "properties.txt", ResultCondition.SUCCESS, "", false)));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         Project projectB = createFreeStyleProject("projectB");

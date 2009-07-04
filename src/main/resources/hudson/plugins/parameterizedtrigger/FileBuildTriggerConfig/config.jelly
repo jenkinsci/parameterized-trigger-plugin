@@ -17,5 +17,10 @@
     <f:checkbox name="includeCurrentParameters" checked="${instance.includeCurrentParameters}"/>
     <label class="attach-previous">Include parameters of the current build</label>
   </f:entry>
+  <f:advanced>
+    <f:entry title="Batch condition" help="/plugin/parameterized-trigger/help/batchCondition.html">
+      <f:textarea field="batchCondition"/>
+    </f:entry>
+  </f:advanced>
   
 </j:jelly>
