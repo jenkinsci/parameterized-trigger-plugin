@@ -10,10 +10,8 @@ import hudson.model.Descriptor;
 import hudson.model.Items;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.model.StringParameterValue;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -45,20 +43,9 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 			p.load(new StringInputStream(properties));
 
 			for (AbstractProject project : getProjects()) {
-				List<ParameterValue> values = new ArrayList<ParameterValue>();
-				addDefaultParameters(project, values, listener);
-				if (includeCurrentParameters) {
-					ParametersAction action = build.getAction(ParametersAction.class);
-					if (action != null) {
-						values.addAll(action.getParameters());
-					}
-				}
-				for (Map.Entry<Object, Object> entry : p.entrySet()) {
-					values.add(new StringParameterValue(entry.getKey()
-							.toString(), resolveParametersInString(build, listener, entry.getValue().toString())));
-				}
-
-                project.scheduleBuild(0, new Cause.UpstreamCause(build), new ParametersAction(values));
+				List<ParameterValue> parameters = createParametersList(build, project,
+						includeCurrentParameters, p, listener);
+                project.scheduleBuild(0, new Cause.UpstreamCause(build), new ParametersAction(parameters));
 			}
 
 		}

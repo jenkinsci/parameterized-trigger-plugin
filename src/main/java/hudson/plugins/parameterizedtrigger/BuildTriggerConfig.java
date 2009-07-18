@@ -14,9 +14,16 @@ import hudson.model.AbstractProject;
 import hudson.model.JobProperty;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.StringParameterValue;
 
+import java.util.Hashtable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.io.IOException;
+import java.util.Properties;
 
 public abstract class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
@@ -64,16 +71,36 @@ public abstract class BuildTriggerConfig implements Describable<BuildTriggerConf
 			return false;
 		}
 	}
-
-	protected static void addDefaultParameters(AbstractProject project, List<ParameterValue> parametersValues,
-			BuildListener listener) {
-		ParametersDefinitionProperty property =
+	
+	public List<ParameterValue> createParametersList(AbstractBuild<?, ?> build, AbstractProject project,
+			boolean includeCurrentParameters, Properties specifiedParameters, BuildListener listener) {
+		Hashtable<String, ParameterValue> parameters = new Hashtable<String, ParameterValue>();
+		// Add downstream project default parameters.
+		ParametersDefinitionProperty parametersProperty =
 				(ParametersDefinitionProperty)project.getProperty(ParametersDefinitionProperty.class);
-		if (property != null) {
-			for (ParameterDefinition parameterDefinition : property.getParameterDefinitions()) {
-				parametersValues.add(parameterDefinition.getDefaultParameterValue());
+		if (parametersProperty != null) {
+			for (ParameterDefinition parameterDefinition : parametersProperty.getParameterDefinitions()) {
+				ParameterValue parameter = parameterDefinition.getDefaultParameterValue();
+				parameters.put(parameter.getName(), parameter);
 			}
 		}
+		// Add current project parameters.
+		if (includeCurrentParameters) {
+			ParametersAction action = build.getAction(ParametersAction.class);
+			if (action != null) {
+				for (ParameterValue parameter : action.getParameters()) {
+					parameters.put(parameter.getName(), parameter);
+				}
+			}
+		}
+		// Add parameters that have been specified explicitly.
+		for (Map.Entry<Object, Object> entry : specifiedParameters.entrySet()) {
+			ParameterValue parameter = new StringParameterValue(entry.getKey()
+					.toString(), resolveParametersInString(build, listener, entry.getValue().toString()));
+			parameters.put(parameter.getName(), parameter);
+		}
+		
+		return new ArrayList(parameters.values());
 	}
 
 	public String getBatchCondition() {
