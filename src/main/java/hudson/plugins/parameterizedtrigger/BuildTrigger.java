@@ -5,6 +5,8 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.DependecyDeclarer;
+import hudson.model.DependencyGraph;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
@@ -20,7 +22,7 @@ import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.StaplerRequest;
 
-public class BuildTrigger extends Notifier {
+public class BuildTrigger extends Notifier implements DependecyDeclarer {
 
 	private final List<BuildTriggerConfig> configs;
 
@@ -50,6 +52,18 @@ public class BuildTrigger extends Notifier {
 		}
 
 		return true;
+	}
+
+	@Override
+	public void buildDependencyGraph(AbstractProject owner,
+			DependencyGraph graph) {
+		
+		for (BuildTriggerConfig config: configs) {
+			for (AbstractProject project: config.getProjectList()) {
+				graph.addDependency(owner, project);
+			}
+		}
+		
 	}
 
 	public Object readResolve() {
