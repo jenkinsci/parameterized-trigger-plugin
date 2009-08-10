@@ -1,0 +1,18 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+	  <f:entry title="Projects to build" help="/plugin/parameterized-trigger/help/projectsValue.html">
+	    <f:textbox field="projects"/>
+	  </f:entry>
+	  <f:entry title="Trigger when build is" help="/plugin/parameterized-trigger/help/resultCondition.html">
+	    <select class="setting-input" name="condition">
+	      <j:forEach var="it" items="${descriptor.possibleResultConditions}">
+	        <f:option value="${it.name()}" selected="${it==instance.condition}">${it.displayName}</f:option>
+	      </j:forEach>
+	    </select>
+	  </f:entry>
+    <f:block>
+      <f:hetero-list name="configs" hasHeader="true"
+                     descriptors="${descriptor.getBuilderConfigDescriptors()}"
+                     items="${instance.configs}"
+                     addCaption="${%Add}"/>
+    </f:block>
+</j:jelly>

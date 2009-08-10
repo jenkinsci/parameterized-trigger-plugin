@@ -1,0 +1,48 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.jvnet.hudson.plugins</groupId>
+        <artifactId>plugin</artifactId>
+        <version>1.318</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>parameterized-trigger</artifactId>
+    <packaging>hpi</packaging>
+    <version>2.0</version>
+    <name>Hudson Parameterized Trigger plugin</name>
+    <url>http://wiki.hudson-ci.org/display/HUDSON/Parameterized+Trigger+Plugin</url>
+    
+    <dependencies>
+    	<dependency>
+    		<groupId>org.jvnet.hudson.plugins</groupId>
+    		<artifactId>subversion</artifactId>
+    		<version>1.4</version>
+    	</dependency>
+    </dependencies>
+    
+    <build>
+      <plugins>
+        <plugin>
+          <!-- make sure our code doesn't have 1.6 dependencies except where we know it -->
+          <groupId>org.jvnet</groupId>
+          <artifactId>animal-sniffer</artifactId>
+          <version>1.2</version>
+          <configuration>
+            <signature>
+              <groupId>org.jvnet.animal-sniffer</groupId>
+              <artifactId>java1.5</artifactId>
+              <version>1.0</version>
+            </signature>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+
+  <scm>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/parameterized-trigger-2.0</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/parameterized-trigger-2.0</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/parameterized-trigger/tags/parameterized-trigger-2.0</url>
+  </scm>
+</project>

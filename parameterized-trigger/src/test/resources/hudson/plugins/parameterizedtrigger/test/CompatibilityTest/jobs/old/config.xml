@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <triggers class="vector"/>
+  <builders/>
+  <publishers>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger>
+      <configs>
+        <hudson.plugins.parameterizedtrigger.PredefinedPropertiesBuildTriggerConfig>
+          <projectsValue>ssss</projectsValue>
+          <batchCondition></batchCondition>
+          <properties>azer</properties>
+          <condition class="hudson.plugins.parameterizedtrigger.ResultCondition">SUCCESS</condition>
+          <includeCurrentParameters>true</includeCurrentParameters>
+        </hudson.plugins.parameterizedtrigger.PredefinedPropertiesBuildTriggerConfig>
+        <hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig>
+          <projectsValue>qsdf</projectsValue>
+          <batchCondition></batchCondition>
+          <propertiesFile>qsdf</propertiesFile>
+          <condition class="hudson.plugins.parameterizedtrigger.ResultCondition">UNSTABLE</condition>
+          <includeCurrentParameters>false</includeCurrentParameters>
+        </hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
+  </publishers>
+  <buildWrappers/>
+</project>
