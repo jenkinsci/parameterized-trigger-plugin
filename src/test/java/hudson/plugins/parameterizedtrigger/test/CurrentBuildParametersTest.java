@@ -23,9 +23,12 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import hudson.model.ParametersAction;
 import hudson.model.Project;
+import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 
@@ -33,7 +36,7 @@ import org.junit.Assert;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
-public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
+public class CurrentBuildParametersTest extends HudsonTestCase {
 
 	public void test() throws Exception {
 
@@ -41,13 +44,13 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 		String properties = "KEY=value";
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new PredefinedBuildParameters(properties))));
+						new CurrentBuildParameters())));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 		Project projectB = createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 
-		projectA.scheduleBuild2(0).get();
+		projectA.scheduleBuild2(0, null, new ParametersAction(new StringParameterValue("KEY", "value"))).get();
 
 		Thread.sleep(1000);
 

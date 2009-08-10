@@ -1,9 +1,8 @@
 package hudson.plugins.parameterizedtrigger;
 
-import org.kohsuke.stapler.Stapler;
-
-import hudson.tasks.BuildStep;
 import hudson.util.EnumConverter;
+
+import org.kohsuke.stapler.Stapler;
 
 public class Plugin extends hudson.Plugin {
 

@@ -23,34 +23,38 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import org.jvnet.hudson.test.HudsonTestCase;
-import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.SingleFileSCM;
-import org.junit.Assert;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import hudson.plugins.parameterizedtrigger.PredefinedPropertiesBuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.FileBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
-import hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig;
+
+import org.junit.Assert;
+import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.SingleFileSCM;
 
 public class FileBuildTriggerConfigTest extends HudsonTestCase {
 
-    public void test() throws Exception {
+	public void test() throws Exception {
 
-        Project projectA = createFreeStyleProject("projectA");
-        String properties = "KEY=value";
-        projectA.setScm(new SingleFileSCM("properties.txt", properties));
-        projectA.getPublishersList().add(new BuildTrigger(new FileBuildTriggerConfig("projectB", "properties.txt", ResultCondition.SUCCESS, "", false)));
+		Project projectA = createFreeStyleProject("projectA");
+		String properties = "KEY=value";
+		projectA.setScm(new SingleFileSCM("properties.txt", properties));
+		projectA.getPublishersList().add(
+				new BuildTrigger(
+				new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+						new FileBuildParameters("properties.txt"))));
 
-        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-        Project projectB = createFreeStyleProject("projectB");
-        projectB.getBuildersList().add(builder);
+		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+		Project projectB = createFreeStyleProject("projectB");
+		projectB.getBuildersList().add(builder);
 
-        projectA.scheduleBuild2(0).get();
+		projectA.scheduleBuild2(0).get();
 
-        Thread.sleep(1000);
+		Thread.sleep(1000);
 
-        Assert.assertEquals("value", builder.getEnvVars().get("KEY"));
-    }
+		Assert.assertEquals("value", builder.getEnvVars().get("KEY"));
+	}
 
 }

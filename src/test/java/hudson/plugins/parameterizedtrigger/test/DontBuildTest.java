@@ -23,35 +23,45 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import hudson.Launcher;
+import hudson.model.AbstractBuild;
+import hudson.model.Action;
+import hudson.model.BuildListener;
 import hudson.model.Project;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 
+import java.io.IOException;
+
 import org.junit.Assert;
-import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
-public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
+public class DontBuildTest extends HudsonTestCase {
+
+	public static final class DontBuildTrigger extends AbstractBuildParameters {
+		@Override
+		public Action getAction(AbstractBuild<?, ?> build,
+				Launcher launcher, BuildListener listener)
+				throws IOException, InterruptedException,
+				DontTriggerException {
+			throw new DontTriggerException();
+		}
+	}
 
 	public void test() throws Exception {
 
 		Project projectA = createFreeStyleProject("projectA");
-		String properties = "KEY=value";
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new PredefinedBuildParameters(properties))));
+						new DontBuildTrigger())));
 
-		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 		Project projectB = createFreeStyleProject("projectB");
-		projectB.getBuildersList().add(builder);
-
-		projectA.scheduleBuild2(0).get();
 
 		Thread.sleep(1000);
 
-		Assert.assertEquals("value", builder.getEnvVars().get("KEY"));
+		Assert.assertEquals(0, projectB.getBuilds().size());
 	}
 
 }

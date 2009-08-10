@@ -1,9 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
-import org.kohsuke.stapler.Stapler;
-
 import hudson.model.Result;
-import hudson.util.EnumConverter;
 
 public enum ResultCondition {
 

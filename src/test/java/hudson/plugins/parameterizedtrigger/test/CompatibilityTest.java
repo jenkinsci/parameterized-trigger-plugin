@@ -23,35 +23,19 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.model.Project;
+import hudson.model.AbstractProject;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
-import hudson.plugins.parameterizedtrigger.ResultCondition;
 
-import org.junit.Assert;
-import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.recipes.LocalData;
 
-public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
+public class CompatibilityTest extends HudsonTestCase {
 
+	@LocalData
 	public void test() throws Exception {
-
-		Project projectA = createFreeStyleProject("projectA");
-		String properties = "KEY=value";
-		projectA.getPublishersList().add(
-				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new PredefinedBuildParameters(properties))));
-
-		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
-		projectB.getBuildersList().add(builder);
-
-		projectA.scheduleBuild2(0).get();
-
-		Thread.sleep(1000);
-
-		Assert.assertEquals("value", builder.getEnvVars().get("KEY"));
+		AbstractProject p = (AbstractProject) hudson.getItem("old");
+		BuildTrigger trigger = (BuildTrigger) p.getPublishersList().get(BuildTrigger.class);
+		assertEquals(2, trigger.getConfigs().size());
 	}
 
 }
