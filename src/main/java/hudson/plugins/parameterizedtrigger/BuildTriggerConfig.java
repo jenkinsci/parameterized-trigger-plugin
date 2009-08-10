@@ -7,28 +7,16 @@ import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Cause;
 import hudson.model.Items;
-import hudson.tasks.BatchFile;
-import hudson.tasks.CommandInterpreter;
-import hudson.tasks.Shell;
-import hudson.model.ParameterValue;
-import hudson.model.AbstractProject;
-import hudson.model.JobProperty;
-import hudson.model.ParametersDefinitionProperty;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.model.StringParameterValue;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 
-import java.util.Hashtable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 public class BuildTriggerConfig {
 
@@ -64,6 +52,21 @@ public class BuildTriggerConfig {
 	public List<AbstractProject> getProjectList() {
 		return Items.fromNameList(projects, AbstractProject.class);
 	}
+	
+	private ParametersAction getDefaultParameters(AbstractProject<?,?> project) {
+		ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
+		if (property == null) {
+			return null;
+		}
+		
+		List<ParameterValue> parameters = new ArrayList<ParameterValue>();
+		for (ParameterDefinition pd: property.getParameterDefinitions()) {
+			parameters.add(pd.getDefaultParameterValue());
+		}
+		
+		return new ParametersAction(parameters);
+	}
+	
 
 	public void perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
@@ -80,10 +83,17 @@ public class BuildTriggerConfig {
 
 				if (!actions.isEmpty()) {
 					for (AbstractProject project : getProjectList()) {
+						
+						List<Action> list = new ArrayList<Action>(actions);
+						
+						ParametersAction defaultParameters = getDefaultParameters(project);
+						if (defaultParameters != null) {
+							list.add(0, defaultParameters);
+						}
+						
 						project.scheduleBuild(0,
 								new Cause.UpstreamCause(build),
-								(Action[]) actions.toArray(new Action[actions
-										.size()]));
+								(Action[]) list.toArray(new Action[list.size()]));
 					}
 				}
 			}
