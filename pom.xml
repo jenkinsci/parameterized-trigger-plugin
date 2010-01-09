@@ -13,6 +13,13 @@
     <version>2.1-SNAPSHOT</version>
     <name>Hudson Parameterized Trigger plugin</name>
     <url>http://wiki.hudson-ci.org/display/HUDSON/Parameterized+Trigger+Plugin</url>
+
+    <developers>
+        <developer>
+            <id>huybrechts</id>
+            <name>Tom Huybrechts</name>
+        </developer>
+    </developers>
     
     <dependencies>
     	<dependency>
