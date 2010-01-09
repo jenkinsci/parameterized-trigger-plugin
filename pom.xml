@@ -10,7 +10,7 @@
 
     <artifactId>parameterized-trigger</artifactId>
     <packaging>hpi</packaging>
-    <version>2.1</version>
+    <version>2.2-SNAPSHOT</version>
     <name>Hudson Parameterized Trigger plugin</name>
     <url>http://wiki.hudson-ci.org/display/HUDSON/Parameterized+Trigger+Plugin</url>
 
@@ -46,10 +46,4 @@
         </plugin>
       </plugins>
     </build>
-
-  <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/parameterized-trigger-2.1</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/parameterized-trigger-2.1</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/hudson/plugins/parameterized-trigger/tags/parameterized-trigger-2.1</url>
-  </scm>
 </project>
