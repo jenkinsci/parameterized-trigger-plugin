@@ -12,8 +12,8 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		String s = f.readToString();
 		s = env.expand(s);
 		Properties p = new Properties();
-		p.load(new StringReader(s));
+		p.load(new ByteArrayInputStream(s.getBytes("ISO-8859-1")));
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
