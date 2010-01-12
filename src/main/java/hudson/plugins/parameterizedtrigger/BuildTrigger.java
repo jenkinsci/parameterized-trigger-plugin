@@ -57,18 +57,14 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	@Override
 	public void buildDependencyGraph(AbstractProject owner,
 			DependencyGraph graph) {
-		
-		for (BuildTriggerConfig config: configs) {
-			for (AbstractProject project: config.getProjectList()) {
-				graph.addDependency(owner, project);
-			}
-		}
-		
-	}
-
-	public Object readResolve() {
-		System.out.println(configs);
-		return this;
+		// commented because Hudson will trigger builds (w/o parameters) for all
+		// registered dependencies.. either need a way to avoid that (as we do it
+		// here in perform(), or a way to provide parameters to BuildTrigger.execute.
+		//for (BuildTriggerConfig config: configs) {
+		//	for (AbstractProject project: config.getProjectList()) {
+		//		graph.addDependency(owner, project);
+		//	}
+		//}
 	}
 
 	@Extension
