@@ -8,6 +8,7 @@ import hudson.model.BuildListener;
 import hudson.model.DependecyDeclarer;
 import hudson.model.DependencyGraph;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.DescriptorList;
@@ -44,8 +45,15 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	}
 
 	@Override
+	public BuildStepMonitor getRequiredMonitorService() {
+		return BuildStepMonitor.NONE;
+	}
+
+	@Override @SuppressWarnings("deprecation")
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
+		// In Hudson 1.341+ builds will be triggered via DependencyGraph
+		if (canDeclare()) return true;
 
 		for (BuildTriggerConfig config : configs) {
 			config.perform(build, launcher, listener);
@@ -55,16 +63,18 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	}
 
 	@Override
-	public void buildDependencyGraph(AbstractProject owner,
-			DependencyGraph graph) {
-		// commented because Hudson will trigger builds (w/o parameters) for all
-		// registered dependencies.. either need a way to avoid that (as we do it
-		// here in perform(), or a way to provide parameters to BuildTrigger.execute.
-		//for (BuildTriggerConfig config: configs) {
-		//	for (AbstractProject project: config.getProjectList()) {
-		//		graph.addDependency(owner, project);
-		//	}
-		//}
+	public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
+		// Can only add dependencies in Hudson 1.341 or higher
+		if (!canDeclare()) return;
+
+		for (BuildTriggerConfig config : configs)
+			for (AbstractProject project : config.getProjectList())
+				ParameterizedDependency.add(owner, project, config, graph);
+	}
+
+	private static boolean canDeclare() {
+		// Inner class added in Hudson 1.341
+		return DependencyGraph.class.getClasses().length > 0;
 	}
 
 	@Extension

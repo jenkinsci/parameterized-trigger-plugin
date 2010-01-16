@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2004-2009, Sun Microsystems, Inc., Kohsuke Kawaguchi
+ * Copyright (c) 2004-2010, Sun Microsystems, Inc., Kohsuke Kawaguchi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,10 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
-import hudson.model.BuildListener;
 import hudson.model.Project;
+import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
@@ -35,17 +34,16 @@ import hudson.plugins.parameterizedtrigger.ResultCondition;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.jvnet.hudson.test.HudsonTestCase;
 
 public class DontBuildTest extends HudsonTestCase {
 
 	public static final class DontBuildTrigger extends AbstractBuildParameters {
+		boolean called = false;
 		@Override
-		public Action getAction(AbstractBuild<?, ?> build,
-				Launcher launcher, BuildListener listener)
-				throws IOException, InterruptedException,
-				DontTriggerException {
+		public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
+				throws IOException, InterruptedException, DontTriggerException {
+			called = true;
 			throw new DontTriggerException();
 		}
 	}
@@ -53,15 +51,19 @@ public class DontBuildTest extends HudsonTestCase {
 	public void test() throws Exception {
 
 		Project projectA = createFreeStyleProject("projectA");
+		DontBuildTrigger dbt = new DontBuildTrigger();
 		projectA.getPublishersList().add(
-				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new DontBuildTrigger())));
+			new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, dbt)));
 
 		Project projectB = createFreeStyleProject("projectB");
+		projectB.setQuietPeriod(0);
+		hudson.rebuildDependencyGraph();
 
+		projectA.scheduleBuild2(0).get();
 		Thread.sleep(1000);
 
-		Assert.assertEquals(0, projectB.getBuilds().size());
+		assertEquals(0, projectB.getBuilds().size());
+		assertTrue("trigger was not called", dbt.called);
 	}
 
 }

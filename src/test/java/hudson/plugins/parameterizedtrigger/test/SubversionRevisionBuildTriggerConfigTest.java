@@ -3,6 +3,7 @@ package hudson.plugins.parameterizedtrigger.test;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.Queue;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
@@ -30,6 +31,7 @@ public class SubversionRevisionBuildTriggerConfigTest extends HudsonTestCase {
 		setJavaNetCredential();
 		FreeStyleProject p1 = createFreeStyleProject();
 		FreeStyleProject p2 = createFreeStyleProject();
+		p2.setQuietPeriod(1);
 
 		p1
 				.setScm(new SubversionSCM(
@@ -42,10 +44,12 @@ public class SubversionRevisionBuildTriggerConfigTest extends HudsonTestCase {
 		p1.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig(p2.getName(), ResultCondition.SUCCESS,
 						new SubversionRevisionBuildParameters())));
+		hudson.rebuildDependencyGraph();
 
 		FreeStyleBuild b1 = p1.scheduleBuild2(0, new Cause.UserCause()).get();
-
-		Thread.sleep(10000);
+		Queue.Item q = hudson.getQueue().getItem(p2);
+		assertNotNull("p2 should be in queue (quiet period): " + getLog(b1), q);
+		q.getFuture().get();
 
 		FreeStyleBuild b2 = p2.getLastBuild();
 

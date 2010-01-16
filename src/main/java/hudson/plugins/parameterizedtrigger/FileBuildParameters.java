@@ -3,22 +3,21 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
-import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
+import hudson.model.TaskListener;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.tools.ant.filters.StringInputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class FileBuildParameters extends AbstractBuildParameters {
@@ -30,14 +29,13 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		this.propertiesFile = propertiesFile;
 	}
 
-	public Action getAction(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws IOException, InterruptedException {
+	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
+			throws IOException, InterruptedException {
 
 		EnvVars env = build.getEnvironment(listener);
 
 		String resolvedPropertiesFile = env.expand(propertiesFile);
-		FilePath f = build.getProject().getWorkspace().child(
-				resolvedPropertiesFile);
+		FilePath f = build.getWorkspace().child(resolvedPropertiesFile);
 		if (!f.exists()) {
 			listener
 					.getLogger()
@@ -51,7 +49,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		String s = f.readToString();
 		s = env.expand(s);
 		Properties p = new Properties();
-		p.load(new ByteArrayInputStream(s.getBytes("ISO-8859-1")));
+		p.load(new StringInputStream(s));
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {

@@ -1,14 +1,13 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.Extension;
-import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
-import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
+import hudson.model.TaskListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,8 +27,8 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		this.properties = properties;
 	}
 
-	public Action getAction(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws IOException, InterruptedException {
+	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
+			throws IOException, InterruptedException {
 
 		String resolved = build.getEnvironment(listener).expand(properties);
 

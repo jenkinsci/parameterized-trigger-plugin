@@ -12,6 +12,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 
 import java.io.IOException;
@@ -80,12 +81,12 @@ public class BuildTriggerConfig {
 		return new ParametersAction(parameters);
 	}
 	
-	List<Action> getBaseActions(AbstractBuild<?,?> build, Launcher launcher, BuildListener listener)
+	List<Action> getBaseActions(AbstractBuild<?,?> build, TaskListener listener)
 			throws IOException, InterruptedException, DontTriggerException {
 		List<Action> actions = new ArrayList<Action>();
 		ParametersAction params = null;
 		for (AbstractBuildParameters config : configs) {
-			Action a = config.getAction(build, launcher, listener);
+			Action a = config.getAction(build, listener);
 			if (a instanceof ParametersAction) {
 				params = params == null ? (ParametersAction)a
 					: mergeParameters(params, (ParametersAction)a);
@@ -114,6 +115,11 @@ public class BuildTriggerConfig {
 		return actions;
 	}
 
+	/**
+	 * @deprecated since 2.3 with Hudson 1.341+
+	 * (see {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)})
+	 */
+	@Deprecated
 	public void perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 
@@ -124,7 +130,7 @@ public class BuildTriggerConfig {
 					for (AbstractProject project : getProjectList()) {
 						List<Action> list = getBuildActions(actions, project);
 						
-						project.scheduleBuild(0,
+						project.scheduleBuild(project.getQuietPeriod(),
 								new Cause.UpstreamCause((Run)build),
 								list.toArray(new Action[list.size()]));
 					}

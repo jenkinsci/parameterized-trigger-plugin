@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2004-2009, Sun Microsystems, Inc., Kohsuke Kawaguchi
+ * Copyright (c) 2004-2010, Sun Microsystems, Inc., Kohsuke Kawaguchi
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@ import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 
-import org.junit.Assert;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
@@ -46,12 +45,13 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 		Project projectB = createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
+		projectB.setQuietPeriod(1);
+		hudson.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
+		hudson.getQueue().getItem(projectB).getFuture().get();
 
-		Thread.sleep(1000);
-
-		Assert.assertEquals("value", builder.getEnvVars().get("KEY"));
+		assertNotNull("builder should record environment", builder.getEnvVars());
+		assertEquals("value", builder.getEnvVars().get("KEY"));
 	}
-
 }

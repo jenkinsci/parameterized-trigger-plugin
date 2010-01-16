@@ -1,13 +1,12 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.Extension;
-import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
-import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
+import hudson.model.TaskListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,16 +21,15 @@ public class CurrentBuildParameters extends AbstractBuildParameters {
 	}
 
 	@Override
-	public Action getAction(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws IOException, InterruptedException {
+	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
+			throws IOException {
 
 		ParametersAction action = build.getAction(ParametersAction.class);
 		if (action == null) {
 			listener.getLogger().println("[parameterized-trigger] current build has no parameters");
 			throw new IOException("current build has no parameters");
 		} else {
-			List<ParameterValue> values = new ArrayList<ParameterValue>();
-			values.addAll(action.getParameters());
+			List<ParameterValue> values = new ArrayList<ParameterValue>(action.getParameters());
 			return new ParametersAction(values);
 		}
 	}

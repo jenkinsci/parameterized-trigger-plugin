@@ -1,7 +1,7 @@
 /*
  * The MIT License
  * 
- * Copyright (c) 2004-2009, Sun Microsystems, Inc., Tom Huybrechts
+ * Copyright (c) 2004-2010, Sun Microsystems, Inc., Tom Huybrechts
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,98 +23,84 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.model.Descriptor;
 import hudson.model.Project;
-import hudson.model.Result;
+import hudson.model.Queue;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
-import hudson.tasks.Builder;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.Assert;
 import org.jvnet.hudson.test.FailureBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.UnstableBuilder;
 
 public class ResultConditionTest extends HudsonTestCase {
 
     public void testTriggerByStableBuild() throws Exception {
         Project projectA = createFreeStyleProject("projectA");
         Project projectB = createFreeStyleProject("projectB");
+        projectB.setQuietPeriod(1);
 
-        schedule(projectA, ResultCondition.SUCCESS);
-        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, ResultCondition.FAILED);
-        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.FAILED);
+        assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, ResultCondition.UNSTABLE_OR_BETTER);
-        Assert.assertEquals(2, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        assertEquals(2, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, ResultCondition.UNSTABLE);
-        Assert.assertEquals(2, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
     public void testTriggerByUnstableBuild() throws Exception {
         Project projectA = createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new UnstableBuilder());
         Project projectB = createFreeStyleProject("projectB");
+        projectB.setQuietPeriod(1);
 
-		schedule(projectA, ResultCondition.SUCCESS);
-        Assert.assertNull(projectB.getLastBuild());
+        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        assertNull(projectB.getLastBuild());
 
-        schedule(projectA, ResultCondition.FAILED);
-        Assert.assertNull(projectB.getLastBuild());
+        schedule(projectA, projectB, ResultCondition.FAILED);
+        assertNull(projectB.getLastBuild());
 
-        schedule(projectA, ResultCondition.UNSTABLE_OR_BETTER);
-        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, ResultCondition.UNSTABLE);
-        Assert.assertEquals(2, projectB.getLastBuild().getNumber());
-}
+        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        assertEquals(2, projectB.getLastBuild().getNumber());
+    }
 
-	private void schedule(Project projectA, ResultCondition condition)
-			throws IOException, InterruptedException, ExecutionException {
-		projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig("projectB", condition, new PredefinedBuildParameters(""))));
+    private void schedule(Project projectA, Project projectB, ResultCondition condition)
+            throws IOException, InterruptedException, ExecutionException {
+        projectA.getPublishersList().replace(new BuildTrigger(new BuildTriggerConfig("projectB", condition, new PredefinedBuildParameters(""))));
+        hudson.rebuildDependencyGraph();
         projectA.scheduleBuild2(0).get();
-        Thread.sleep(500);
-	}
+        Queue.Item q = hudson.getQueue().getItem(projectB);
+        if (q != null) q.getFuture().get();
+    }
 
     public void testTriggerByFailedBuild() throws Exception {
         Project projectA = createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new FailureBuilder());
         Project projectB = createFreeStyleProject("projectB");
+        projectB.setQuietPeriod(1);
 
-		schedule(projectA, ResultCondition.SUCCESS);
-        Assert.assertNull(projectB.getLastBuild());
+        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        assertNull(projectB.getLastBuild());
 
-        schedule(projectA, ResultCondition.FAILED);
-        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.FAILED);
+        assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, ResultCondition.UNSTABLE_OR_BETTER);
-        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, ResultCondition.UNSTABLE);
-        Assert.assertEquals(1, projectB.getLastBuild().getNumber());
+        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        assertEquals(1, projectB.getLastBuild().getNumber());
     }
-
-    public static class UnstableBuilder extends Builder {
-
-        public Descriptor<Builder> getDescriptor() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-         public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener buildListener) throws InterruptedException, IOException {
-            build.setResult(Result.UNSTABLE);
-            return true;
-        }
-    }
-
 }
