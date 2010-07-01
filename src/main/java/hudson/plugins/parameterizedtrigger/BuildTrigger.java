@@ -2,6 +2,9 @@ package hudson.plugins.parameterizedtrigger;
 
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.matrix.MatrixAggregatable;
+import hudson.matrix.MatrixAggregator;
+import hudson.matrix.MatrixBuild;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -75,6 +78,15 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	private static boolean canDeclare() {
 		// Inner class added in Hudson 1.341
 		return DependencyGraph.class.getClasses().length > 0;
+	}
+
+	public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
+		return new MatrixAggregator(build, launcher, listener) {
+			@Override
+			public boolean endBuild() throws InterruptedException, IOException {
+				return hudson.tasks.BuildTrigger.execute(build, listener);
+			}
+		};
 	}
 
 	@Extension
