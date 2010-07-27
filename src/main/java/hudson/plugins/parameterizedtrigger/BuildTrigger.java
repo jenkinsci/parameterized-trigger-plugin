@@ -26,7 +26,7 @@ import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.StaplerRequest;
 
-public class BuildTrigger extends Notifier implements DependecyDeclarer {
+public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixAggregatable {
 
 	private final List<BuildTriggerConfig> configs;
 
