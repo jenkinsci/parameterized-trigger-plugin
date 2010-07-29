@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
@@ -30,15 +31,15 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
 			throws IOException, InterruptedException {
 
-		String resolved = build.getEnvironment(listener).expand(properties);
+		EnvVars env = build.getEnvironment(listener);
 
 		Properties p = new Properties();
-		p.load(new StringInputStream(resolved));
+		p.load(new StringInputStream(properties));
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
 			values.add(new StringParameterValue(entry.getKey().toString(),
-					entry.getValue().toString()));
+					env.expand(entry.getValue().toString())));
 		}
 
 		return new ParametersAction(values);
