@@ -38,8 +38,7 @@ import org.jvnet.hudson.test.HudsonTestCase;
 public class CurrentBuildParametersTest extends HudsonTestCase {
 
 	public void test() throws Exception {
-
-		Project projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = createFreeStyleProject("projectA");
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
 						new CurrentBuildParameters())));
@@ -50,11 +49,22 @@ public class CurrentBuildParametersTest extends HudsonTestCase {
 		projectB.setQuietPeriod(1);
 		hudson.rebuildDependencyGraph();
 
-		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(new StringParameterValue("KEY", "value"))).get();
+		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
+			new StringParameterValue("KEY", "value"))).get();
 		hudson.getQueue().getItem(projectB).getFuture().get();
 
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		assertEquals("value", builder.getEnvVars().get("KEY"));
+
+                // Now rename projectB and confirm projectA's build trigger is updated automatically:
+                projectB.renameTo("new-projectB");
+                assertEquals("rename in trigger", "new-projectB", projectA.getPublishersList()
+                             .get(BuildTrigger.class).getConfigs().get(0).getProjects());
+
+                // Now delete projectB and confirm projectA's build trigger is updated automatically:
+                projectB.delete();
+                assertNull("now-empty trigger should be removed",
+                           projectA.getPublishersList().get(BuildTrigger.class));
 	}
 
 }

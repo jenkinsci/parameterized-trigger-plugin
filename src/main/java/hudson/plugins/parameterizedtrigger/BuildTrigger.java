@@ -28,10 +28,10 @@ import org.kohsuke.stapler.StaplerRequest;
 
 public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixAggregatable {
 
-	private final List<BuildTriggerConfig> configs;
+	private final ArrayList<BuildTriggerConfig> configs;
 
 	public BuildTrigger(List<BuildTriggerConfig> configs) {
-		this.configs = configs;
+		this.configs = new ArrayList<BuildTriggerConfig>(configs);
 	}
 
 	public BuildTrigger(BuildTriggerConfig... configs) {

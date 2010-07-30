@@ -26,7 +26,7 @@ public class BuildTriggerConfig {
 
 	private final List<AbstractBuildParameters> configs;
 
-	private final String projects;
+	private String projects;
 	private final ResultCondition condition;
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
@@ -141,6 +141,31 @@ public class BuildTriggerConfig {
 			return;
 		}
 	}
+
+        public boolean onJobRenamed(String oldName, String newName) {
+            boolean changed = false;
+            String[] list = projects.split(",");
+            for (int i = 0; i < list.length; i++) {
+                if (list[i].trim().equals(oldName)) {
+                    list[i] = newName;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                StringBuilder buf = new StringBuilder();
+                for (int i = 0; i < list.length; i++) {
+                    if (list[i] == null) continue;
+                    if (buf.length() > 0) buf.append(',');
+                    buf.append(list[i]);
+                }
+                projects = buf.toString();
+            }
+            return changed;
+        }
+
+        public boolean onDeleted(String oldName) {
+            return onJobRenamed(oldName, null);
+        }
 
 	@Override
 	public String toString() {
