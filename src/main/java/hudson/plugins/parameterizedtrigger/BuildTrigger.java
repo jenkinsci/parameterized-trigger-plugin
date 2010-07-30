@@ -56,7 +56,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixA
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		// In Hudson 1.341+ builds will be triggered via DependencyGraph
-		if (canDeclare()) return true;
+		if (canDeclare(build.getProject())) return true;
 
 		for (BuildTriggerConfig config : configs) {
 			config.perform(build, launcher, listener);
@@ -68,16 +68,20 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixA
 	@Override
 	public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
 		// Can only add dependencies in Hudson 1.341 or higher
-		if (!canDeclare()) return;
+		if (!canDeclare(owner)) return;
 
 		for (BuildTriggerConfig config : configs)
 			for (AbstractProject project : config.getProjectList())
 				ParameterizedDependency.add(owner, project, config, graph);
 	}
 
-	private static boolean canDeclare() {
+	private boolean canDeclare(AbstractProject owner) {
 		// Inner class added in Hudson 1.341
-		return DependencyGraph.class.getClasses().length > 0;
+		return DependencyGraph.class.getClasses().length > 0
+                        // See HUDSON-6274 -- currently Maven projects call scheduleProject
+                        // directly, so would not get parameters from DependencyGraph.
+                        // Remove this condition when HUDSON-6274 is implemented.
+                        && !owner.getClass().getName().equals("hudson.maven.MavenModuleSet");
 	}
 
 	public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
