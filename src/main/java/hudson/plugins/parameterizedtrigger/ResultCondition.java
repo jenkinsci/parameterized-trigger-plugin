@@ -23,6 +23,11 @@ public enum ResultCondition {
 		boolean isMet(Result result) {
 			return result == Result.FAILURE;
 		}
+	},
+	ALWAYS("Complete (always trigger)") {
+		boolean isMet(Result result) {
+			return true;
+		}
 	};
 
 	private ResultCondition(String displayName) {
