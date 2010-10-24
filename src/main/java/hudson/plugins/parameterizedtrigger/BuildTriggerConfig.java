@@ -8,6 +8,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Cause;
+import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
@@ -19,14 +20,17 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
+import hudson.util.IOException2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.Future;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
@@ -52,7 +56,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return configs;
 	}
 
-	public String getProjects() {
+    public String getProjects() {
 		return projects;
 	}
 
@@ -123,30 +127,29 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	}
 
 	/**
-	 * @deprecated since 2.3 with Hudson 1.341+
-	 * (see {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)})
+     * Note that with Hudson 1.341, trigger should be using
+	 * {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)}.
 	 */
-	@Deprecated
-	public void perform(AbstractBuild<?, ?> build, Launcher launcher,
+	public List<Future<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
-
 		try {
 			if (condition.isMet(build.getResult())) {
 				List<Action> actions = getBaseActions(build, listener);
-				if (!actions.isEmpty()) {
-					for (AbstractProject project : getProjectList()) {
-						List<Action> list = getBuildActions(actions, project);
-						
-						project.scheduleBuild(project.getQuietPeriod(),
-								new Cause.UpstreamCause((Run)build),
-								list.toArray(new Action[list.size()]));
-					}
-				}
+
+                List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
+                for (AbstractProject project : getProjectList()) {
+                    List<Action> list = getBuildActions(actions, project);
+
+                    futures.add(project.scheduleBuild2(project.getQuietPeriod(),
+                            new UpstreamCause((Run) build),
+                            list.toArray(new Action[list.size()])));
+                }
+                return futures;
 			}
 		} catch (DontTriggerException e) {
 			// don't trigger on this configuration
-			return;
 		}
+        return Collections.emptyList();
 	}
 
         public boolean onJobRenamed(String oldName, String newName) {
@@ -180,7 +183,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     @Override
 	public String toString() {
-		return "BuildTriggerConfig [projects=" + projects + ", condition="
+		return getClass().getName()+" [projects=" + projects + ", condition="
 				+ condition + ", configs=" + configs + "]";
 	}
 

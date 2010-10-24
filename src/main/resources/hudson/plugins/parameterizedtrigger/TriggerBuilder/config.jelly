@@ -1,0 +1,17 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <f:entry title="${%Build Triggers}" field="configs">
+    <f:repeatable field="configs" noAddButton="true" minimum="1">
+      <j:set var="instance" value="${instance.descriptor!=descriptor?null:instance}"/><!-- work around until 1.382 -->
+      <table width="100%">
+        <st:include class="${descriptor.clazz}" page="config.jelly" />
+
+        <f:entry>
+          <div align="right">
+            <input type="button" value="${%Add trigger...}" class="repeatable-add show-if-last" />
+            <input type="button" value="${%Delete}" class="repeatable-delete show-if-not-only" style="margin-left: 1em;" />
+          </div>
+        </f:entry>
+      </table>
+    </f:repeatable>
+  </f:entry>
+</j:jelly>
