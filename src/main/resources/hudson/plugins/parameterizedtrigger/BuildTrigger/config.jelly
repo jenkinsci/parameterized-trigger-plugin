@@ -1,26 +1,9 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="${%Build Triggers}">
-    <f:repeatable var="config" name="configs" items="${instance.configs}" noAddButton="true" minimum="1">
+  <f:entry title="${%Build Triggers}" field="configs">
+    <f:repeatable field="configs" noAddButton="true" minimum="1">
       <table width="100%">
-		  <f:entry title="Projects to build" help="/plugin/parameterized-trigger/help/projectsValue.html">
-		    <f:textbox name="projects" value="${config.projects}"/>
-		  </f:entry>
-		  <f:entry title="Trigger when build is" help="/plugin/parameterized-trigger/help/resultCondition.html">
-		    <select class="setting-input" name="condition">
-		      <j:forEach var="it" items="${descriptor.possibleResultConditions}">
-		        <f:option value="${it.name()}" selected="${it==config.condition}">${it.displayName}</f:option>
-		      </j:forEach>
-		    </select>
-		  </f:entry>
-	    <f:block>
+        <st:include class="${descriptor.clazz}" page="config.jelly" />
 
-	      <f:hetero-list name="configs" hasHeader="true"
-	                     descriptors="${descriptor.getBuilderConfigDescriptors()}"
-	                     items="${config.configs}"
-	                     addCaption="${%Add Parameters}"
-	      />
-
-	    </f:block>
         <f:entry>
           <div align="right">
             <input type="button" value="${%Add trigger...}" class="repeatable-add show-if-last" />

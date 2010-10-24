@@ -1,11 +1,16 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.Extension;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Cause;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
+import hudson.model.Hudson;
 import hudson.model.Items;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
@@ -14,6 +19,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,16 +28,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 
-public class BuildTriggerConfig {
+public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	private final List<AbstractBuildParameters> configs;
 
 	private String projects;
 	private final ResultCondition condition;
 
+    @DataBoundConstructor
 	public BuildTriggerConfig(String projects, ResultCondition condition,
 			List<AbstractBuildParameters> configs) {
-		this.configs = configs;
+		this.configs = Util.fixNull(configs);
 		this.projects = projects;
 		this.condition = condition;
 	}
@@ -167,10 +174,25 @@ public class BuildTriggerConfig {
             return onJobRenamed(oldName, null);
         }
 
-	@Override
+    public Descriptor<BuildTriggerConfig> getDescriptor() {
+        return Hudson.getInstance().getDescriptorOrDie(getClass());
+    }
+
+    @Override
 	public String toString() {
 		return "BuildTriggerConfig [projects=" + projects + ", condition="
 				+ condition + ", configs=" + configs + "]";
 	}
 
+    @Extension
+    public static class DescriptorImpl extends Descriptor<BuildTriggerConfig> {
+        @Override
+        public String getDisplayName() {
+            return ""; // unused
+        }
+
+        public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
+            return Hudson.getInstance().getDescriptorList(AbstractBuildParameters.class);
+        }
+    }
 }

@@ -1,7 +1,7 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-  <f:entry title="Parameters" help="/plugin/parameterized-trigger/help/properties.html">
-    <f:textarea name="properties" value="${instance.properties}"/>
+  <f:entry field="properties" title="Parameters">
+    <f:textarea />
   </f:entry>
 
 </j:jelly>
