@@ -75,12 +75,15 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixA
 
 	private boolean canDeclare(AbstractProject owner) {
 		// Inner class added in Hudson 1.341
+        String ownerClassName = owner.getClass().getName();
 		return DependencyGraph.class.getClasses().length > 0
                         // See HUDSON-6274 -- currently Maven projects call scheduleProject
                         // directly, so would not get parameters from DependencyGraph.
                         // Remove this condition when HUDSON-6274 is implemented.
-                        && !owner.getClass().getName().equals("hudson.maven.MavenModuleSet");
-	}
+                        && !ownerClassName.equals("hudson.maven.MavenModuleSet")
+                        // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
+                        && !ownerClassName.equals("hudson.plugins.promoted_builds.PromotionProcess");
+ 	}
 
 	public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
 		return new MatrixAggregator(build, launcher, listener) {
