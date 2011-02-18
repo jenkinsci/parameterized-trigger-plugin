@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -58,10 +60,18 @@ public class TriggerBuilder extends Builder {
         }
         try {
             for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entrySet()) {
+                int n=0;
+                AbstractProject p = e.getKey().getProjectList().get(n);
                 for (Future<AbstractBuild> f : e.getValue()) {
-                    AbstractBuild b = f.get();
-                    listener.getLogger().println(b.getFullDisplayName()+" completed. result was "+b.getResult());
-                    build.setResult(e.getKey().getBlock().mapResult(b.getResult()));
+                    try {
+                        listener.getLogger().println("Waiting for the completion of "+p.getFullDisplayName());
+                        AbstractBuild b = f.get();
+                        listener.getLogger().println(b.getFullDisplayName()+" completed. result was "+b.getResult());
+                        build.setResult(e.getKey().getBlock().mapResult(b.getResult()));
+                    } catch (CancellationException x) {
+                        throw new AbortException(p.getFullDisplayName() +" aborted.");
+                    }
+                    n++;
                 }
             }
         } catch (ExecutionException e) {

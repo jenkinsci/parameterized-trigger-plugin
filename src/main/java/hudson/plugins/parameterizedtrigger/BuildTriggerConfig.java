@@ -140,9 +140,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 for (AbstractProject project : getProjectList()) {
                     List<Action> list = getBuildActions(actions, project);
 
-                    futures.add(project.scheduleBuild2(project.getQuietPeriod(),
-                            new UpstreamCause((Run) build),
-                            list.toArray(new Action[list.size()])));
+                    futures.add(schedule(build, project, list));
                 }
                 return futures;
 			}
@@ -152,7 +150,13 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
 	}
 
-        public boolean onJobRenamed(String oldName, String newName) {
+    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
+        return project.scheduleBuild2(project.getQuietPeriod(),
+                new UpstreamCause((Run) build),
+                list.toArray(new Action[list.size()]));
+    }
+
+    public boolean onJobRenamed(String oldName, String newName) {
             boolean changed = false;
             String[] list = projects.split(",");
             for (int i = 0; i < list.length; i++) {
