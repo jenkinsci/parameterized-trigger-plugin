@@ -61,17 +61,21 @@ public class TriggerBuilder extends Builder {
         try {
             for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entrySet()) {
                 int n=0;
-                AbstractProject p = e.getKey().getProjectList().get(n);
-                for (Future<AbstractBuild> f : e.getValue()) {
-                    try {
-                        listener.getLogger().println("Waiting for the completion of "+p.getFullDisplayName());
-                        AbstractBuild b = f.get();
-                        listener.getLogger().println(b.getFullDisplayName()+" completed. result was "+b.getResult());
-                        build.setResult(e.getKey().getBlock().mapResult(b.getResult()));
-                    } catch (CancellationException x) {
-                        throw new AbortException(p.getFullDisplayName() +" aborted.");
-                    }
-                    n++;
+                if(!e.getKey().getProjectList().isEmpty()){
+	                AbstractProject p = e.getKey().getProjectList().get(n);
+	                for (Future<AbstractBuild> f : e.getValue()) {
+	                    try {
+	                        listener.getLogger().println("Waiting for the completion of "+p.getFullDisplayName());
+	                        AbstractBuild b = f.get();
+	                        listener.getLogger().println(b.getFullDisplayName()+" completed. Result was "+b.getResult());
+	                        build.setResult(e.getKey().getBlock().mapResult(b.getResult()));
+	                    } catch (CancellationException x) {
+	                        throw new AbortException(p.getFullDisplayName() +" aborted.");
+	                    }
+	                    n++;
+	                }
+                }else{
+                	throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
                 }
             }
         } catch (ExecutionException e) {
