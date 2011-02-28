@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import static hudson.Util.fixEmpty;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
@@ -7,7 +8,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
-import hudson.model.Cause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -20,8 +20,9 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
-import hudson.util.IOException2;
+import hudson.util.FormValidation;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,7 +66,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	}
 
 	public List<AbstractProject> getProjectList() {
-		return Items.fromNameList(projects, AbstractProject.class);
+		List<AbstractProject> projectList = new ArrayList<AbstractProject>();
+		projectList.addAll(Items.fromNameList(projects, AbstractProject.class));
+		return projectList;
 	}
 
 	private static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
@@ -201,5 +204,15 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
             return Hudson.getInstance().getDescriptorList(AbstractBuildParameters.class);
         }
+
+    	public FormValidation doCheckProjects(@QueryParameter String value) {
+    		String v = fixEmpty(value);
+    		if(v == null){
+    			return FormValidation.error("No projects defined.");
+    		}else{
+    			return FormValidation.ok();
+    		}
+    	}
+
     }
 }
