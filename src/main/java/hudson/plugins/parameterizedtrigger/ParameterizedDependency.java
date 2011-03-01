@@ -10,9 +10,9 @@ import hudson.model.TaskListener;
 import java.util.List;
 
 /**
- * Invoke downstream projects with applicable parameters using Hudson's
+ * Invoke downstream projects with applicable parameters using
  * DependencyGraph.Dependency interface.
- * @author Alan.Harder@sun.com
+ * @author Alan Harder
  */
 public class ParameterizedDependency extends Dependency {
 	private BuildTriggerConfig config;
