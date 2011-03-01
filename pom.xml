@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>1.396</version>
+        <version>1.397</version>
     </parent>
   
     <artifactId>parameterized-trigger</artifactId>
@@ -25,12 +25,12 @@
     </developers>
     
     <dependencies>
-    	<dependency>
-    		<groupId>org.jvnet.hudson.plugins</groupId>
-    		<artifactId>subversion</artifactId>
-    		<version>1.4</version>
-        <optional>true</optional>
-    	</dependency>
+        <dependency>
+            <groupId>org.jvnet.hudson.plugins</groupId>
+            <artifactId>subversion</artifactId>
+            <version>[1.17,)</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
