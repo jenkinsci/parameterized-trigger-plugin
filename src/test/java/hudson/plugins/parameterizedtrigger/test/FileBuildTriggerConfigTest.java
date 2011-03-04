@@ -44,7 +44,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 		projectA.getPublishersList().add(
 				new BuildTrigger(
 				new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new FileBuildParameters("properties.txt"))));
+						new FileBuildParameters("properties.txt", null))));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 		Project projectB = createFreeStyleProject("projectB");
