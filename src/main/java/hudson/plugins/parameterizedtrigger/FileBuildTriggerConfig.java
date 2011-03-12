@@ -17,6 +17,7 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
 	private String projectsValue;
     private String propertiesFile;
     private ResultCondition condition;
+    private boolean triggerWithNoParameters;
     private boolean includeCurrentParameters;
     private boolean batchCondition;
 	
@@ -28,6 +29,6 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
     	if (propertiesFile != null) {
     		configs.add(new FileBuildParameters(propertiesFile));
     	}
-		return new BuildTriggerConfig(projectsValue, condition, configs);
+		return new BuildTriggerConfig(projectsValue, condition, triggerWithNoParameters, configs);
     }
 }

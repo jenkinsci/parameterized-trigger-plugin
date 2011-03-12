@@ -24,12 +24,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
 
     @DataBoundConstructor
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
-        super(projects, ResultCondition.ALWAYS, configs);
-        this.block = block;
-    }
-
-    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, AbstractBuildParameters... configs) {
-        super(projects, ResultCondition.ALWAYS, configs);
+        super(projects, ResultCondition.ALWAYS, false, configs);
         this.block = block;
     }
 

@@ -27,8 +27,8 @@ public class CurrentBuildParameters extends AbstractBuildParameters {
 
 		ParametersAction action = build.getAction(ParametersAction.class);
 		if (action == null) {
-			listener.getLogger().println("[parameterized-trigger] current build has no parameters");
-			throw new IOException("current build has no parameters");
+			listener.getLogger().println("[parameterized-trigger] Current build has no parameters.");
+			return null;
 		} else {
 			List<ParameterValue> values = new ArrayList<ParameterValue>(action.getParameters().size());
 			for (ParameterValue value : action.getParameters())

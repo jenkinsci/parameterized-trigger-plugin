@@ -31,18 +31,22 @@ public class ParameterizedDependency extends Dependency {
 	}
 
 	@Override
-	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener,
-					  List<Action> actions) {
-		if (!config.getCondition().isMet(build.getResult()))
+	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
+		if (!config.getCondition().isMet(build.getResult())){
 			return false;
-
+		}
 		try {
 			List<Action> actionList = config.getBaseActions(build, listener);
 			if (!actionList.isEmpty()) {
 				actions.addAll(config.getBuildActions(actionList, getDownstreamProject()));
 				return true;
+			}else if(actionList.isEmpty()){
+				if(config.getTriggerWithNoParameters()){
+					return true;
+				}
 			}
-                        return false;
+			listener.getLogger().println("[parameterized-trigger] Downstream builds will not be triggered.");
+            return false;
 		} catch (AbstractBuildParameters.DontTriggerException ex) {
 			// don't trigger on this configuration
 			return false;
