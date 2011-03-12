@@ -17,6 +17,7 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
 	private String projectsValue;
     private String properties;
     private ResultCondition condition;
+    private boolean triggerWithNoParameters;
     private boolean includeCurrentParameters;
     private String batchCondition;
     
@@ -28,6 +29,6 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
     	if (properties != null) {
     		configs.add(new PredefinedBuildParameters(properties));
     	}
-		return new BuildTriggerConfig(projectsValue, condition, configs);
+		return new BuildTriggerConfig(projectsValue, condition, triggerWithNoParameters, configs);
     }
 }

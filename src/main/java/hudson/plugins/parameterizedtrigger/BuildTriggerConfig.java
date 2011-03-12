@@ -39,18 +39,20 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	private String projects;
 	private final ResultCondition condition;
+	private boolean triggerWithNoParameters;
 
     @DataBoundConstructor
 	public BuildTriggerConfig(String projects, ResultCondition condition,
-			List<AbstractBuildParameters> configs) {
-		this.configs = Util.fixNull(configs);
+			boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
 		this.projects = projects;
 		this.condition = condition;
+		this.triggerWithNoParameters = triggerWithNoParameters;
+		this.configs = Util.fixNull(configs);
 	}
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, Arrays.asList(configs));
+		this(projects, condition, false, Arrays.asList(configs));
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
@@ -65,6 +67,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return condition;
 	}
 
+	public boolean getTriggerWithNoParameters() {
+        return triggerWithNoParameters;
+    }
+	
 	public List<AbstractProject> getProjectList() {
 		List<AbstractProject> projectList = new ArrayList<AbstractProject>();
 		projectList.addAll(Items.fromNameList(projects, AbstractProject.class));
@@ -112,7 +118,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return actions;
 	}
 
-        List<Action> getBuildActions(List<Action> baseActions, AbstractProject project) {
+	List<Action> getBuildActions(List<Action> baseActions, AbstractProject project) {
 		List<Action> actions = new ArrayList<Action>(baseActions);
 
 		ParametersAction defaultParameters = getDefaultParameters(project);
@@ -208,7 +214,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     	public FormValidation doCheckProjects(@QueryParameter String value) {
     		String v = fixEmpty(value);
     		if(v == null){
-    			return FormValidation.error("No projects defined.");
+    			return FormValidation.error("No project specified");
     		}else{
     			return FormValidation.ok();
     		}
