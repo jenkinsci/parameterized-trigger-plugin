@@ -20,26 +20,16 @@ import org.tmatesoft.svn.core.SVNException;
 
 public class SubversionRevisionBuildTriggerConfigTest extends HudsonTestCase {
 
-	protected void setJavaNetCredential() throws SVNException, IOException {
-		// set the credential to access svn.dev.java.net
-		hudson.getDescriptorByType(SubversionSCM.DescriptorImpl.class)
-				.postCredential("https://svn.dev.java.net/svn/hudson/",
-						"guest", "", null, new PrintWriter(new NullStream()));
-	}
-
 	public void testRevisionParameter() throws Exception {
-		setJavaNetCredential();
 		FreeStyleProject p1 = createFreeStyleProject();
 		FreeStyleProject p2 = createFreeStyleProject();
 		p2.setQuietPeriod(1);
 
-		p1
-				.setScm(new SubversionSCM(
-						"https://svn.dev.java.net/svn/hudson/trunk/hudson/test-projects/trivial-ant@13000"));
+		p1.setScm(new SubversionSCM(
+					"https://svn.jenkins-ci.org/trunk/hudson/test-projects/trivial-ant@13000"));
 
-		p2
-				.setScm(new SubversionSCM(
-						"https://svn.dev.java.net/svn/hudson/trunk/hudson/test-projects/trivial-ant"));
+		p2.setScm(new SubversionSCM(
+					"https://svn.jenkins-ci.org/trunk/hudson/test-projects/trivial-ant"));
 
 		p1.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig(p2.getName(), ResultCondition.SUCCESS,
