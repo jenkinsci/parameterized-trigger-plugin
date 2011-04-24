@@ -1,6 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
@@ -54,6 +55,9 @@ public class TriggerBuilder extends Builder {
 	@Override
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
+        EnvVars env = build.getEnvironment(listener);
+        env.overrideAll(build.getBuildVariables());
+
         Map<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = new HashMap<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>>();
 		for (BlockableBuildTriggerConfig config : configs) {
             futures.put(config,config.perform(build, launcher, listener));
@@ -61,8 +65,9 @@ public class TriggerBuilder extends Builder {
         try {
             for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entrySet()) {
                 int n=0;
-                if(!e.getKey().getProjectList().isEmpty()){
-	                AbstractProject p = e.getKey().getProjectList().get(n);
+                List<AbstractProject> projectList = e.getKey().getProjectList(env);
+                if(!projectList.isEmpty()){
+	                AbstractProject p = projectList.get(n);
 	                for (Future<AbstractBuild> f : e.getValue()) {
 	                    try {
 	                        listener.getLogger().println("Waiting for the completion of "+p.getFullDisplayName());
