@@ -208,7 +208,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
 
         public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
-            return Hudson.getInstance().getDescriptorList(AbstractBuildParameters.class);
+            return Hudson.getInstance().<AbstractBuildParameters,
+              Descriptor<AbstractBuildParameters>>getDescriptorList(AbstractBuildParameters.class);
         }
 
     	public FormValidation doCheckProjects(@QueryParameter String value) {
