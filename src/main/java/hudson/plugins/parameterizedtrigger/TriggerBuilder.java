@@ -1,3 +1,28 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2010-2011, InfraDNA, Inc., Manufacture Francaise des Pneumatiques Michelin,
+ * Romain Seguy
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.AbortException;
@@ -60,12 +85,17 @@ public class TriggerBuilder extends Builder {
 
         Map<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = new HashMap<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>>();
 		for (BlockableBuildTriggerConfig config : configs) {
-            futures.put(config,config.perform(build, launcher, listener));
+            futures.put(config, config.perform(build, launcher, listener));
         }
+
+        boolean buildStepResult = true;
+
         try {
             for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entrySet()) {
                 int n=0;
-                List<AbstractProject> projectList = e.getKey().getProjectList(env);
+                BlockableBuildTriggerConfig config = e.getKey();
+                List<AbstractProject> projectList = config.getProjectList(env);
+                
                 if(!projectList.isEmpty()){
 	                AbstractProject p = projectList.get(n);
 	                for (Future<AbstractBuild> f : e.getValue()) {
@@ -73,13 +103,19 @@ public class TriggerBuilder extends Builder {
 	                        listener.getLogger().println("Waiting for the completion of "+p.getFullDisplayName());
 	                        AbstractBuild b = f.get();
 	                        listener.getLogger().println(b.getFullDisplayName()+" completed. Result was "+b.getResult());
-	                        build.setResult(e.getKey().getBlock().mapResult(b.getResult()));
+	                        
+                            if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
+                                build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                            }
+                            else {
+                                buildStepResult = false;
+                            }
 	                    } catch (CancellationException x) {
 	                        throw new AbortException(p.getFullDisplayName() +" aborted.");
 	                    }
 	                    n++;
 	                }
-                }else{
+                } else {
                 	throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
                 }
             }
@@ -87,7 +123,7 @@ public class TriggerBuilder extends Builder {
             throw new IOException2(e); // can't happen, I think.
         }
 
-        return true;
+        return buildStepResult;
 	}
 
 	@Extension
