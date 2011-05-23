@@ -1,7 +1,8 @@
 <!--
 The MIT License
 
-Copyright (c) 2010, InfraDNA, Inc.
+Copyright (c) 2010-2011, InfraDNA, Inc., Manufacture Francaise des Pneumatiques Michelin,
+Romain Seguy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 -->
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="${%Mark this build as unstable if the triggered build is worse or equal to}" field="unstableThreshold">
+  <f:entry title="${%Fail this build step if the triggered build is worse or equal to}" field="buildStepFailureThreshold">
     <select class="setting-input" name="${field}">
       <f:option value="never">${%never}</f:option>
       <j:forEach var="it" items="${descriptor.allResults}">
@@ -43,4 +44,16 @@ THE SOFTWARE.
       </j:forEach>
     </select>
   </f:entry>
+
+  <f:entry title="${%Mark this build as unstable if the triggered build is worse or equal to}" field="unstableThreshold">
+    <select class="setting-input" name="${field}">
+      <f:option value="never">${%never}</f:option>
+      <j:forEach var="it" items="${descriptor.allResults}">
+        <f:option value="${it}" selected="${it==instance[field]}">
+          ${it}
+        </f:option>
+      </j:forEach>
+    </select>
+  </f:entry>
+
 </j:jelly>

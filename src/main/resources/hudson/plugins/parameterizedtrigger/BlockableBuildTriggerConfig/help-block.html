@@ -1,0 +1,44 @@
+<!--
+  - The MIT License
+  -
+  - Copyright (c) 2011, Manufacture Francaise des Pneumatiques Michelin, Romain Seguy
+  -
+  - Permission is hereby granted, free of charge, to any person obtaining a copy
+  - of this software and associated documentation files (the "Software"), to deal
+  - in the Software without restriction, including without limitation the rights
+  - to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  - copies of the Software, and to permit persons to whom the Software is
+  - furnished to do so, subject to the following conditions:
+  -
+  - The above copyright notice and this permission notice shall be included in
+  - all copies or substantial portions of the Software.
+  -
+  - THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  - IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  - FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  - AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  - LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  - OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  - THE SOFTWARE.
+  -->
+
+<div>
+  When activating this option, triggered builds will be run synchronously. The
+  result of the current build step or the current build can then be controlled
+  using the three following options:<br/><ul>
+  <li><b>Fail this build step if the triggered build is worse or equal to</b>:
+  This option takes precedence over the two following ones if its value is not
+  <b>never</b>. In that case, the result of the current build step (that is,
+  success or failure) is based on the result of the triggered builds. If the
+  condition defined for at least one of the triggered build is met, then the
+  build step will be considered as failed.</li>
+  <li><b>Mark this build as failure if the triggered build is worse or equal to</b>:
+  This option takes precedence over the next one if its value is not set to
+  <b>never</b>. In that case, the current build will be considered as failed
+  based on the result of the triggered builds and the value of the option.</li>
+  <li><b>Mark this build as unstable if the triggered build is worse or equal to</b>:
+  This option is taken into account if its value is not <b>never</b>. In that
+  case, the build will be considered as unstable based on the result of the
+  triggered builds and the value of this option.</li>
+  </ul>
+</div>
