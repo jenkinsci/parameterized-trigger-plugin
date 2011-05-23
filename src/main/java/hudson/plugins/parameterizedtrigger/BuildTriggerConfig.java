@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.EnvVars;
 import static hudson.Util.fixEmpty;
 import hudson.Extension;
 import hudson.Launcher;
@@ -31,6 +32,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
@@ -40,6 +42,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	private String projects;
 	private final ResultCondition condition;
 	private boolean triggerWithNoParameters;
+
+    // the list of projects to build is computed in getProjectList() ; this method
+    // is actually invoked twice (when in a build step), so let's cache its result
+    private transient List<AbstractProject> projectList;
 
     @DataBoundConstructor
 	public BuildTriggerConfig(String projects, ResultCondition condition,
@@ -70,10 +76,26 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	public boolean getTriggerWithNoParameters() {
         return triggerWithNoParameters;
     }
-	
-	public List<AbstractProject> getProjectList() {
-		List<AbstractProject> projectList = new ArrayList<AbstractProject>();
-		projectList.addAll(Items.fromNameList(projects, AbstractProject.class));
+
+    /**
+     * @param env Environment variables from which to expand project names; Might be {@code null}.
+     */
+	public List<AbstractProject> getProjectList(EnvVars env) {
+        if(projectList == null) {
+            projectList = new ArrayList<AbstractProject>();
+
+            // expand variables if applicable
+            StringBuilder projectNames = new StringBuilder();
+            StringTokenizer tokens = new StringTokenizer(projects,",");
+            while(tokens.hasMoreTokens()) {
+                if(projectNames.length() > 0) {
+                    projectNames.append(',');
+                }
+                projectNames.append(env != null ? env.expand(tokens.nextToken().trim()) : tokens.nextToken().trim());
+            }
+
+            projectList.addAll(Items.fromNameList(projectNames.toString(), AbstractProject.class));
+        }
 		return projectList;
 	}
 
@@ -141,12 +163,15 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	 */
 	public List<Future<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
-		try {
+        EnvVars env = build.getEnvironment(listener);
+        env.overrideAll(build.getBuildVariables());
+
+        try {
 			if (condition.isMet(build.getResult())) {
 				List<Action> actions = getBaseActions(build, listener);
 
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
-                for (AbstractProject project : getProjectList()) {
+                for (AbstractProject project : getProjectList(env)) {
                     List<Action> list = getBuildActions(actions, project);
 
                     futures.add(schedule(build, project, list));
