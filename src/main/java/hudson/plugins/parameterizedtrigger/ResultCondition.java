@@ -10,13 +10,18 @@ public enum ResultCondition {
 		}
 	},
     UNSTABLE("Unstable") {
-                   boolean isMet(Result result) {
-                           return result == Result.UNSTABLE;
-                   }
-           },
+        boolean isMet(Result result) {
+            return result == Result.UNSTABLE;
+        }
+    },
 	UNSTABLE_OR_BETTER("Stable or unstable but not failed") {
 		boolean isMet(Result result) {
 			return result.isBetterOrEqualTo(Result.UNSTABLE);
+		}
+	},
+    UNSTABLE_OR_WORSE("Unstable or Failed but not stable") {
+		boolean isMet(Result result) {
+			return result.isWorseOrEqualTo(Result.UNSTABLE);
 		}
 	},
 	FAILED("Failed") {
