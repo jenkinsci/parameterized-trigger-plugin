@@ -30,6 +30,25 @@ public class ParameterizedDependency extends Dependency {
 		graph.addDependency(new ParameterizedDependency(upstream, downstream, config));
 	}
 
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            
+            final ParameterizedDependency that = (ParameterizedDependency) obj;
+            return this.getUpstreamProject() == that.getUpstreamProject() || this.getDownstreamProject() == that.getDownstreamProject()
+                || this.config == that.config;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 23 * hash + this.getUpstreamProject().hashCode();
+            hash = 23 * hash + this.getDownstreamProject().hashCode();
+            hash = 23 * hash + this.config.hashCode();
+            return hash;
+        }
+
 	@Override
 	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
 		if (!config.getCondition().isMet(build.getResult())){

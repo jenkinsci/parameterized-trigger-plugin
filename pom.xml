@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.jvnet.hudson.plugins</groupId>
             <artifactId>subversion</artifactId>
-            <version>[1.17,)</version>
+            <version>1.17</version>
             <optional>true</optional>
         </dependency>
     </dependencies>
