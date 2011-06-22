@@ -29,44 +29,79 @@ public class Plugin extends hudson.Plugin {
             @Override
             public void onRenamed(Item item, String oldName, String newName) {
                 for (Project<?,?> p : Hudson.getInstance().getProjects()) {
-                    BuildTrigger t = p.getPublishersList().get(BuildTrigger.class);
-                    if (t != null) {
-                        boolean changed = false;
-                        for (BuildTriggerConfig c : t.getConfigs())
+                    boolean changed = false;
+                    //iterate over post build triggers
+                    BuildTrigger bt = p.getPublishersList().get(BuildTrigger.class);
+                    if (bt != null) {
+                        for (BuildTriggerConfig c : bt.getConfigs()){
                             changed |= c.onJobRenamed(oldName, newName);
-                        if (changed) try {
-                            p.save();
-                        } catch (IOException e) {
-                            Logger.getLogger(RenameListener.class.getName()).log(Level.WARNING,
-                                    "Failed to persist project setting during rename from "+oldName+" to "+newName, e);
                         }
                     }
+                    //iterate over build step triggers
+                    TriggerBuilder tb = p.getBuildersList().get(TriggerBuilder.class);
+                    if (tb != null) {
+                    	for (BuildTriggerConfig co : tb.getConfigs()){
+                    		changed |= co.onJobRenamed(oldName, newName);
+                    	}
+                    }
+                    //if something changed, save the project
+                    if (changed){
+	                   	try {
+	                    	p.save();
+	                    } catch (IOException e) {
+	                    	Logger.getLogger(RenameListener.class.getName()).log(Level.WARNING,
+	                    			"Failed to persist project setting during rename from "+oldName+" to "+newName, e);
+	                    }
+                    }
+                    
                 }
             }
 
-            @Override public void onDeleted(Item item) {
+            @Override
+            public void onDeleted(Item item) {
                 for (Project<?,?> p : Hudson.getInstance().getProjects()) {
                     String oldName = item.getName();
-                    BuildTrigger t = p.getPublishersList().get(BuildTrigger.class);
-                    if (t != null) {
-                        boolean changed = false;
-                        for (ListIterator<BuildTriggerConfig> it = t.getConfigs().listIterator();
-                             it.hasNext();) {
-                            BuildTriggerConfig c = it.next();
+                    boolean changed = false;
+                    //iterate over post build triggers
+                    BuildTrigger bt = p.getPublishersList().get(BuildTrigger.class);
+                    if (bt != null) {
+                        for (ListIterator<BuildTriggerConfig> btc = bt.getConfigs().listIterator(); btc.hasNext();) {
+                            BuildTriggerConfig c = btc.next();
                             if (c.onDeleted(oldName)) {
                                 changed = true;
-                                if (c.getProjects().length() == 0)
-                                    it.remove();
+                                if (c.getProjects().length() == 0){
+                                    btc.remove();
+                                }
                             }
                         }
-                        if (changed) try {
-                            if (t.getConfigs().size() == 0)
-                                p.getPublishersList().remove(t);
-                            p.save();
-                        } catch (IOException e) {
-                            Logger.getLogger(RenameListener.class.getName()).log(Level.WARNING,
-                                    "Failed to persist project setting during remove of "+oldName, e);
+                    }
+                  //iterate over build step triggers
+                    TriggerBuilder tb = p.getBuildersList().get(TriggerBuilder.class);
+                    if (tb != null) {
+                        for (ListIterator<BlockableBuildTriggerConfig> bbtc = tb.getConfigs().listIterator(); bbtc.hasNext();) {
+                            BuildTriggerConfig c = bbtc.next();
+                            if (c.onDeleted(oldName)) {
+                                changed = true;
+                                if (c.getProjects().length() == 0){
+                                    bbtc.remove();
+                                }
+                            }
                         }
+                    }
+                    //if something changed, save the project
+                    if (changed){
+	                    try {
+	                    	if (bt.getConfigs().size() == 0){
+	                    		p.getPublishersList().remove(bt);
+	                    	}
+	                    	if (tb.getConfigs().size() == 0){
+	                    		p.getBuildersList().remove(tb);
+	                    	}
+	                    	p.save();
+	                    } catch (IOException e) {
+	                    	Logger.getLogger(RenameListener.class.getName()).log(Level.WARNING,
+	                    			"Failed to persist project setting during remove of "+oldName, e);
+	                    }
                     }
                 }
             }
