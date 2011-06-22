@@ -1,7 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.EnvVars;
-import static hudson.Util.fixEmpty;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
@@ -10,10 +9,13 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.AutoCompletionCandidates;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
+import hudson.model.Item;
 import hudson.model.Items;
+import hudson.model.Job;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
@@ -21,7 +23,11 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
+import hudson.tasks.Messages;
 import hudson.util.FormValidation;
+
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -239,14 +245,60 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
               Descriptor<AbstractBuildParameters>>getDescriptorList(AbstractBuildParameters.class);
         }
 
-    	public FormValidation doCheckProjects(@QueryParameter String value) {
-    		String v = fixEmpty(value);
-    		if(v == null){
-    			return FormValidation.error("No project specified");
-    		}else{
-    			return FormValidation.ok();
-    		}
-    	}
+        /**
+         * Form validation method.
+         * 
+         * Copied from hudson.tasks.BuildTrigger.doCheck(Item project, String value)
+         */
+        public FormValidation doCheckProjects(@AncestorInPath Item project, @QueryParameter String value ) {
+            // Require CONFIGURE permission on this project
+            if(!project.hasPermission(Item.CONFIGURE)){
+            	return FormValidation.ok();
+            }
+            StringTokenizer tokens = new StringTokenizer(Util.fixNull(value),",");
+            boolean hasProjects = false;
+            while(tokens.hasMoreTokens()) {
+                String projectName = tokens.nextToken().trim();
+                if (StringUtils.isNotBlank(projectName)) {
+                	//Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410 
+                    Item item = Hudson.getInstance().getItem(projectName);
+                    if(item==null){
+                        return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName,AbstractProject.findNearest(projectName).getName()));
+                    }
+                    if(!(item instanceof AbstractProject)){
+                        return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
+                    }
+                    hasProjects = true;
+                }
+            }
+            if (!hasProjects) {
+//            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
+            	return FormValidation.error("No project specified");
+            }
+
+            return FormValidation.ok();
+        }
+
+        /**
+         * Autocompletion method
+         * 
+         * Copied from hudson.tasks.BuildTrigger.doAutoCompleteChildProjects(String value)
+         * 
+         * @param value
+         * @return
+         */
+        public AutoCompletionCandidates doAutoCompleteProjects(@QueryParameter String value) {
+            AutoCompletionCandidates candidates = new AutoCompletionCandidates();
+            List<Job> jobs = Hudson.getInstance().getItems(Job.class);
+            for (Job job: jobs) {
+                if (job.getFullName().startsWith(value)) {
+                    if (job.hasPermission(Item.READ)) {
+                        candidates.add(job.getFullName());
+                    }
+                }
+            }
+            return candidates;
+        }
 
     }
 }
