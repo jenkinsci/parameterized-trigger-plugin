@@ -91,10 +91,10 @@ public class Plugin extends hudson.Plugin {
                     //if something changed, save the project
                     if (changed){
 	                    try {
-	                    	if (bt!=null && bt.getConfigs().size() == 0){
+	                    	if (bt!=null && bt.getConfigs().isEmpty()){
 	                    		p.getPublishersList().remove(bt);
 	                    	}
-	                    	if (tb!=null && tb.getConfigs().size() == 0){
+	                    	if (tb!=null && tb.getConfigs().isEmpty()){
 	                    		p.getBuildersList().remove(tb);
 	                    	}
 	                    	p.save();
