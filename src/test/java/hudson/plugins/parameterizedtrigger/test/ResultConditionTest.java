@@ -52,8 +52,11 @@ public class ResultConditionTest extends HudsonTestCase {
 
         schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
         assertEquals(2, projectB.getLastBuild().getNumber());
-
+        
         schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        assertEquals(2, projectB.getLastBuild().getNumber());
+        
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
@@ -74,6 +77,9 @@ public class ResultConditionTest extends HudsonTestCase {
 
         schedule(projectA, projectB, ResultCondition.UNSTABLE);
         assertEquals(2, projectB.getLastBuild().getNumber());
+        
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        assertEquals(3, projectB.getLastBuild().getNumber());
     }
 
     private void schedule(Project projectA, Project projectB, ResultCondition condition)
@@ -102,5 +108,8 @@ public class ResultConditionTest extends HudsonTestCase {
 
         schedule(projectA, projectB, ResultCondition.UNSTABLE);
         assertEquals(1, projectB.getLastBuild().getNumber());
+        
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        assertEquals(2, projectB.getLastBuild().getNumber());
     }
 }
