@@ -30,6 +30,7 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
+import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -77,14 +78,14 @@ public class TriggerBuilder extends Builder {
 		return BuildStepMonitor.NONE;
 	}
 
-	@Override
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
+    @Override
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
         Map<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = new HashMap<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>>();
-		for (BlockableBuildTriggerConfig config : configs) {
+        for (BlockableBuildTriggerConfig config : configs) {
             futures.put(config, config.perform(build, launcher, listener));
         }
 
@@ -97,26 +98,26 @@ public class TriggerBuilder extends Builder {
                 List<AbstractProject> projectList = config.getProjectList(env);
                 
                 if(!projectList.isEmpty()){
-	                AbstractProject p = projectList.get(n);
-	                for (Future<AbstractBuild> f : e.getValue()) {
-	                    try {
-	                        listener.getLogger().println("Waiting for the completion of "+p.getFullDisplayName());
-	                        AbstractBuild b = f.get();
-	                        listener.getLogger().println(b.getFullDisplayName()+" completed. Result was "+b.getResult());
-	                        
+                    AbstractProject p = projectList.get(n);
+                        for (Future<AbstractBuild> f : e.getValue()) {
+                        try {
+                            listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+                            AbstractBuild b = f.get();
+                            listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
+                            
                             if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                 build.setResult(config.getBlock().mapBuildResult(b.getResult()));
                             }
                             else {
                                 buildStepResult = false;
                             }
-	                    } catch (CancellationException x) {
-	                        throw new AbortException(p.getFullDisplayName() +" aborted.");
-	                    }
-	                    n++;
-	                }
+                        } catch (CancellationException x) {
+                            throw new AbortException(p.getFullDisplayName() +" aborted.");
+                        }
+                        n++;
+                        }
                 } else {
-                	throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
+                    throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
                 }
             }
         } catch (ExecutionException e) {
@@ -124,7 +125,7 @@ public class TriggerBuilder extends Builder {
         }
 
         return buildStepResult;
-	}
+    }
 
 	@Extension
 	public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
