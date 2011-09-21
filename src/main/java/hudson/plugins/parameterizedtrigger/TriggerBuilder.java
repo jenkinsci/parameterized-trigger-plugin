@@ -25,6 +25,8 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -43,9 +45,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -84,7 +84,7 @@ public class TriggerBuilder extends Builder {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
-        Map<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = new HashMap<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>>();
+        ListMultimap<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = ArrayListMultimap.create();
         for (BlockableBuildTriggerConfig config : configs) {
             futures.put(config, config.perform(build, launcher, listener));
         }
@@ -92,11 +92,11 @@ public class TriggerBuilder extends Builder {
         boolean buildStepResult = true;
 
         try {
-            for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entrySet()) {
+            for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entries()) {
                 int n=0;
                 BlockableBuildTriggerConfig config = e.getKey();
                 List<AbstractProject> projectList = config.getProjectList(env);
-                
+
                 if(!projectList.isEmpty()){
                     AbstractProject p = projectList.get(n);
                         for (Future<AbstractBuild> f : e.getValue()) {
@@ -104,7 +104,7 @@ public class TriggerBuilder extends Builder {
                             listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                             AbstractBuild b = f.get();
                             listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                            
+
                             if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                 build.setResult(config.getBlock().mapBuildResult(b.getResult()));
                             }
