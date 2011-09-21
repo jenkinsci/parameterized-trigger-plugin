@@ -15,13 +15,12 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.kohsuke.stapler.DataBoundConstructor;
 
 public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixAggregatable {
 
@@ -77,10 +76,6 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixA
 		// Inner class added in Hudson 1.341
         String ownerClassName = owner.getClass().getName();
 		return DependencyGraph.class.getClasses().length > 0
-                        // See HUDSON-6274 -- currently Maven projects call scheduleProject
-                        // directly, so would not get parameters from DependencyGraph.
-                        // Remove this condition when HUDSON-6274 is implemented.
-                        && !ownerClassName.equals("hudson.maven.MavenModuleSet")
                         // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
                         && !ownerClassName.equals("hudson.plugins.promoted_builds.PromotionProcess");
  	}
