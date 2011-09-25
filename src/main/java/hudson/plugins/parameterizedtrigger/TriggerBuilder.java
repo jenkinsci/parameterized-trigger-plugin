@@ -84,38 +84,31 @@ public class TriggerBuilder extends Builder {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
-        Map<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = new HashMap<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>>();
-        for (BlockableBuildTriggerConfig config : configs) {
-            futures.put(config, config.perform(build, launcher, listener));
-        }
-
         boolean buildStepResult = true;
 
         try {
-            for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entrySet()) {
-                int n=0;
-                BlockableBuildTriggerConfig config = e.getKey();
+            for (BlockableBuildTriggerConfig config : configs) {
+                List<Future<AbstractBuild>> futures = config.perform(build, launcher, listener);
                 List<AbstractProject> projectList = config.getProjectList(env);
                 
                 if(!projectList.isEmpty()){
-                    AbstractProject p = projectList.get(n);
-                        for (Future<AbstractBuild> f : e.getValue()) {
+                    for (Future<AbstractBuild> f : futures) {
+                        AbstractProject p = projectList.get(0);
                         try {
                             listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                             AbstractBuild b = f.get();
+                            projectList.remove(b.getProject());
                             listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
                             
                             if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                 build.setResult(config.getBlock().mapBuildResult(b.getResult()));
-                            }
-                            else {
+                            } else {
                                 buildStepResult = false;
                             }
                         } catch (CancellationException x) {
                             throw new AbortException(p.getFullDisplayName() +" aborted.");
                         }
-                        n++;
-                        }
+                    }
                 } else {
                     throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
                 }
