@@ -221,7 +221,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	}
 
     private List<List<AbstractBuildParameters>> getDynamicBuildParameters(AbstractBuild<?,?> build, BuildListener listener) throws DontTriggerException, IOException, InterruptedException {
-        if (configFactories == null) {
+        if (configFactories == null || configFactories.isEmpty()) {
             return ImmutableList.<List<AbstractBuildParameters>>of(ImmutableList.<AbstractBuildParameters>of());
         } else {
             List<List<AbstractBuildParameters>> dynamicBuildParameters = Lists.newArrayList();
@@ -296,6 +296,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
             return Hudson.getInstance().<AbstractBuildParameters,
               Descriptor<AbstractBuildParameters>>getDescriptorList(AbstractBuildParameters.class);
+        }
+
+        public List<Descriptor<AbstractBuildParameterFactory>> getBuilderConfigFactoryDescriptors() {
+            return Hudson.getInstance().<AbstractBuildParameterFactory,
+              Descriptor<AbstractBuildParameterFactory>>getDescriptorList(AbstractBuildParameterFactory.class);
         }
 
         /**

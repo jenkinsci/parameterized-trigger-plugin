@@ -32,7 +32,7 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                                ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory(0,2,1, "TEST=COUNT$COUNT")),
+                                ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT")),
                                 Collections.<AbstractBuildParameters>emptyList())));
 
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -61,8 +61,8 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
                         new BlockableBuildTriggerConfig(projectB.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
                                 ImmutableList.<AbstractBuildParameterFactory>of(
-                                        new CounterBuildParameterFactory(0,2,1, "TEST=COUNT$COUNT"),
-                                        new CounterBuildParameterFactory(0,3,1, "NEWTEST=COUNT$COUNT")
+                                        new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT"),
+                                        new CounterBuildParameterFactory("0","2","1", "NEWTEST=COUNT$COUNT")
                                         ),
                                 Collections.<AbstractBuildParameters>emptyList())));
         projectB.setConcurrentBuild(true);
