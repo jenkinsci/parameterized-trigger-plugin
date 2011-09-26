@@ -15,13 +15,12 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.kohsuke.stapler.DataBoundConstructor;
 
 public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixAggregatable {
 
