@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author wolfs
+ * A BuildParameterFactory generating Predefined Parameters for a counter
  */
 public class CounterBuildParameterFactory extends AbstractBuildParameterFactory {
 
@@ -54,7 +54,10 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             params.add(getParameterForCount(fromNum));
         } else {
             if (stepNum == 0) {
-                throw new RuntimeException("Counting with step size 0 will not terminate!");
+                throw new RuntimeException(Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
+            }
+            if (upDown * stepNum < 0) {
+                throw new RuntimeException(Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
             }
 
             for (Long i = fromNum; upDown * i <= upDown * toNum; i += stepNum) {
@@ -73,7 +76,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     public static class DescriptorImpl extends Descriptor<AbstractBuildParameterFactory> {
         @Override
         public String getDisplayName() {
-            return "Counter Parameter Factory";
+            return Messages.CounterBuildParameterFactory_CounterBuildParameterFactory();
         }
 
         @Override
