@@ -35,9 +35,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 
@@ -189,6 +191,27 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		}
         return Collections.emptyList();
 	}
+
+    public Map<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        EnvVars env = build.getEnvironment(listener);
+        env.overrideAll(build.getBuildVariables());
+
+        try {
+            if (getCondition().isMet(build.getResult())) {
+                List<Action> actions = getBaseActions(build, listener);
+
+                Map<AbstractProject, Future<AbstractBuild>> futures = new HashMap<AbstractProject, Future<AbstractBuild>>();
+                for (AbstractProject project : getProjectList(env)) {
+                    List<Action> list = getBuildActions(actions, project);
+                    futures.put(project, schedule(build, project, list));
+                }
+                return futures;
+            }
+        } catch (DontTriggerException e) {
+            // don't trigger on this configuration
+        }
+        return Collections.emptyMap();
+    }
 
     protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
         return project.scheduleBuild2(project.getQuietPeriod(),

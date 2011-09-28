@@ -13,6 +13,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 /**
@@ -37,6 +38,13 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
         List<Future<AbstractBuild>> r = super.perform(build, launcher, listener);
         if (block==null) return Collections.emptyList();
         return r;
+    }
+
+    @Override
+    public Map<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        Map<AbstractProject, Future<AbstractBuild>> futures = super.perform2(build, launcher, listener);
+        if(block==null) return Collections.emptyMap();
+        return futures;
     }
 
     @Override

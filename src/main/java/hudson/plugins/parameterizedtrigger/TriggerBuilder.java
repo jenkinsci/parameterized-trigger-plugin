@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -88,16 +89,21 @@ public class TriggerBuilder extends Builder {
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
-                List<Future<AbstractBuild>> futures = config.perform(build, launcher, listener);
+                Map<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
                 List<AbstractProject> projectList = config.getProjectList(env);
                 
                 if(!projectList.isEmpty()){
-                    for (Future<AbstractBuild> f : futures) {
-                        AbstractProject p = projectList.get(0);
+                    //handle non-blocking configs
+                    if(futures.isEmpty()){
+                        listener.getLogger().println("Triggering projects: " + getProjectListAsString(projectList));
+                        continue;
+                    }
+                    //handle blocking configs
+                    for (AbstractProject p : projectList) {
+                        Future<AbstractBuild> f = futures.get(p);
                         try {
                             listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                             AbstractBuild b = f.get();
-                            projectList.remove(b.getProject());
                             listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
                             
                             if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
@@ -118,6 +124,18 @@ public class TriggerBuilder extends Builder {
         }
 
         return buildStepResult;
+    }
+    
+    private String getProjectListAsString(List<AbstractProject> projectList){
+        StringBuffer projectListString = new StringBuffer();
+        for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
+            AbstractProject project = (AbstractProject) iterator.next();
+            projectListString.append(HyperlinkNote.encodeTo('/'+ project.getUrl(), project.getFullDisplayName()));
+            if(iterator.hasNext()){
+                projectListString.append(", ");
+            }
+        }
+        return projectListString.toString();
     }
 
 	@Extension

@@ -103,5 +103,27 @@ public class TriggerBuilderTest extends HudsonTestCase {
         assertEquals("Waiting for the completion of project2", log.get(3));
         assertEquals("Waiting for the completion of project3", log.get(5));
     }
+    
+    public void testNonBlockingTrigger() throws Exception {
+        createFreeStyleProject("project1");
+        createFreeStyleProject("project2");
+        createFreeStyleProject("project3");
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("project1, project2, project3", null, null);
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        triggerProject.scheduleBuild2(0, new UserCause()).get();
+
+        List<String> log = triggerProject.getLastBuild().getLog(20);
+        for (String string : log) {
+            System.out.println(string);
+        }
+        
+        assertEquals("Triggering projects: project1, project2, project3", log.get(1));
+    }
 
 }
