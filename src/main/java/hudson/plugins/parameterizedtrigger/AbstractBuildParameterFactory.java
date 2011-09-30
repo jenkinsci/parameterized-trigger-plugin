@@ -10,7 +10,8 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * @author wolfs
+ * Generates Build Parameters. These will can be used in the TriggerBuilder to trigger the same projects with many different
+ * parameters.
  */
 public abstract class AbstractBuildParameterFactory implements Describable<AbstractBuildParameterFactory> {
 
