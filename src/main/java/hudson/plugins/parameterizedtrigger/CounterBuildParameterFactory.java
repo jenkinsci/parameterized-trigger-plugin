@@ -9,6 +9,8 @@ import hudson.model.AbstractBuild;
 import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import hudson.util.VariableResolver;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -95,7 +97,10 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
         }
 
         private FormValidation validateNumberField(String value) {
-            if (!isNumber(value)) {
+            // The field can contain Parameters - eliminate them first. The remaining String should
+            // be empty or a number.
+            String valueWithoutVariables = Util.replaceMacro(value, EMPTY_STRING_VARIABLE_RESOLVER);
+            if (StringUtils.isNotEmpty(valueWithoutVariables) && !isNumber(valueWithoutVariables)) {
                 return FormValidation.warning(hudson.model.Messages.Hudson_NotANumber());
             } else {
                 return FormValidation.validateRequired(value);
@@ -127,5 +132,13 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     public String getParamExpr() {
         return paramExpr;
     }
+
+    private static final VariableResolver<String> EMPTY_STRING_VARIABLE_RESOLVER = new VariableResolver<String>() {
+
+        @Override
+        public String resolve(String name) {
+            return "";
+        }
+    };
 
 }

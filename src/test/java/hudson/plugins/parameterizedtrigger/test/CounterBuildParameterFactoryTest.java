@@ -20,9 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author wolfs
- */
 public class CounterBuildParameterFactoryTest extends HudsonTestCase {
 
     public void testWithOneParameter() throws Exception {
