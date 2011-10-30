@@ -7,10 +7,13 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.Hudson;
+import hudson.model.Node;
 import hudson.model.Run;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -21,10 +24,16 @@ import java.util.concurrent.Future;
  */
 public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     private final BlockingBehaviour block;
+    public boolean buildAllNodesWithLabel;
 
-    @DataBoundConstructor
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
         super(projects, ResultCondition.ALWAYS, false, configs);
+        this.block = block;
+    }
+
+    @DataBoundConstructor
+    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameterFactory> configFactories,List<AbstractBuildParameters> configs) {
+        super(projects, ResultCondition.ALWAYS, false, configFactories, configs);
         this.block = block;
     }
 
@@ -52,6 +61,10 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
         } else {
             return super.schedule(build,project,list);
         }
+    }
+
+    public Collection<Node> getNodes() {
+        return Hudson.getInstance().getLabel("asrt").getNodes();
     }
 
     @Extension

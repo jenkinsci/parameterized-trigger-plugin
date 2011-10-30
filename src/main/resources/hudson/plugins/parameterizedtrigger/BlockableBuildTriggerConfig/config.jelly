@@ -39,4 +39,11 @@ THE SOFTWARE.
                    addCaption="${%Add Parameters}"
     />
   </f:block>
+  <f:block>
+    <f:hetero-list name="configFactories" hasHeader="true"
+                   descriptors="${descriptor.getBuilderConfigFactoryDescriptors()}"
+                   items="${instance.configFactories}"
+                   addCaption="${%Add ParameterFactories}"
+    />
+  </f:block>
 </j:jelly>
