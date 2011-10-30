@@ -75,7 +75,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     }
 
     @Extension
-    public static class DescriptorImpl extends Descriptor<AbstractBuildParameterFactory> {
+    public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
         @Override
         public String getDisplayName() {
             return Messages.CounterBuildParameterFactory_CounterBuildParameterFactory();
