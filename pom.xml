@@ -6,10 +6,10 @@
         <artifactId>plugin</artifactId>
         <version>1.398</version>
     </parent>
-  
+
     <artifactId>parameterized-trigger</artifactId>
     <packaging>hpi</packaging>
-    <version>2.12-SNAPSHOT</version>
+    <version>2.13-SNAPSHOT</version>
     <name>Jenkins Parameterized Trigger plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin</url>
 
@@ -23,13 +23,19 @@
           <name>Kohsuke Kawaguchi</name>
       </developer>
     </developers>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>subversion</artifactId>
             <version>1.25</version>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+          <groupId>org.mockito</groupId>
+          <artifactId>mockito-core</artifactId>
+          <version>1.8.5</version>
+          <scope>test</scope>
         </dependency>
     </dependencies>
 

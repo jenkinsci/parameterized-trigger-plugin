@@ -25,6 +25,8 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -43,10 +45,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -85,36 +84,38 @@ public class TriggerBuilder extends Builder {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
+        ListMultimap<BlockableBuildTriggerConfig,List<Future<AbstractBuild>>> futures = ArrayListMultimap.create();
+        for (BlockableBuildTriggerConfig config : configs) {
+            futures.put(config, config.perform(build, launcher, listener));
+        }
+
         boolean buildStepResult = true;
 
         try {
-            for (BlockableBuildTriggerConfig config : configs) {
-                Map<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
+            for (Entry<BlockableBuildTriggerConfig, List<Future<AbstractBuild>>> e : futures.entries()) {
+                int n=0;
+                BlockableBuildTriggerConfig config = e.getKey();
                 List<AbstractProject> projectList = config.getProjectList(env);
-                
+
                 if(!projectList.isEmpty()){
-                    //handle non-blocking configs
-                    if(futures.isEmpty()){
-                        listener.getLogger().println("Triggering projects: " + getProjectListAsString(projectList));
-                        continue;
-                    }
-                    //handle blocking configs
-                    for (AbstractProject p : projectList) {
-                        Future<AbstractBuild> f = futures.get(p);
+                    AbstractProject p = projectList.get(n);
+                        for (Future<AbstractBuild> f : e.getValue()) {
                         try {
                             listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                             AbstractBuild b = f.get();
                             listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                            
+
                             if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                 build.setResult(config.getBlock().mapBuildResult(b.getResult()));
-                            } else {
+                            }
+                            else {
                                 buildStepResult = false;
                             }
                         } catch (CancellationException x) {
                             throw new AbortException(p.getFullDisplayName() +" aborted.");
                         }
-                    }
+                        n++;
+                        }
                 } else {
                     throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
                 }
@@ -124,18 +125,6 @@ public class TriggerBuilder extends Builder {
         }
 
         return buildStepResult;
-    }
-    
-    private String getProjectListAsString(List<AbstractProject> projectList){
-        StringBuffer projectListString = new StringBuffer();
-        for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
-            AbstractProject project = (AbstractProject) iterator.next();
-            projectListString.append(HyperlinkNote.encodeTo('/'+ project.getUrl(), project.getFullDisplayName()));
-            if(iterator.hasNext()){
-                projectListString.append(", ");
-            }
-        }
-        return projectListString.toString();
     }
 
 	@Extension

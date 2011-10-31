@@ -23,11 +23,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 -->
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <j:getStatic var="failureConstant" className="hudson.model.Result" field="FAILURE"/>
+  <j:getStatic var="unstableConstant" className="hudson.model.Result" field="UNSTABLE"/>
   <f:entry title="${%Fail this build step if the triggered build is worse or equal to}" field="buildStepFailureThreshold">
+    <j:set var="selectedValue" value="${instance == null ? failureConstant : instance[field]}" />
     <select class="setting-input" name="${field}">
       <f:option value="never">${%never}</f:option>
       <j:forEach var="it" items="${descriptor.allResults}">
-        <f:option value="${it}" selected="${it==instance[field]}">
+        <f:option value="${it}" selected="${it==selectedValue}">
           ${it}
         </f:option>
       </j:forEach>
@@ -35,10 +38,11 @@ THE SOFTWARE.
   </f:entry>
 
   <f:entry title="${%Mark this build as failure if the triggered build is worse or equal to}" field="failureThreshold">
+    <j:set var="selectedValue" value="${instance == null ? failureConstant : instance[field]}" />
     <select class="setting-input" name="${field}">
       <f:option value="never">${%never}</f:option>
       <j:forEach var="it" items="${descriptor.allResults}">
-        <f:option value="${it}" selected="${it==instance[field]}">
+        <f:option value="${it}" selected="${it==selectedValue}">
           ${it}
         </f:option>
       </j:forEach>
@@ -46,10 +50,11 @@ THE SOFTWARE.
   </f:entry>
 
   <f:entry title="${%Mark this build as unstable if the triggered build is worse or equal to}" field="unstableThreshold">
+    <j:set var="selectedValue" value="${instance == null ? unstableConstant : instance[field]}" />
     <select class="setting-input" name="${field}">
       <f:option value="never">${%never}</f:option>
       <j:forEach var="it" items="${descriptor.allResults}">
-        <f:option value="${it}" selected="${it==instance[field]}">
+        <f:option value="${it}" selected="${it==selectedValue}">
           ${it}
         </f:option>
       </j:forEach>
