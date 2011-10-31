@@ -1,6 +1,8 @@
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -219,6 +221,30 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
 	}
 
+    public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        EnvVars env = build.getEnvironment(listener);
+        env.overrideAll(build.getBuildVariables());
+
+        try {
+            if (getCondition().isMet(build.getResult())) {
+                ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
+                
+                for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
+                    List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
+                    for (AbstractProject project : getProjectList(env)) {
+                        List<Action> list = getBuildActions(actions, project);
+                        
+                        futures.put(project, schedule(build, project, list));
+                    }
+                }
+                return futures;
+            }
+        } catch (DontTriggerException e) {
+            // don't trigger on this configuration
+        }
+        return ArrayListMultimap.create();
+    }
+	
     /**
      * @return
      *      Inner list represents a set of build parameters used together for one invocation of a project,
