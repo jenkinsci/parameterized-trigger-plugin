@@ -81,13 +81,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             return Messages.CounterBuildParameterFactory_CounterBuildParameterFactory();
         }
 
-        @Override
-        public String getHelpFile() {
-            return "/plugin/parameterized-trigger/help/parameter-factories/counter.html";
-        }
-
-        public FormValidation doCheckFrom(@QueryParameter String value) {
-            return validateNumberField(value);
+        public FormValidation doCheckFrom(@QueryParameter String value) { return validateNumberField(value);
         }
         public FormValidation doCheckTo(@QueryParameter String value) {
             return validateNumberField(value);
