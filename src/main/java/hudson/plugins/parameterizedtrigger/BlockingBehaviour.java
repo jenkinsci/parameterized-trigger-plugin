@@ -25,6 +25,7 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.model.AbstractDescribableImpl;
 import org.apache.commons.lang.StringUtils;
 import hudson.Extension;
 import hudson.model.Describable;
@@ -43,7 +44,7 @@ import static hudson.model.Result.*;
  *
  * @author Kohsuke Kawaguchi
  */
-public class BlockingBehaviour implements Describable<BlockingBehaviour> {
+public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour> {
     public final Result buildStepFailureThreshold;
     public final Result unstableThreshold;
     public final Result failureThreshold;
@@ -91,11 +92,6 @@ public class BlockingBehaviour implements Describable<BlockingBehaviour> {
         if (failureThreshold!=null && r.isWorseOrEqualTo(failureThreshold))   return FAILURE;
         if (unstableThreshold!=null && r.isWorseOrEqualTo(unstableThreshold))  return UNSTABLE;
         return SUCCESS;
-    }
-
-    @Override
-    public Descriptor<BlockingBehaviour> getDescriptor() {
-        return Hudson.getInstance().getDescriptor(getClass());
     }
 
     @Extension

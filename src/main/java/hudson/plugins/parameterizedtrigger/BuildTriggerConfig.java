@@ -200,7 +200,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 			if (condition.isMet(build.getResult())) {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
-                getDynamicBuildParameters(build, listener);
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
@@ -220,10 +219,16 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
 	}
 
+    /**
+     * @return
+     *      Inner list represents a set of build parameters used together for one invocation of a project,
+     *      and outer list represents multiple invocations of the same project.
+     */
     private List<List<AbstractBuildParameters>> getDynamicBuildParameters(AbstractBuild<?,?> build, BuildListener listener) throws DontTriggerException, IOException, InterruptedException {
         if (configFactories == null || configFactories.isEmpty()) {
             return ImmutableList.<List<AbstractBuildParameters>>of(ImmutableList.<AbstractBuildParameters>of());
         } else {
+            // this code is building the combinations of all AbstractBuildParameters reported from all factories
             List<List<AbstractBuildParameters>> dynamicBuildParameters = Lists.newArrayList();
             dynamicBuildParameters.add(Collections.<AbstractBuildParameters>emptyList());
             for (AbstractBuildParameterFactory configFactory : configFactories) {
