@@ -98,8 +98,8 @@ public class TriggerBuilder extends Builder {
                 List<AbstractProject> projectList = config.getProjectList(env);
                 
                 if(!projectList.isEmpty()){
-                    AbstractProject p = projectList.get(n);
                         for (Future<AbstractBuild> f : e.getValue()) {
+                        AbstractProject p = projectList.get(n);
                         try {
                             listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                             AbstractBuild b = f.get();
