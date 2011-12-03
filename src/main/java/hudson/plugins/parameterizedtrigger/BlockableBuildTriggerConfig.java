@@ -12,6 +12,9 @@ import hudson.model.Node;
 import hudson.model.Run;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +49,13 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
         List<Future<AbstractBuild>> r = super.perform(build, launcher, listener);
         if (block==null) return Collections.emptyList();
         return r;
+    }
+
+    @Override
+    public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<AbstractProject, Future<AbstractBuild>> futures = super.perform2(build, launcher, listener);
+        if(block==null) return ArrayListMultimap.create();
+        return futures;
     }
 
     @Override
