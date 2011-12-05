@@ -41,6 +41,8 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.IOException2;
+import hudson.model.Action;
+import hudson.model.TaskListener;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -133,8 +135,17 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
     @Override
     public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
         for (BuildTriggerConfig config : configs)
-            for (AbstractProject project : config.getProjectList(null)) 
-                ParameterizedDependency.add(owner, project, config, graph);
+            for (AbstractProject project : config.getProjectList(null))
+                graph.addDependency(new ParameterizedDependency(owner, project, config) {
+                        @Override
+                        public boolean shouldTriggerBuild(AbstractBuild build,
+                                                          TaskListener listener,
+                                                          List<Action> actions) {
+                            // TriggerBuilders are inline already.
+                            return false;
+                        }
+                    });
+
     }
     
     
