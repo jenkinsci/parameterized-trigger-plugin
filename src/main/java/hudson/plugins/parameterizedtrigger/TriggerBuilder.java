@@ -35,6 +35,8 @@ import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.DependecyDeclarer;
+import hudson.model.DependencyGraph;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -49,13 +51,15 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * {@link Builder} that triggers other projects and optionally waits for their completion.
  *
  * @author Kohsuke Kawaguchi
  */
-public class TriggerBuilder extends Builder {
+public class TriggerBuilder extends Builder implements DependecyDeclarer {
 
 	private final ArrayList<BlockableBuildTriggerConfig> configs;
 
@@ -126,6 +130,20 @@ public class TriggerBuilder extends Builder {
         return buildStepResult;
     }
 
+    @Override
+    public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
+        Logger.getLogger(TriggerBuilder.class.getName()).log(Level.WARNING,
+                                                             "Populating downstream list for " + owner.getFullDisplayName());
+        
+        for (BuildTriggerConfig config : configs)
+            for (AbstractProject project : config.getProjectList(null)) {
+                Logger.getLogger(TriggerBuilder.class.getName()).log(Level.WARNING,
+                                                                     "Adding " + project.getFullDisplayName() + " to downstream list for " + owner.getFullDisplayName());
+                ParameterizedDependency.add(owner, project, config, graph);
+            }
+    }
+    
+    
     private String getProjectListAsString(List<AbstractProject> projectList){
         StringBuffer projectListString = new StringBuffer();
         for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
