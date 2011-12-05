@@ -132,15 +132,9 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
 
     @Override
     public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
-        Logger.getLogger(TriggerBuilder.class.getName()).log(Level.WARNING,
-                                                             "Populating downstream list for " + owner.getFullDisplayName());
-        
         for (BuildTriggerConfig config : configs)
-            for (AbstractProject project : config.getProjectList(null)) {
-                Logger.getLogger(TriggerBuilder.class.getName()).log(Level.WARNING,
-                                                                     "Adding " + project.getFullDisplayName() + " to downstream list for " + owner.getFullDisplayName());
+            for (AbstractProject project : config.getProjectList(null)) 
                 ParameterizedDependency.add(owner, project, config, graph);
-            }
     }
     
     
