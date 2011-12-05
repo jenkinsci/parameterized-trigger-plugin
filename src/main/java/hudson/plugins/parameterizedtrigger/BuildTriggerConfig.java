@@ -50,36 +50,53 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	private String projects;
 	private final ResultCondition condition;
+	private final String script;
 	private boolean triggerWithNoParameters;
 
     // the list of projects to build is computed in getProjectList() ; this method
     // is actually invoked twice (when in a build step), so let's cache its result
     private transient List<AbstractProject> projectList;
 
-    public BuildTriggerConfig(String projects, ResultCondition condition,
+    public BuildTriggerConfig(String projects, ResultCondition condition, String script,
             boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
         this.projects = projects;
         this.condition = condition;
+        this.script = script;
         this.triggerWithNoParameters = triggerWithNoParameters;
         this.configFactories = configFactories;
         this.configs = Util.fixNull(configs);
     }
 
     @DataBoundConstructor
+    public BuildTriggerConfig(String projects, ResultCondition condition, String script,
+            boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
+        this(projects, condition, script, triggerWithNoParameters, null, configs);
+    }
+
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+    	this(projects, condition, null, triggerWithNoParameters, configFactories, configs);
+    }
+
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
-        this(projects, condition, triggerWithNoParameters, null, configs);
+        this(projects, condition, null, triggerWithNoParameters, null, configs);
     }
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
+		this(projects, condition, null, false, null, Arrays.asList(configs));
+	}
+
+	public BuildTriggerConfig(String projects, ResultCondition condition, String script,
+			AbstractBuildParameters... configs) {
+		this(projects, condition, script, false, null, Arrays.asList(configs));
 	}
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
             List<AbstractBuildParameterFactory> configFactories,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
+		this(projects, condition, null, false, configFactories, Arrays.asList(configs));
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
@@ -96,6 +113,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	public ResultCondition getCondition() {
 		return condition;
+	}
+	
+	public String getScript() {
+		return script;
 	}
 
 	public boolean getTriggerWithNoParameters() {

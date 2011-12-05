@@ -1,0 +1,17 @@
+<div>
+	Groovy script that checks additional conditions on the build. Leave the script empty
+	to disable any script execution.
+	<p>
+			The script takes several parameters:
+			<ul>
+					<li><code>build</code> - <a href="http://javadoc.jenkins-ci.org/hudson/model/AbstractBuild.html">Hudson Build</a></li>
+					<li><code>listener</code> - <a href="http://javadoc.jenkins-ci.org/hudson/model/TaskListener.html">Task listener</a>, useful to log information</li>
+			</ul>
+	</p>
+	<p>
+		For example, to enable this trigger only at night, between 21:00 and 6:00, use the following script:
+		<pre>hour = Calendar.instance.get(Calendar.HOUR_OF_DAY)
+listener.logger.println "Executing script at ${hour}H"
+(hour >= 21 || hour < 6)</pre>
+	</p>
+</div>

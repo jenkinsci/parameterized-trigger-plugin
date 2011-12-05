@@ -9,6 +9,12 @@ import hudson.model.TaskListener;
 
 import java.util.List;
 
+import javax.script.Invocable;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Invoke downstream projects with applicable parameters using
  * DependencyGraph.Dependency interface.
@@ -51,7 +57,7 @@ public class ParameterizedDependency extends Dependency {
 
 	@Override
 	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
-		if (!config.getCondition().isMet(build.getResult())){
+		if (!isConditionMet(build, listener)){
 			return false;
 		}
 		try {
@@ -75,5 +81,38 @@ public class ParameterizedDependency extends Dependency {
 			ex.printStackTrace(listener.getLogger());
 			return false;
 		}
+	}
+
+	protected boolean isConditionMet(AbstractBuild build, TaskListener listener) {
+		// Standard condition first
+        if (config.getCondition().isMet(build.getResult())) {
+        	// Checks for the script
+        	String script = config.getScript();
+        	if (StringUtils.isNotBlank(script)) {
+        	        // Engine manager
+        	        ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
+        	        // Gets the Groovy engine
+        	        ScriptEngine engine = scriptEngineManager.getEngineByName("groovy");
+        	        // Creates the script and the function entry point, with all parameters
+        	        String function = String.format("def check (build, listener) { %s }", script);
+        	        try {
+        	                // Evaluates the script
+        	                engine.eval(function);
+        	                // Gets the function
+        	                Invocable invocable = (Invocable) engine;
+        	                // Invokes the function
+        	                Boolean result = (Boolean) invocable.invokeFunction("check", new Object[] { build, listener });
+        	                // Returns the result
+        	                return result;
+        	        } catch (Exception ex) {
+        	                String message = String.format("Couldn't evaluate script %s", script);
+        	                throw new RuntimeException(message, ex);
+        	        }
+        	} else {
+        	        return true;
+        	}
+        } else {
+            return false;
+        }
 	}
 }
