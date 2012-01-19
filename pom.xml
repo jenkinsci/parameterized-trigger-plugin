@@ -9,7 +9,7 @@
 
     <artifactId>parameterized-trigger</artifactId>
     <packaging>hpi</packaging>
-    <version>2.14-SNAPSHOT</version>
+    <version>3.0-SNAPSHOT</version>
     <name>Jenkins Parameterized Trigger plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin</url>
 
@@ -25,6 +25,11 @@
     </developers>
 
     <dependencies>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>run-condition</artifactId>
+            <version>0.8-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>subversion</artifactId>
@@ -43,6 +48,7 @@
           <version>1.2</version>
           <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>

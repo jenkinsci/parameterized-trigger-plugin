@@ -6,6 +6,7 @@ import hudson.model.Action;
 import hudson.model.DependencyGraph;
 import hudson.model.DependencyGraph.Dependency;
 import hudson.model.TaskListener;
+import hudson.model.BuildListener;
 
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class ParameterizedDependency extends Dependency {
         public boolean equals(Object obj) {
             if (obj == null) return false;
             if (getClass() != obj.getClass()) return false;
-            
+
             final ParameterizedDependency that = (ParameterizedDependency) obj;
             return this.getUpstreamProject() == that.getUpstreamProject() || this.getDownstreamProject() == that.getDownstreamProject()
                 || this.config == that.config;
@@ -51,7 +52,14 @@ public class ParameterizedDependency extends Dependency {
 
 	@Override
 	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
-		if (!config.getCondition().isMet(build.getResult())){
+		try {
+            if (!config.getRuncondition().runPerform(build, (BuildListener)listener)){
+                return false;
+            }
+        } catch (Exception ex) {
+            listener.error("Failed to check runcondition: "
+				+ getDownstreamProject().getName());
+			ex.printStackTrace(listener.getLogger());
 			return false;
 		}
 		try {

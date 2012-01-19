@@ -36,6 +36,8 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.jenkins_ci.plugins.run_condition.RunCondition;
+import org.jenkins_ci.plugins.run_condition.core.AlwaysRun;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,37 +56,74 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     private final List<AbstractBuildParameterFactory> configFactories;
 
 	private String projects;
-	private final ResultCondition condition;
+	private final ResultCondition condition = ResultCondition.UNUSED;
+    private final RunCondition runcondition;
 	private boolean triggerWithNoParameters;
 
     // the list of projects to build is computed in getProjectList() ; this method
     // is actually invoked twice (when in a build step), so let's cache its result
     private transient List<AbstractProject> projectList;
 
-    public BuildTriggerConfig(String projects, ResultCondition condition,
-            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+    public Object readResolve() {
+        /*  In previous versions to 3.0 condition was used
+            this is now replaced by a run condition so convert this when it is deserialized
+            when it is resaved the new elements will be saved.
+        */
+
+        if(condition != ResultCondition.UNUSED)
+        {
+            return new BuildTriggerConfig(projects, triggerWithNoParameters, configFactories, configs, condition.getRuncondition());
+        }
+
+        return this;
+    }
+
+    public BuildTriggerConfig(  String projects,
+                                boolean triggerWithNoParameters,
+                                List<AbstractBuildParameterFactory> configFactories,
+                                List<AbstractBuildParameters> configs,
+                                RunCondition runcondition) {
         this.projects = projects;
-        this.condition = condition;
         this.triggerWithNoParameters = triggerWithNoParameters;
         this.configFactories = configFactories;
         this.configs = Util.fixNull(configs);
+        this.runcondition = runcondition;
+    }
+
+    public BuildTriggerConfig(  String projects,
+                                ResultCondition condition,
+                                boolean triggerWithNoParameters,
+                                List<AbstractBuildParameterFactory> configFactories,
+                                List<AbstractBuildParameters> configs) {
+        this(projects, triggerWithNoParameters, configFactories, configs, condition.getRuncondition());
+    }
+
+    public BuildTriggerConfig(  String projects,
+                                ResultCondition condition,
+                                boolean triggerWithNoParameters,
+                                List<AbstractBuildParameters> configs) {
+        this(projects, triggerWithNoParameters, null, configs, condition.getRuncondition());
     }
 
     @DataBoundConstructor
-    public BuildTriggerConfig(String projects, ResultCondition condition,
-            boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
-        this(projects, condition, triggerWithNoParameters, null, configs);
+    public BuildTriggerConfig(  String projects,
+                                RunCondition runcondition,
+                                boolean triggerWithNoParameters,
+                                List<AbstractBuildParameters> configs) {
+        this(projects, triggerWithNoParameters, null, configs, runcondition);
     }
 
-	public BuildTriggerConfig(String projects, ResultCondition condition,
-			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
+	public BuildTriggerConfig(  String projects,
+                                ResultCondition condition,
+                                AbstractBuildParameters... configs) {
+		this(projects, false, null, Arrays.asList(configs), condition.getRuncondition());
 	}
 
-	public BuildTriggerConfig(String projects, ResultCondition condition,
-            List<AbstractBuildParameterFactory> configFactories,
-			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
+	public BuildTriggerConfig(  String projects,
+                                ResultCondition condition,
+                                List<AbstractBuildParameterFactory> configFactories,
+                                AbstractBuildParameters... configs) {
+		this(projects, false, configFactories, Arrays.asList(configs),condition.getRuncondition());
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
@@ -99,8 +138,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return projects;
 	}
 
-	public ResultCondition getCondition() {
-		return condition;
+    public RunCondition getRuncondition() {
+		return runcondition;
 	}
 
 	public boolean getTriggerWithNoParameters() {
@@ -212,7 +251,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         env.overrideAll(build.getBuildVariables());
 
         try {
-			if (condition.isMet(build.getResult())) {
+			if (runcondition.runPerform(build, listener)) {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
@@ -230,6 +269,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 			}
 		} catch (DontTriggerException e) {
 			// don't trigger on this configuration
+		} catch (Exception e) {
+			// don't trigger on this configuration
 		}
         return Collections.emptyList();
 	}
@@ -239,14 +280,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         env.overrideAll(build.getBuildVariables());
 
         try {
-            if (getCondition().isMet(build.getResult())) {
+            if (runcondition.runPerform(build, listener)) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
-                
+
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
                     for (AbstractProject project : getProjectList(build.getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
-                        
+
                         futures.put(project, schedule(build, project, list));
                     }
                 }
@@ -254,10 +295,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             }
         } catch (DontTriggerException e) {
             // don't trigger on this configuration
-        }
+        } catch (Exception e) {
+			// don't trigger on this configuration
+		}
         return ArrayListMultimap.create();
     }
-	
+
     /**
      * @return
      *      Inner list represents a set of build parameters used together for one invocation of a project,
@@ -326,8 +369,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     @Override
 	public String toString() {
-		return getClass().getName()+" [projects=" + projects + ", condition="
-				+ condition + ", configs=" + configs + "]";
+		return getClass().getName()+" [projects=" + projects + ", runcondition="
+				+ runcondition + ", configs=" + configs + "]";
 	}
 
     @Extension
@@ -379,7 +422,13 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
             return FormValidation.ok();
         }
+        public List<? extends Descriptor<? extends RunCondition>> getRunConditions() {
+            return RunCondition.all();
+        }
 
+        public RunCondition.RunConditionDescriptor getDefaultRunCondition() {
+            return Hudson.getInstance().getDescriptorByType(AlwaysRun.AlwaysRunDescriptor.class);
+        }
         /**
          * Autocompletion method
          *
