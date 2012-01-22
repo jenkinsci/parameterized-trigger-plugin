@@ -24,7 +24,6 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.EnvVars;
-import hudson.model.AbstractBuild;
 import hudson.model.Cause.UserCause;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -33,14 +32,16 @@ import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 
-import java.util.Map;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 
@@ -84,4 +85,34 @@ public class BuildInfoExporterTest extends HudsonTestCase {
                 assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
                 assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
 	}
+
+  public void testEnvShouldContainAllTriggeredBuilds_with2TriggeredProjects() throws Exception {
+    CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+    scheduleTriggeringProject(builder, "projectA", "projectB", "projectC");
+    EnvVars envVars = builder.getEnvVars();
+    assertEquals("'TRIGGERED_BUILD_TAGS' value should be comma separated build tags", "jenkins-projectB-1,jenkins-projectC-1", envVars.get("TRIGGERED_BUILD_TAGS"));
+  }
+
+  public void testEnvShouldContainAllTriggeredBuilds_projectNamesWithDoubleQuote() throws Exception { // looks like there is no need to support project names that have a comma?
+    CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+    scheduleTriggeringProject(builder, "projectA", "projectB", "badly named but \"lovable\" project");
+    EnvVars envVars = builder.getEnvVars();
+    assertEquals("'TRIGGERED_BUILD_TAGS' value should handle project names with double quotes", "jenkins-projectB-1,jenkins-badly named but \"lovable\" project-1", envVars.get("TRIGGERED_BUILD_TAGS"));
+  }
+
+  private Project<?, ?> scheduleTriggeringProject(CaptureEnvironmentBuilder builder, String triggeringProjectName, String... triggeredProjectNames) throws IOException, ExecutionException, InterruptedException {
+    Project<?, ?> triggeringProject = createFreeStyleProject(triggeringProjectName);
+    List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+    buildParameters.add(new CurrentBuildParameters());
+    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
+    BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig(StringUtils.join(triggeredProjectNames, ","), neverFail, buildParameters);
+    triggeringProject.getBuildersList().add(new TriggerBuilder(config));
+    triggeringProject.getBuildersList().add(builder);
+    for (String triggeredProjectName : triggeredProjectNames) {
+      createFreeStyleProject(triggeredProjectName).setQuietPeriod(0);
+    }
+    hudson.rebuildDependencyGraph();
+    triggeringProject.scheduleBuild2(0, new UserCause()).get();
+    return triggeringProject;
+  }
 }
