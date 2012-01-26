@@ -26,11 +26,7 @@ package hudson.plugins.parameterizedtrigger.test;
 import hudson.EnvVars;
 import hudson.model.Cause.UserCause;
 import hudson.model.Project;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
-import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
-import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
-import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.plugins.parameterizedtrigger.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,6 +37,7 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
+import hudson.slaves.EnvironmentVariablesNodeProperty;
 import org.apache.commons.lang.StringUtils;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
@@ -98,6 +95,18 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     scheduleTriggeringProject(builder, "projectA", "projectB", "badly named but \"lovable\" project");
     EnvVars envVars = builder.getEnvVars();
     assertEquals("'TRIGGERED_BUILD_TAGS' value should handle project names with double quotes", "jenkins-projectB-1,jenkins-badly named but \"lovable\" project-1", envVars.get("TRIGGERED_BUILD_TAGS"));
+  }
+
+  public void testEnvShouldContainAllTriggeredBuilds_handlesExistingBlankVariable() throws Exception {
+    EnvironmentVariablesNodeProperty prop = new EnvironmentVariablesNodeProperty();
+    prop.getEnvVars().put(BuildInfoExporterAction.TRIGGERED_BUILD_TAGS, " ");
+    hudson.getGlobalNodeProperties().add(prop);
+
+    CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+    scheduleTriggeringProject(builder, "projectA", "projectB");
+    EnvVars envVars = builder.getEnvVars();
+
+    assertEquals("'TRIGGERED_BUILD_TAGS' value should not have a leading comma when there is an existing blank value", "jenkins-projectB-1", envVars.get("TRIGGERED_BUILD_TAGS"));
   }
 
   private Project<?, ?> scheduleTriggeringProject(CaptureEnvironmentBuilder builder, String triggeringProjectName, String... triggeredProjectNames) throws IOException, ExecutionException, InterruptedException {
