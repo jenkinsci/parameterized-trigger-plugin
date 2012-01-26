@@ -27,6 +27,7 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.EnvVars;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.AbstractBuild;
+import org.apache.commons.lang.StringUtils;
 
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
@@ -62,7 +63,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
   private void addToAllTriggeredBuildTags(EnvVars env) {
     StringBuilder existingBuildTags = new StringBuilder();
-    if (env.get(TRIGGERED_BUILD_TAGS) != null) {
+    if (StringUtils.isNotBlank(env.get(TRIGGERED_BUILD_TAGS))) {
       existingBuildTags = existingBuildTags.append(env.get(TRIGGERED_BUILD_TAGS)).append(",");
     }
     env.put(TRIGGERED_BUILD_TAGS, existingBuildTags.append(createBuildTag()).toString());
