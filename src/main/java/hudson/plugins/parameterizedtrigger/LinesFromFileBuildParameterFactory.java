@@ -18,9 +18,11 @@ import java.util.regex.Pattern;
 
 public class LinesFromFileBuildParameterFactory extends AbstractBuildParameterFactory {
 
+    private static final String PARAMETER_KEY = "LINE";
+    private static final Pattern NEWLINE_PATTERN = Pattern.compile("\\r?\\n");
+
     private String filePath;
     private String paramExpr;
-    private static final Pattern NEWLINE_PATTERN = Pattern.compile("\\r?\\n");
 
     @DataBoundConstructor
     public LinesFromFileBuildParameterFactory(String filePath, String paramExpr) {
@@ -36,10 +38,11 @@ public class LinesFromFileBuildParameterFactory extends AbstractBuildParameterFa
         String fileContents = build.getWorkspace().child(expandedFilePath).readToString();
         for (String line : NEWLINE_PATTERN.split(fileContents)) {
             line = line.trim();
-            if(line != null && line.length() > 0) {
-                params.add(new PredefinedBuildParameters(Util.replaceMacro(paramExpr, ImmutableMap.of("LINE", line))));
+            if (line.length() > 0) {
+                params.add(new PredefinedBuildParameters(Util.replaceMacro(paramExpr, ImmutableMap.of(PARAMETER_KEY, line))));
             }
         }
+        listener.getLogger().println(params.size() + " lines in file: " + expandedFilePath + ".  " + params.size() + " builds will be triggered.");
         return params;
     }
 
@@ -47,7 +50,7 @@ public class LinesFromFileBuildParameterFactory extends AbstractBuildParameterFa
     public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
         @Override
         public String getDisplayName() {
-            return "Lines From File Parameter Factory";
+            return Messages.LinesFromFileBuildParameterFactory_LinesFromFileBuildParameterFactory();
         }
 
         public FormValidation doCheckFilePath(@QueryParameter String value) {
