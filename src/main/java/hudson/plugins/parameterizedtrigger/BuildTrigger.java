@@ -68,7 +68,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixA
 		if (!canDeclare(owner)) return;
 
 		for (BuildTriggerConfig config : configs)
-			for (AbstractProject project : config.getProjectList(null))
+			for (AbstractProject project : config.getProjectList(owner.getParent(),null))
 				ParameterizedDependency.add(owner, project, config, graph);
 	}
 

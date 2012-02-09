@@ -94,8 +94,8 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
         try {
             for (BlockableBuildTriggerConfig config : configs) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
-                List<AbstractProject> projectList = config.getProjectList(env);
-                
+                List<AbstractProject> projectList = config.getProjectList(build.getProject().getParent(),env);
+
                 if(!projectList.isEmpty()){
                     //handle non-blocking configs
                     if(futures.isEmpty()){
@@ -135,7 +135,7 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
     @Override
     public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
         for (BuildTriggerConfig config : configs)
-            for (AbstractProject project : config.getProjectList(null))
+            for (AbstractProject project : config.getProjectList(owner.getParent(),null))
                 graph.addDependency(new ParameterizedDependency(owner, project, config) {
                         @Override
                         public boolean shouldTriggerBuild(AbstractBuild build,

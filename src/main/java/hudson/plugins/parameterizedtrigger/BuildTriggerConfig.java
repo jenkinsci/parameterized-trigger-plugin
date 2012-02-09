@@ -18,6 +18,7 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.Item;
+import hudson.model.ItemGroup;
 import hudson.model.Items;
 import hudson.model.Job;
 import hudson.model.ParameterDefinition;
@@ -29,6 +30,8 @@ import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.tasks.Messages;
 import hudson.util.FormValidation;
+
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -105,9 +108,19 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     /**
-     * @param env Environment variables from which to expand project names; Might be {@code null}.
+     * @deprecated
+     *      Use {@link #getProjectList(ItemGroup, EnvVars)}
      */
-	public List<AbstractProject> getProjectList(EnvVars env) {
+    public List<AbstractProject> getProjectList(EnvVars env) {
+        return getProjectList(null,env);
+    }
+
+    /**
+     * @param env Environment variables from which to expand project names; Might be {@code null}.
+     * @param context
+     *      The container with which to resolve relative project names.
+     */
+	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
         if(projectList == null) {
             projectList = new ArrayList<AbstractProject>();
 
@@ -121,7 +134,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 projectNames.append(env != null ? env.expand(tokens.nextToken().trim()) : tokens.nextToken().trim());
             }
 
-            projectList.addAll(Items.fromNameList(projectNames.toString(), AbstractProject.class));
+            projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
         }
 		return projectList;
 	}
@@ -206,7 +219,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-                    for (AbstractProject project : getProjectList(env)) {
+                    for (AbstractProject project : getProjectList(build.getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.add(schedule(build, project, list));
@@ -231,7 +244,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
-                    for (AbstractProject project : getProjectList(env)) {
+                    for (AbstractProject project : getProjectList(build.getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
                         
                         futures.put(project, schedule(build, project, list));
@@ -349,8 +362,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             while(tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
                 if (StringUtils.isNotBlank(projectName)) {
-                	//Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
-                    Item item = Hudson.getInstance().getItem(projectName);
+                	Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
                     if(item==null){
                         return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName,AbstractProject.findNearest(projectName).getName()));
                     }
