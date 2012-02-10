@@ -1,6 +1,6 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-  <f:entry field="filePattern" title="File Pattern">
+  <f:entry field="filePattern" title="${%File Pattern}">
     <f:textarea />
   </f:entry>
 
