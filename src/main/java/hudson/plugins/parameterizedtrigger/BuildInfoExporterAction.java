@@ -24,15 +24,15 @@
 
 package hudson.plugins.parameterizedtrigger;
 
-import java.util.Map;
-
 import hudson.EnvVars;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.AbstractBuild;
+import org.apache.commons.lang.StringUtils;
 
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
   public static final String BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBER_";
+  public static final String TRIGGERED_BUILD_TAGS = "TRIGGERED_BUILD_TAGS";
 
   private String buildName;
   private int buildNumber;
@@ -55,9 +55,21 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     return null;
   }
 
-
   public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
     env.put(JOB_NAME_VARIABLE, buildName);
     env.put(BUILD_NUMBER_VARIABLE_PREFIX + buildName, Integer.toString(buildNumber));
+    addToAllTriggeredBuildTags(env);
+  }
+
+  private void addToAllTriggeredBuildTags(EnvVars env) {
+    StringBuilder existingBuildTags = new StringBuilder();
+    if (StringUtils.isNotBlank(env.get(TRIGGERED_BUILD_TAGS))) {
+      existingBuildTags = existingBuildTags.append(env.get(TRIGGERED_BUILD_TAGS)).append(",");
+    }
+    env.put(TRIGGERED_BUILD_TAGS, existingBuildTags.append(createBuildTag()).toString());
+  }
+
+  private String createBuildTag() {
+    return new StringBuilder("jenkins-").append(buildName).append("-").append(buildNumber).toString();
   }
 }
