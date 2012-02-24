@@ -6,7 +6,7 @@
                field="projects"/>
   </f:entry>
   <f:entry>
-    <f:dropdownDescriptorSelector title="${%runCondition}" field="runcondition" descriptors="${descriptor.runConditions}"
+    <f:dropdownDescriptorSelector title="${%Trigger when condition}" field="runcondition" descriptors="${descriptor.runConditions}"
             default="${descriptor.defaultRunCondition}"/>
   </f:entry>
   <f:entry title="${%Trigger build without parameters}" field="triggerWithNoParameters" >
