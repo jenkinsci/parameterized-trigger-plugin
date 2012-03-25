@@ -104,6 +104,11 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
                     }
                     //handle blocking configs
                     for (AbstractProject p : projectList) {
+                        //handle non-buildable projects
+                        if(!p.isBuildable()){
+                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
+                            continue;
+                        }
                         for (Future<AbstractBuild> future : futures.get(p)) {
                             try {
                                 listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
