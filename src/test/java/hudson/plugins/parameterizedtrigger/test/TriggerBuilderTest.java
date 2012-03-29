@@ -140,7 +140,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         triggerProject.scheduleBuild2(0, new UserCause()).get();
 
-        List<String> log = triggerProject.getLastBuild().getLog(20);
+        List<String> log = triggerProject.getLastBuild().getLog(30);
         for (String string : log) {
             System.out.println(string);
         }
@@ -159,7 +159,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
     
     public void testBlockingTriggerWithDisabledProjects() throws Exception {
         createFreeStyleProject("project1");
-        Project p2 = createFreeStyleProject("project2");
+        Project<?, ?> p2 = createFreeStyleProject("project2");
         p2.disable();
         createFreeStyleProject("project3");
 
