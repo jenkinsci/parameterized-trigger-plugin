@@ -24,11 +24,11 @@
 
 package hudson.plugins.parameterizedtrigger;
 
-import java.util.Map;
-
 import hudson.EnvVars;
-import hudson.model.EnvironmentContributingAction;
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.EnvironmentContributingAction;
+import jenkins.model.Jenkins;
 
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
@@ -36,11 +36,13 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
   private String buildName;
   private int buildNumber;
+  private final AbstractBuild<?, ?> parentBuild;
 
-  public BuildInfoExporterAction(String buildName, int buildNumber) {
+  public BuildInfoExporterAction(String buildName, int buildNumber, AbstractBuild<?,?> parentBuild) {
     super();
     this.buildName = buildName;
     this.buildNumber = buildNumber;
+        this.parentBuild = parentBuild;
   }
 
   public String getIconFileName() {
@@ -60,4 +62,15 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     env.put(JOB_NAME_VARIABLE, buildName);
     env.put(BUILD_NUMBER_VARIABLE_PREFIX + buildName, Integer.toString(buildNumber));
   }
+
+    public boolean isFirst() {
+        return parentBuild.getAction(BuildInfoExporterAction.class) == this;
+    }
+
+    public AbstractBuild<?,?> getTriggeredBuild() {
+        AbstractProject<?, ? extends AbstractBuild<?,?>> project =
+                Jenkins.getInstance().getItemByFullName(buildName, AbstractProject.class);
+        return project.getBuildByNumber(buildNumber);
+    }
+
 }
