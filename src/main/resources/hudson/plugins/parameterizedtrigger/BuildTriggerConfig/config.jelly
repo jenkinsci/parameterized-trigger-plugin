@@ -8,6 +8,9 @@
   <f:entry title="${%Trigger when build is}" field="condition">
     <f:enum>${it.displayName}</f:enum>
   </f:entry>
+  <f:entry title="Trigger when script is true" field="script"> 
+     <f:textarea value="${instance.script}" /> 
+  </f:entry>
   <f:entry title="${%Trigger build without parameters}" field="triggerWithNoParameters" >
 	<f:checkbox checked="${instance.triggerWithNoParameters}"/>
   </f:entry>
