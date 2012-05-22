@@ -121,7 +121,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      *      The container with which to resolve relative project names.
      */
 	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
-        if(projectList == null) {
             projectList = new ArrayList<AbstractProject>();
 
             // expand variables if applicable
@@ -135,7 +134,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             }
 
             projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
-        }
 		return projectList;
 	}
 
