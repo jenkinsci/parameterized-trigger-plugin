@@ -60,10 +60,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     private final RunCondition runcondition;
 	private boolean triggerWithNoParameters;
 
-    // the list of projects to build is computed in getProjectList() ; this method
-    // is actually invoked twice (when in a build step), so let's cache its result
-    private transient List<AbstractProject> projectList;
-
     public Object readResolve() {
         /*  In previous versions to 3.0 condition was used
             this is now replaced by a run condition so convert this when it is deserialized
@@ -83,7 +79,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                                 List<AbstractBuildParameterFactory> configFactories,
                                 List<AbstractBuildParameters> configs,
                                 RunCondition runcondition) {
-        this.projects = projects;
+
+                                    this.projects = projects;
         this.triggerWithNoParameters = triggerWithNoParameters;
         this.configFactories = configFactories;
         this.configs = Util.fixNull(configs);
@@ -160,21 +157,19 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      *      The container with which to resolve relative project names.
      */
 	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
-        if(projectList == null) {
-            projectList = new ArrayList<AbstractProject>();
+        List<AbstractProject> projectList = new ArrayList<AbstractProject>();
 
-            // expand variables if applicable
-            StringBuilder projectNames = new StringBuilder();
-            StringTokenizer tokens = new StringTokenizer(projects,",");
-            while(tokens.hasMoreTokens()) {
-                if(projectNames.length() > 0) {
-                    projectNames.append(',');
-                }
-                projectNames.append(env != null ? env.expand(tokens.nextToken().trim()) : tokens.nextToken().trim());
+        // expand variables if applicable
+        StringBuilder projectNames = new StringBuilder();
+        StringTokenizer tokens = new StringTokenizer(projects,",");
+        while(tokens.hasMoreTokens()) {
+            if(projectNames.length() > 0) {
+                projectNames.append(',');
             }
-
-            projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
+            projectNames.append(env != null ? env.expand(tokens.nextToken().trim()) : tokens.nextToken().trim());
         }
+
+        projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
 		return projectList;
 	}
 

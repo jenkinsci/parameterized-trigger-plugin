@@ -1,0 +1,21 @@
+<div>
+    Specifies the Groovy filter expression that restricts the subset of the combinations
+    that the downstream project will run.
+
+    <p>
+    See the "Combination Filter" field in a matrix project configuration page for more
+    details about the environment the script runs in, examples, and so on.
+
+    <p>
+    What you specify here gets expanded by variables of the triggering build, which allows
+    you to dynamically control the subset of the triggerred job. For example, if you trigger job BAR
+    from FOO with <tt>label=="${TARGET}"</tt> in the filter, and if FOO defines the <tt>TARGET</tt> variable
+    and FOO #1 sets <tt>TARGET</tt> to be <tt>linux</tt>, then the triggered BAR #3 will only select the subset
+    of combinations where <tt>label=="linux"</tt> holds true.
+
+    <p>
+    Note that the variable expansion follows the <tt>${varname}</tt> syntax used throughout in Jenkins, which
+    collides with Groovy string inline expression syntax. However, Jenkins variable expansion leaves undefined
+    variables as-is, so most of the time your Groovy string line expression syntax will survive the expansion,
+    get passed to Groovy as-is, and work as expected. If you do need to escape '$', use '$$'.
+</div>
