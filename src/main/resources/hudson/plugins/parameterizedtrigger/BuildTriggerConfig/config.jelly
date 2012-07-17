@@ -15,6 +15,7 @@
   <f:block>
     <f:hetero-list name="configs" hasHeader="true"
                    descriptors="${descriptor.getBuilderConfigDescriptors()}"
+                   oneEach="true"
                    items="${instance.configs}"
                    addCaption="${%Add Parameters}"
     />

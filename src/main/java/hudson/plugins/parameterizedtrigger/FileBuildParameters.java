@@ -40,7 +40,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			listener
 					.getLogger()
 					.println(
-							"[parameterizedtrigger] Could not trigger downstream project, as properties file"
+							"[parameterizedtrigger] Could not trigger downstream project, as properties file "
 									+ resolvedPropertiesFile
 									+ " did not exist.");
 			return null;
