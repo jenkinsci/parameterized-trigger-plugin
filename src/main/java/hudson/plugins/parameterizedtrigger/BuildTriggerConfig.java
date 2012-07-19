@@ -213,7 +213,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-                    for (AbstractProject project : getProjectList(build.getProject().getParent(),env)) {
+                    for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.add(schedule(build, project, list));
@@ -235,12 +235,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         try {
             if (getCondition().isMet(build.getResult())) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
-                
+
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
-                    for (AbstractProject project : getProjectList(build.getProject().getParent(),env)) {
+                    for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
-                        
+
                         futures.put(project, schedule(build, project, list));
                     }
                 }
@@ -251,7 +251,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
         return ArrayListMultimap.create();
     }
-	
+
     /**
      * @return
      *      Inner list represents a set of build parameters used together for one invocation of a project,

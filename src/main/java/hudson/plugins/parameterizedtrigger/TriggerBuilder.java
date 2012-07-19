@@ -94,7 +94,7 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
         try {
             for (BlockableBuildTriggerConfig config : configs) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
-                List<AbstractProject> projectList = config.getProjectList(build.getProject().getParent(),env);
+                List<AbstractProject> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(),env);
 
                 if(!projectList.isEmpty()){
                     //handle non-blocking configs
@@ -115,7 +115,7 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
                                 AbstractBuild b = future.get();
                                 listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
                                 build.getActions().add(new BuildInfoExporterAction(b.getProject().getFullName(), b.getNumber()));
-                                
+
                                 if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                     build.setResult(config.getBlock().mapBuildResult(b.getResult()));
                                 } else {
@@ -152,8 +152,8 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
                     });
 
     }
-    
-    
+
+
     private String getProjectListAsString(List<AbstractProject> projectList){
         StringBuffer projectListString = new StringBuffer();
         for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
