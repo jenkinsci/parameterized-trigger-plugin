@@ -79,14 +79,14 @@ public class EnvInjectParametersTest extends HudsonTestCase {
 		assertNotNull("builder should record environment", builder.getEnvVars());
         assertEquals("Golden", builder.getEnvVars().get("TOAST"));
 
-                // Now rename projectB and confirm projectA's build trigger is updated automatically:
-                projectB.renameTo("new-projectB");
-                assertEquals("rename in trigger", "new-projectB", projectA.getPublishersList()
-                             .get(BuildTrigger.class).getConfigs().get(0).getProjects());
+        // Now rename projectB and confirm projectA's build trigger is updated automatically:
+        projectB.renameTo("new-projectB");
+        assertEquals("rename in trigger", "new-projectB", projectA.getPublishersList()
+                     .get(BuildTrigger.class).getConfigs().get(0).getProjects());
 
-                // Now delete projectB and confirm projectA's build trigger is updated automatically:
-                projectB.delete();
-                assertNull("now-empty trigger should be removed",
-                           projectA.getPublishersList().get(BuildTrigger.class));
+        // Now delete projectB and confirm projectA's build trigger is updated automatically:
+        projectB.delete();
+        assertNull("now-empty trigger should be removed",
+                   projectA.getPublishersList().get(BuildTrigger.class));
 	}
 }

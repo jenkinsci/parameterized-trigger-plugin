@@ -70,15 +70,15 @@ public class TriggerBuilderTest extends HudsonTestCase {
         for (String string : log) {
             System.out.println(string);
         }
-        assertEquals("project1 #1 completed. Result was SUCCESS", log.get(2));
-        assertEquals("project2 #1 completed. Result was SUCCESS", log.get(4));
-        assertEquals("project3 #1 completed. Result was SUCCESS", log.get(6));
-        assertEquals("project4 #1 completed. Result was SUCCESS", log.get(8));
-        assertEquals("project5 #1 completed. Result was SUCCESS", log.get(10));
-        assertEquals("project6 #1 completed. Result was SUCCESS", log.get(12));
-        
+
+        int i = checkNextLogEntry(log, "project1 #1 completed. Result was SUCCESS", 0);
+        i = checkNextLogEntry(log, "project2 #1 completed. Result was SUCCESS", 0);
+        i = checkNextLogEntry(log, "project3 #1 completed. Result was SUCCESS", 0);
+        i = checkNextLogEntry(log, "project4 #1 completed. Result was SUCCESS", 0);
+        i = checkNextLogEntry(log, "project5 #1 completed. Result was SUCCESS", 0);
+        i = checkNextLogEntry(log, "project6 #1 completed. Result was SUCCESS", 0);
     }
-    
+
     public void testWaitingForCompletion() throws Exception {
         createFreeStyleProject("project1");
         createFreeStyleProject("project2");
@@ -96,11 +96,12 @@ public class TriggerBuilderTest extends HudsonTestCase {
         for (String string : log) {
             System.out.println(string);
         }
-        assertEquals("Waiting for the completion of project1", log.get(1));
-        assertEquals("Waiting for the completion of project2", log.get(3));
-        assertEquals("Waiting for the completion of project3", log.get(5));
+
+        int i = checkNextLogEntry(log, "Waiting for the completion of project1", 0);
+        i = checkNextLogEntry(log, "Waiting for the completion of project2", i);
+        i = checkNextLogEntry(log, "Waiting for the completion of project3", i);
     }
-    
+
     public void testNonBlockingTrigger() throws Exception {
         createFreeStyleProject("project1");
         createFreeStyleProject("project2");
@@ -119,23 +120,22 @@ public class TriggerBuilderTest extends HudsonTestCase {
         for (String string : log) {
             System.out.println(string);
         }
-        
-        assertEquals("Triggering projects: project1, project2, project3", log.get(1));
+        checkNextLogEntry(log, "Triggering projects: project1, project2, project3", 0);
     }
 
     public void testConsoleOutputWithCounterParameters() throws Exception{
         createFreeStyleProject("project1");
         createFreeStyleProject("project2");
         createFreeStyleProject("project3");
-        
+
         Project<?,?> triggerProject = createFreeStyleProject();
-        
+
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
         ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0","2","1", "TEST=COUNT$COUNT"));
         List<AbstractBuildParameters> emptyList = Collections.<AbstractBuildParameters>emptyList();
-        
+
         BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig("project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
-        
+
         triggerProject.getBuildersList().add(new TriggerBuilder(bBTConfig));
 
         triggerProject.scheduleBuild2(0, new UserCause()).get();
@@ -144,19 +144,19 @@ public class TriggerBuilderTest extends HudsonTestCase {
         for (String string : log) {
             System.out.println(string);
         }
-        
-        assertEquals("project1 #1 completed. Result was SUCCESS", log.get(2));
-        assertEquals("project1 #2 completed. Result was SUCCESS", log.get(4));
-        assertEquals("project1 #3 completed. Result was SUCCESS", log.get(6));
-        assertEquals("project2 #1 completed. Result was SUCCESS", log.get(8));
-        assertEquals("project2 #2 completed. Result was SUCCESS", log.get(10));
-        assertEquals("project2 #3 completed. Result was SUCCESS", log.get(12));
-        assertEquals("project3 #1 completed. Result was SUCCESS", log.get(14));
-        assertEquals("project3 #2 completed. Result was SUCCESS", log.get(16));
-        assertEquals("project3 #3 completed. Result was SUCCESS", log.get(18));
+
+        int i = checkNextLogEntry(log, "project1 #1 completed. Result was SUCCESS", 0);
+        i = checkNextLogEntry(log, "project1 #2 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project1 #3 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project2 #1 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project2 #2 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project2 #3 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project3 #1 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project3 #2 completed. Result was SUCCESS", i);
+        i = checkNextLogEntry(log, "project3 #3 completed. Result was SUCCESS", i);
     }
 
-    
+
     public void testBlockingTriggerWithDisabledProjects() throws Exception {
         createFreeStyleProject("project1");
         Project<?, ?> p2 = createFreeStyleProject("project2");
@@ -175,9 +175,21 @@ public class TriggerBuilderTest extends HudsonTestCase {
         for (String string : log) {
             System.out.println(string);
         }
-        assertEquals("Waiting for the completion of project1", log.get(1));
-        assertEquals("Skipping project2. The project is either disabled or the configuration has not been saved yet.", log.get(3));
-        assertEquals("Waiting for the completion of project3", log.get(4));
-      
+        int i = checkNextLogEntry(log, "Waiting for the completion of project1", 0);
+        i = checkNextLogEntry(log, "Skipping project2. The project is either disabled or the configuration has not been saved yet.", i);
+        i = checkNextLogEntry(log, "Waiting for the completion of project3", i);
+    }
+
+    private int checkNextLogEntry(List<String> log, String entry, int start) {
+
+        int temp = start;
+        while(temp < log.size()) {
+            if(entry.equals(log.get(temp))) {
+                return temp + 1;
+            }
+            temp++;
+        }
+        assertEquals(entry, log.get(start));
+        return 0;
     }
 }
