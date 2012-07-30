@@ -35,41 +35,91 @@ import org.kohsuke.stapler.DataBoundConstructor;
 /**
  *
  * @author shoughton
+ * @author Chris Johnson
  */
 public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
 
+    /**
+     *  Enum containing the action that could occur when there are no files found in the workspace
+     *
+     */
+    public enum NoFilesFoundEnum {
+        SKIP("Don't trigger these projects"){ // previous behaviour (default)
+            @Override
+            public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
+                listener.getLogger().println(Messages.FileBuildParameterFactory_NoFilesFoundSkipping());
+                throw new AbstractBuildParameters.DontTriggerException();
+        }},
+        NOPARMS("Skip these parameters"){
+            @Override
+            public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
+                listener.getLogger().println(Messages.FileBuildParameterFactory_NoFilesFoundIgnore());
+        }},
+        FAIL("Fail the build step"){
+            @Override
+            public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
+                listener.getLogger().println(Messages.FileBuildParameterFactory_NoFilesFoundTerminate());
+                throw new RuntimeException();
+        }};
+
+        private String description;
+
+        public String getDescription() {
+            return description;
+        }
+
+        NoFilesFoundEnum(String description) {
+            this.description = description;
+        }
+
+        public abstract void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException;
+    }
+
     private final String filePattern;
+    private final NoFilesFoundEnum noFilesFoundAction;
 
     @DataBoundConstructor
-    public FileBuildParameterFactory(String filePattern) {
+    public FileBuildParameterFactory(String filePattern, NoFilesFoundEnum noFilesFoundAction) {
         this.filePattern = filePattern;
+        this.noFilesFoundAction = noFilesFoundAction;
+    }
+
+    public FileBuildParameterFactory(String filePattern) {
+        this(filePattern, NoFilesFoundEnum.SKIP);
     }
 
     public String getFilePattern() {
         return filePattern;
     }
 
+    public NoFilesFoundEnum getNoFilesFoundAction() {
+        return noFilesFoundAction;
+    }
+
     @Override
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
-        
+
         List<AbstractBuildParameters> result = Lists.newArrayList();
-        
+
         try {
             FilePath workspace = getWorkspace(build);
             FilePath[] files = workspace.list(getFilePattern());
-            for(FilePath f: files) {
-                String parametersStr = f.readToString();
-                Logger.getLogger(FileBuildParameterFactory.class.getName()).log(Level.INFO, null, "Triggering build with " + f.getBaseName());
-                result.add(new PredefinedBuildParameters(parametersStr));
+            if(files.length == 0) {
+                noFilesFoundAction.failCheck(listener);
+            } else {
+                for(FilePath f: files) {
+                    String parametersStr = f.readToString();
+                    Logger.getLogger(FileBuildParameterFactory.class.getName()).log(Level.INFO, null, "Triggering build with " + f.getName());
+                    result.add(new PredefinedBuildParameters(parametersStr));
+                }
             }
-
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             Logger.getLogger(FileBuildParameterFactory.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
         return result;
     }
-    
+
     private FilePath getWorkspace(AbstractBuild build) {
         FilePath workspace = build.getWorkspace();
         if (workspace == null) {
@@ -77,11 +127,6 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
         }
         return workspace;
     }
-    
-    //private PredefinedBuildParameters getParameterBlock() {
-    //    String stringWithCount = Util.replaceMacro(paramExpr, ImmutableMap.of("CHANGELIST", changelist.toString()));
-    //    return new PredefinedBuildParameters(stringWithCount);
-    //}
 
     @Extension
     public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
