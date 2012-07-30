@@ -59,12 +59,12 @@ public class ParameterizedDependency extends Dependency {
 			if (!actionList.isEmpty()) {
 				actions.addAll(config.getBuildActions(actionList, getDownstreamProject()));
 				return true;
-			}else if(actionList.isEmpty()){
-				if(config.getTriggerWithNoParameters()){
-					return true;
-				}
 			}
-			listener.getLogger().println("[parameterized-trigger] Downstream builds will not be triggered.");
+
+            if (config.getTriggerWithNoParameters()) {
+                return true;
+            }
+            listener.getLogger().println("[parameterized-trigger] Downstream builds will not be triggered as no parameter is set.");
             return false;
 		} catch (AbstractBuildParameters.DontTriggerException ex) {
 			// don't trigger on this configuration
