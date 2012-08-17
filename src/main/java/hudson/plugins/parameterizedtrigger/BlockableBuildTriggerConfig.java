@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
+import org.jenkins_ci.plugins.run_condition.RunCondition;
 
 /**
  * {@link BuildTriggerConfig} that supports blocking of the execution.

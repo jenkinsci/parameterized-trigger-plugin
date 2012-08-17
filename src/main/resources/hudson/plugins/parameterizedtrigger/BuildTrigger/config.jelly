@@ -1,17 +1,21 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:entry title="${%Build Triggers}" field="configs">
-    <f:repeatable field="configs" noAddButton="true" minimum="1">
-      <j:set var="instance" value="${instance.descriptor!=descriptor?null:instance}"/><!-- work around until 1.382 -->
-      <table width="100%">
-        <st:include class="${descriptor.clazz}" page="config.jelly" />
 
-        <f:entry>
-          <div align="right">
-            <input type="button" value="${%Add trigger...}" class="repeatable-add show-if-last" />
-            <input type="button" value="${%Delete}" class="repeatable-delete show-if-not-only" style="margin-left: 1em;" />
-          </div>
-        </f:entry>
-      </table>
-    </f:repeatable>
+  <f:entry title="${%Build Triggers}">
+  <j:scope>
+    <j:set var="descriptor" value="${descriptor.getPropertyType(instance,'configs').itemTypeDescriptor}"/>
+        <f:repeatable items="${instance.configs}" var="instance" name="configs" minimum="1" add="${%Add trigger...}">
+            <fieldset>
+                <table width="100%" padding="0">
+                    <st:include page="config.jelly" class="${descriptor.clazz}"/>
+                    <f:entry title="">
+                        <div align="right" class="show-if-not-only">
+                            <f:repeatableDeleteButton value="${%Delete}"/>
+                        </div>
+                    </f:entry>
+                </table>
+            </fieldset>
+        </f:repeatable>
+    </j:scope>
   </f:entry>
 </j:jelly>
