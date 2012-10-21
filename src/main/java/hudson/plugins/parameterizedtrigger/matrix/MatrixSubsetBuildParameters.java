@@ -30,7 +30,7 @@ public class MatrixSubsetBuildParameters extends AbstractBuildParameters {
 
     @Override
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener) throws IOException, InterruptedException {
-        return new MatrixSubsetAction(build.getEnvironment(listener).expand(filter));
+        return new MatrixSubsetAction(getEnvironment(build, listener).expand(filter));
 	}
 
 	@Extension
