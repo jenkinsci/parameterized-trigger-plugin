@@ -32,7 +32,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
 			throws IOException, InterruptedException {
 
-		EnvVars env = build.getEnvironment(listener);
+		EnvVars env = getEnvironment(build, listener);
 
 		String resolvedPropertiesFile = env.expand(propertiesFile);
 		FilePath f = build.getWorkspace().child(resolvedPropertiesFile);

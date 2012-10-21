@@ -31,7 +31,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
 			throws IOException, InterruptedException {
 
-		EnvVars env = build.getEnvironment(listener);
+		EnvVars env = getEnvironment(build, listener);
 
 		Properties p = new Properties();
 		p.load(new StringInputStream(properties));
