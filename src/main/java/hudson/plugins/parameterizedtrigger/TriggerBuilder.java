@@ -139,17 +139,20 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
 
     @Override
     public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
-        for (BuildTriggerConfig config : configs)
-            for (AbstractProject project : config.getProjectList(owner.getParent(),null))
-                graph.addDependency(new ParameterizedDependency(owner, project, config) {
-                        @Override
-                        public boolean shouldTriggerBuild(AbstractBuild build,
-                                                          TaskListener listener,
-                                                          List<Action> actions) {
-                            // TriggerBuilders are inline already.
-                            return false;
-                        }
-                    });
+        for (BlockableBuildTriggerConfig config : configs)
+            if(config.getDependencyDeclared() == true) { 
+                // this is only done if required
+                for (AbstractProject project : config.getProjectList(owner.getParent(),null))
+                    graph.addDependency(new ParameterizedDependency(owner, project, config) {
+                            @Override
+                            public boolean shouldTriggerBuild(AbstractBuild build,
+                                                            TaskListener listener,
+                                                            List<Action> actions) {
+                                // TriggerBuilders are inline already.
+                                return false;
+                            }
+                        });
+            }
 
     }
     
