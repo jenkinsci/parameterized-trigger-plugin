@@ -32,6 +32,17 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.jenkins-ci.lib</groupId>
+            <artifactId>envinject-lib</artifactId>
+            <version>1.10</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>envinject</artifactId>
+            <version>1.62</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
           <groupId>org.mockito</groupId>
           <artifactId>mockito-core</artifactId>
           <version>1.8.5</version>
