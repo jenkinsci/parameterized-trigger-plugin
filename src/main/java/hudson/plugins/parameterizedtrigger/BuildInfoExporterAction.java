@@ -61,7 +61,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
 
   public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
-    String sanatizedBuildName = buildName.toUpperCase().replaceAll("[^A-Z0-9]+", "_");
+    String sanatizedBuildName = buildName.replaceAll("[^a-zA-Z0-9]+", "_");
     // Note: this will only indicate the last project in the list that is ran
     env.put(JOB_NAME_VARIABLE, sanatizedBuildName);
     // All Triggered job names 

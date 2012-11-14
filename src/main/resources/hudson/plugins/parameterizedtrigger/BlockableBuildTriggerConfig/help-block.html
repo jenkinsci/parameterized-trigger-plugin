@@ -41,12 +41,16 @@
   case, the build will be considered as unstable based on the result of the
   triggered builds and the value of this option.</li>
   </ul>
- With this option enabled the builds for the projects triggered are avalible as Env variables for future build steps<br/>
+  With this option enabled the builds for the projects triggered are available as 
+  Env variables for future build steps<br/>
   <ul>
   <li><b>LAST_TRIGGERED_JOB_NAME</b>="Last project started"</li>
-  <li><b>TRIGGERED_JOB_NAMES</b>="Comma seperated list of all triggered projects"</li>
-  <li><b>TRIGGERED_BUILD_NUMBER_&lt;project name&gt;</b>="Last build number triggered"</li>
-  <li><b>TRIGGERED_BUILD_NUMBERS_&lt;project name&gt;</b>="Comma seperated list of build numbers triggered"</li>
+  <li><b>TRIGGERED_JOB_NAMES</b>="Comma separated list of all triggered projects"</li>
+  <li><b>TRIGGERED_BUILD_NUMBER_&lt;project name&gt;</b>="Last build number 
+  triggered"</li>
+  <li><b>TRIGGERED_BUILD_NUMBERS_&lt;project name&gt;</b>="Comma separated 
+  list of build numbers triggered"</li>
   </ul>
-  All Project names are converted into upper case and characters not A-Z or 0-9 are replaced by _(multiple characters are condensed into a single _).
+  All Project names have characters not a-zA-Z or 0-9 replaced by 
+  _(multiple characters are condensed into a single _).
 </div>
