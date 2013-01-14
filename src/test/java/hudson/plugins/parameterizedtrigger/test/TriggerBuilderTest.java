@@ -23,7 +23,6 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.model.Cause.UserCause;
 import hudson.model.Project;
 import hudson.model.Result;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
@@ -38,6 +37,8 @@ import java.util.List;
 
 import org.jvnet.hudson.test.HudsonTestCase;
 import com.google.common.collect.ImmutableList;
+import hudson.model.Run;
+import java.io.IOException;
 
 public class TriggerBuilderTest extends HudsonTestCase {
 
@@ -64,18 +65,15 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         triggerProject.getBuildersList().add(triggerBuilder);
 
-        triggerProject.scheduleBuild2(0, new UserCause()).get();
+        triggerProject.scheduleBuild2(0).get();
 
-        List<String> log = triggerProject.getLastBuild().getLog(20);
-        for (String string : log) {
-            System.out.println(string);
-        }
-        assertEquals("project1 #1 completed. Result was SUCCESS", log.get(2));
-        assertEquals("project2 #1 completed. Result was SUCCESS", log.get(4));
-        assertEquals("project3 #1 completed. Result was SUCCESS", log.get(6));
-        assertEquals("project4 #1 completed. Result was SUCCESS", log.get(8));
-        assertEquals("project5 #1 completed. Result was SUCCESS", log.get(10));
-        assertEquals("project6 #1 completed. Result was SUCCESS", log.get(12));
+        assertLines(triggerProject.getLastBuild(),
+                "project1 #1 completed. Result was SUCCESS",
+                "project2 #1 completed. Result was SUCCESS",
+                "project3 #1 completed. Result was SUCCESS",
+                "project4 #1 completed. Result was SUCCESS",
+                "project5 #1 completed. Result was SUCCESS",
+                "project6 #1 completed. Result was SUCCESS");
         
     }
     
@@ -90,15 +88,12 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         triggerProject.getBuildersList().add(triggerBuilder);
 
-        triggerProject.scheduleBuild2(0, new UserCause()).get();
+        triggerProject.scheduleBuild2(0).get();
 
-        List<String> log = triggerProject.getLastBuild().getLog(20);
-        for (String string : log) {
-            System.out.println(string);
-        }
-        assertEquals("Waiting for the completion of project1", log.get(1));
-        assertEquals("Waiting for the completion of project2", log.get(3));
-        assertEquals("Waiting for the completion of project3", log.get(5));
+        assertLines(triggerProject.getLastBuild(),
+                "Waiting for the completion of project1",
+                "Waiting for the completion of project2",
+                "Waiting for the completion of project3");
     }
     
     public void testNonBlockingTrigger() throws Exception {
@@ -113,14 +108,10 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         triggerProject.getBuildersList().add(triggerBuilder);
 
-        triggerProject.scheduleBuild2(0, new UserCause()).get();
+        triggerProject.scheduleBuild2(0).get();
 
-        List<String> log = triggerProject.getLastBuild().getLog(20);
-        for (String string : log) {
-            System.out.println(string);
-        }
-        
-        assertEquals("Triggering projects: project1, project2, project3", log.get(1));
+        assertLines(triggerProject.getLastBuild(),
+                "Triggering projects: project1, project2, project3");
     }
 
     public void testConsoleOutputWithCounterParameters() throws Exception{
@@ -138,22 +129,18 @@ public class TriggerBuilderTest extends HudsonTestCase {
         
         triggerProject.getBuildersList().add(new TriggerBuilder(bBTConfig));
 
-        triggerProject.scheduleBuild2(0, new UserCause()).get();
+        triggerProject.scheduleBuild2(0).get();
 
-        List<String> log = triggerProject.getLastBuild().getLog(30);
-        for (String string : log) {
-            System.out.println(string);
-        }
-        
-        assertEquals("project1 #1 completed. Result was SUCCESS", log.get(2));
-        assertEquals("project1 #2 completed. Result was SUCCESS", log.get(4));
-        assertEquals("project1 #3 completed. Result was SUCCESS", log.get(6));
-        assertEquals("project2 #1 completed. Result was SUCCESS", log.get(8));
-        assertEquals("project2 #2 completed. Result was SUCCESS", log.get(10));
-        assertEquals("project2 #3 completed. Result was SUCCESS", log.get(12));
-        assertEquals("project3 #1 completed. Result was SUCCESS", log.get(14));
-        assertEquals("project3 #2 completed. Result was SUCCESS", log.get(16));
-        assertEquals("project3 #3 completed. Result was SUCCESS", log.get(18));
+        assertLines(triggerProject.getLastBuild(),
+                "project1 #1 completed. Result was SUCCESS",
+                "project1 #2 completed. Result was SUCCESS",
+                "project1 #3 completed. Result was SUCCESS",
+                "project2 #1 completed. Result was SUCCESS",
+                "project2 #2 completed. Result was SUCCESS",
+                "project2 #3 completed. Result was SUCCESS",
+                "project3 #1 completed. Result was SUCCESS",
+                "project3 #2 completed. Result was SUCCESS",
+                "project3 #3 completed. Result was SUCCESS");
     }
 
     
@@ -169,15 +156,23 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         triggerProject.getBuildersList().add(triggerBuilder);
 
-        triggerProject.scheduleBuild2(0, new UserCause()).get();
+        triggerProject.scheduleBuild2(0).get();
 
-        List<String> log = triggerProject.getLastBuild().getLog(20);
-        for (String string : log) {
-            System.out.println(string);
-        }
-        assertEquals("Waiting for the completion of project1", log.get(1));
-        assertEquals("Skipping project2. The project is either disabled or the configuration has not been saved yet.", log.get(3));
-        assertEquals("Waiting for the completion of project3", log.get(4));
+        assertLines(triggerProject.getLastBuild(),
+                "Waiting for the completion of project1",
+                "Skipping project2. The project is either disabled or the configuration has not been saved yet.",
+                "Waiting for the completion of project3");
       
     }
+
+    private void assertLines(Run<?,?> build, String... lines) throws IOException {
+        List<String> log = build.getLog(Integer.MAX_VALUE);
+        List<String> rest = log;
+        for (String line : lines) {
+            int where = rest.indexOf(line);
+            assertFalse("Could not find line '" + line + "' among remaining log lines " + rest, where == -1);
+            rest = rest.subList(where + 1, rest.size());
+        }
+    }
+
 }
