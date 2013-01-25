@@ -25,43 +25,33 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
-import hudson.AbortException;
-import hudson.EnvVars;
-import hudson.Extension;
-import hudson.Launcher;
-import hudson.Util;
+import com.google.common.collect.Lists;
+import hudson.*;
 import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
 import hudson.model.BuildListener;
-import hudson.model.DependecyDeclarer;
-import hudson.model.DependencyGraph;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.IOException2;
-import hudson.model.Action;
-import hudson.model.TaskListener;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * {@link Builder} that triggers other projects and optionally waits for their completion.
  *
  * @author Kohsuke Kawaguchi
  */
-public class TriggerBuilder extends Builder implements DependecyDeclarer {
+public class TriggerBuilder extends Builder {
 
 	private final ArrayList<BlockableBuildTriggerConfig> configs;
 
@@ -114,8 +104,8 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
                                 listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                                 AbstractBuild b = future.get();
                                 listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                build.getActions().add(new BuildInfoExporterAction(b.getProject().getFullName(), b.getNumber()));
-                                
+                                build.getActions().add(new BuildInfoExporterAction(b.getProject().getFullName(), b.getNumber(), build));
+
                                 if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                     build.setResult(config.getBlock().mapBuildResult(b.getResult()));
                                 } else {
@@ -137,23 +127,6 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
         return buildStepResult;
     }
 
-    @Override
-    public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
-        for (BuildTriggerConfig config : configs)
-            for (AbstractProject project : config.getProjectList(owner.getParent(),null))
-                graph.addDependency(new ParameterizedDependency(owner, project, config) {
-                        @Override
-                        public boolean shouldTriggerBuild(AbstractBuild build,
-                                                          TaskListener listener,
-                                                          List<Action> actions) {
-                            // TriggerBuilders are inline already.
-                            return false;
-                        }
-                    });
-
-    }
-    
-    
     private String getProjectListAsString(List<AbstractProject> projectList){
         StringBuffer projectListString = new StringBuffer();
         for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
@@ -166,7 +139,14 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
         return projectListString.toString();
     }
 
-	@Extension
+
+    @Override
+    public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
+        List<AbstractProject<?,?>> subprojects = Lists.newLinkedList();
+        return ImmutableList.of(new SubProjectsAction(project, configs));
+    }
+
+    @Extension
 	public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 		@Override
 		public String getDisplayName() {
