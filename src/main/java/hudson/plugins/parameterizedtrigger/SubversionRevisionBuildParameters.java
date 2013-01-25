@@ -16,23 +16,45 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 public class SubversionRevisionBuildParameters extends AbstractBuildParameters {
 
-	@DataBoundConstructor
+	private boolean includeUpstreamParameters = false;
+        
 	public SubversionRevisionBuildParameters() {
+            this(false);
+	}
+        
+        @DataBoundConstructor
+	public SubversionRevisionBuildParameters(boolean includeUpstreamParameters ) {
+            this.includeUpstreamParameters = includeUpstreamParameters;
 	}
 
+        public boolean getIncludeUpstreamParameters() {
+            return includeUpstreamParameters;
+        }
 	@Override
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener) {
 
-		SubversionTagAction tagAction =
-			build.getAction(SubversionTagAction.class);
-		if (tagAction == null) {
+		SubversionTagAction tagAction =	build.getAction(SubversionTagAction.class);
+		RevisionParameterAction revisionAction = build.getAction(RevisionParameterAction.class);
+
+		List<SvnInfo> infos = new ArrayList<SvnInfo>();
+
+		if (tagAction == null ) {
 			listener.getLogger().println(
 				"[parameterizedtrigger] no SubversionTagAction found -- is this project an SVN project ?");
-			return null;
+		} else {
+			infos.addAll(tagAction.getTags().keySet());
 		}
 
-		List<SvnInfo> infos = new ArrayList<SvnInfo>(tagAction.getTags().keySet());
-		return new RevisionParameterAction(infos);
+		if(includeUpstreamParameters == true) {
+			if (revisionAction == null ) {
+				listener.getLogger().println(
+					"[parameterizedtrigger] no RevisionParameterAction found -- project did not have SVN parameters passed to it?");
+			} else {
+				infos.addAll(revisionAction.getRevisions());
+			}
+		}
+		//if infos is empty don't return an action.
+		return (infos.size() == 0 ) ? null : new RevisionParameterAction(infos);
 	}
 
 	@Extension
