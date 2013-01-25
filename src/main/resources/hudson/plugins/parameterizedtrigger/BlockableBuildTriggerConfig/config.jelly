@@ -31,7 +31,9 @@ THE SOFTWARE.
     <j:set var="instance" value="${instance[field]}"/>
     <st:include from="${descriptor}" page="${descriptor.configPage}" />
   </f:optionalBlock>
-
+  <f:entry title="${%Show Projects in dependancy lists}" field="dependencyDeclared" >
+        <f:checkbox default="true"/> 
+  </f:entry>
   <f:block>
     <f:hetero-list name="configs" hasHeader="true"
                    descriptors="${descriptor.getBuilderConfigDescriptors()}"

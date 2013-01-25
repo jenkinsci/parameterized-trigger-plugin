@@ -28,20 +28,30 @@ import java.util.concurrent.Future;
 public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     private final BlockingBehaviour block;
     public boolean buildAllNodesWithLabel;
+    private boolean dependencyDeclared = true;
 
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
         super(projects, ResultCondition.ALWAYS, false, configs);
         this.block = block;
+        this.dependencyDeclared = dependencyDeclared;
     }
 
-    @DataBoundConstructor
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameterFactory> configFactories,List<AbstractBuildParameters> configs) {
+        this(projects, block, configFactories, configs, true);
+    }
+    @DataBoundConstructor
+    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameterFactory> configFactories,List<AbstractBuildParameters> configs, boolean dependencyDeclared) {
         super(projects, ResultCondition.ALWAYS, false, configFactories, configs);
         this.block = block;
+        this.dependencyDeclared = dependencyDeclared;
     }
 
     public BlockingBehaviour getBlock() {
         return block;
+    }
+    
+    public boolean getDependencyDeclared() {
+        return dependencyDeclared;
     }
 
     @Override
