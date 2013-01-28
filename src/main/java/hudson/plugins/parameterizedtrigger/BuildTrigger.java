@@ -4,9 +4,6 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.matrix.MatrixAggregatable;
-import hudson.matrix.MatrixAggregator;
-import hudson.matrix.MatrixBuild;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -23,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixAggregatable {
+public class BuildTrigger extends Notifier implements DependecyDeclarer {
 
 	private final ArrayList<BuildTriggerConfig> configs;
 
@@ -86,15 +83,6 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer, MatrixA
                         // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
                         && !ownerClassName.equals("hudson.plugins.promoted_builds.PromotionProcess");
  	}
-
-	public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
-		return new MatrixAggregator(build, launcher, listener) {
-			@Override
-			public boolean endBuild() throws InterruptedException, IOException {
-				return hudson.tasks.BuildTrigger.execute(build, listener);
-			}
-		};
-	}
 
 	@Extension
 	public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
