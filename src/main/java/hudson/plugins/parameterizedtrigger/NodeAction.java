@@ -41,20 +41,20 @@ import java.util.List;
  * @author Chris Johnson
  */
 public class NodeAction extends InvisibleAction implements LabelAssignmentAction, Queue.QueueAction, BuildBadgeAction {
-	private final String nodename;
+	private final Label nodeLabel;
 	
-	public NodeAction(String nodename) {
-		this.nodename = nodename;
+	public NodeAction(Label nodeLabel) {
+		this.nodeLabel = nodeLabel;
 	}
 
 	public Label getAssignedLabel(SubTask task) {
-		return Label.get(nodename);
+		return nodeLabel;
 	}
 	
 	public boolean shouldSchedule(List<Action> actions) {
 		// see if there is already a matching action with same node
 		for (NodeAction other:Util.filter(actions, NodeAction.class)) {
-			if(this.nodename.equals(other.nodename)){
+			if(this.nodeLabel.equals(other.nodeLabel)){
 				// there is already a task for this node.
 				return false;
 			}
@@ -65,6 +65,6 @@ public class NodeAction extends InvisibleAction implements LabelAssignmentAction
 	 * @return the tooltip
 	 */
 	public String getTooltip() {
-		return nodename;
+		return nodeLabel.getDisplayName();
 	}
 }

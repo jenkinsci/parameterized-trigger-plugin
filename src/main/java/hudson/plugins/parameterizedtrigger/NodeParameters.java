@@ -8,8 +8,11 @@ import hudson.Extension;
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.Descriptor;
+import hudson.model.Label;
+import hudson.model.Node;
 import hudson.model.TaskListener;
 import java.io.IOException;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -24,15 +27,18 @@ public class NodeParameters extends AbstractBuildParameters{
 
 	@Override
 	public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-		String nodename = build.getBuiltOnStr();
+		Node node = build.getBuiltOn();
+		Label nodeLabel;
 		// master does not return a node name so add it explicitly.
-		if(nodename == "") {
-			nodename = "master";
+		if(node == null) {
+			nodeLabel = Jenkins.getInstance().getSelfLabel();
+		} else {
+			nodeLabel = node.getSelfLabel();
 		}
-		listener.getLogger().println("current node is " + nodename);
-		return new NodeAction(nodename);
+		listener.getLogger().println("Returning node parameter for " + nodeLabel.getDisplayName());
+		return new NodeAction(nodeLabel);
 	}
-	
+
 	@Extension
 	public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
 		@Override
