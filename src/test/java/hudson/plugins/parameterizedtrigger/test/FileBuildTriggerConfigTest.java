@@ -32,6 +32,7 @@ import hudson.plugins.parameterizedtrigger.ResultCondition;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.SingleFileSCM;
+import org.jvnet.hudson.test.ExtractResourceSCM;
 
 public class FileBuildTriggerConfigTest extends HudsonTestCase {
 
@@ -56,5 +57,56 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		assertEquals("value", builder.getEnvVars().get("KEY"));
+	}
+
+	public void test_multiplefiles() throws Exception {
+
+		Project projectA = createFreeStyleProject("projectA");
+		projectA.setScm(new ExtractResourceSCM(getClass().getResource("multiple_property_files.zip")));
+		projectA.getPublishersList().add(
+				new BuildTrigger(
+				new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+						new FileBuildParameters("a_properties.txt,z_properties.txt"))));
+
+		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+		Project projectB = createFreeStyleProject("projectB");
+		projectB.getBuildersList().add(builder);
+		projectB.setQuietPeriod(1);
+		hudson.rebuildDependencyGraph();
+
+		projectA.scheduleBuild2(0).get();
+		hudson.getQueue().getItem(projectB).getFuture().get();
+
+		assertNotNull("builder should record environment", builder.getEnvVars());
+		// test from first file
+		assertEquals("These_three_values_should", builder.getEnvVars().get("A_TEST_01"));
+		assertEquals("be_from_file_a_properties_txt", builder.getEnvVars().get("A_TEST_02"));
+		assertEquals("which_has_three_definitions", builder.getEnvVars().get("A_TEST_03"));
+		// test from second file
+		assertEquals("These_two_values_should", builder.getEnvVars().get("Z_TEST_100"));
+		assertEquals("be_from_file_z_properties_txt", builder.getEnvVars().get("Z_TEST_101"));
+
+	}
+
+	public void test_failOnMissingFile() throws Exception {
+
+		Project projectA = createFreeStyleProject("projectA");
+		projectA.setScm(new ExtractResourceSCM(getClass().getResource("multiple_property_files.zip")));
+		projectA.getPublishersList().add(
+				new BuildTrigger(
+				new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+						new FileBuildParameters("a_properties.txt,missing_file.txt,z_properties.txt",true))));
+
+		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+		Project projectB = createFreeStyleProject("projectB");
+		projectB.getBuildersList().add(builder);
+		projectB.setQuietPeriod(1);
+		hudson.rebuildDependencyGraph();
+
+		projectA.scheduleBuild2(0).get();
+		waitUntilNoActivity();
+
+		// There should be no builds of projectB as not triggered.
+		assertEquals(0, projectB.getBuilds().size());
 	}
 }

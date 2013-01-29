@@ -1,7 +1,10 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-  <f:entry field="propertiesFile" title="Use properties from file">
+  <f:entry field="propertiesFile" title="${%Use properties from file}">
     <f:textbox />
   </f:entry>
-  
+  <f:entry field="failTriggerOnMissing" title="${%Don't trigger if any files are missing}">
+    <f:checkbox default="false" />
+  </f:entry>
+
 </j:jelly>
