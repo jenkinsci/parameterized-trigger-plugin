@@ -20,6 +20,8 @@ import java.util.List;
 
 /**
  * A BuildParameterFactory generating Predefined Parameters for a counter
+ *
+ * @author Chris Johnson
  */
 public class CounterBuildParameterFactory extends AbstractBuildParameterFactory {
 
@@ -27,19 +29,57 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     private final String to;
     private final String step;
     private final String paramExpr;
+    private final SteppingValidationEnum validationFail;
 
+    public enum SteppingValidationEnum {
+        FAIL("Fail the build step"),    // previous behaviour (default)
+        SKIP("Don't trigger these projects"){
+            @Override
+            public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
+                listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateSkipping());
+                throw new AbstractBuildParameters.DontTriggerException();
+        }},
+        NOPARMS("Skip these parameters"){
+            @Override
+            public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
+                listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateIgnore());
+        }};
+
+        private String description;
+
+        public String getDescription() {
+            return description;
+        }
+        SteppingValidationEnum(String description) {
+            this.description = description;
+        }
+
+        public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
+            throw new RuntimeException(Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
+        }
+    }
 
     public CounterBuildParameterFactory(long from, long to, long step, String paramExpr) {
         this(Long.toString(from), Long.toString(to), Long.toString(step), paramExpr);
     }
+    public CounterBuildParameterFactory(long from, long to, long step, String paramExpr, SteppingValidationEnum validationFail) {
+        this(Long.toString(from), Long.toString(to), Long.toString(step), paramExpr, validationFail);
+    }
+
+    public CounterBuildParameterFactory(String from, String to, String step, String paramExpr) {
+        // mimic old behaviour which failed job
+        this(from, to, step, paramExpr, SteppingValidationEnum.FAIL);
+    }
 
     @DataBoundConstructor
-    public CounterBuildParameterFactory(String from, String to, String step, String paramExpr) {
+    public CounterBuildParameterFactory(String from, String to, String step, String paramExpr, SteppingValidationEnum validationFail) {
         this.from = from;
         this.to = to;
         this.step = step;
         this.paramExpr = paramExpr;
+        this.validationFail = validationFail;
     }
+
 
     @Override
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
@@ -56,14 +96,13 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             params.add(getParameterForCount(fromNum));
         } else {
             if (stepNum == 0) {
-                throw new RuntimeException(Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
-            }
-            if (upDown * stepNum < 0) {
-                throw new RuntimeException(Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
-            }
-
-            for (Long i = fromNum; upDown * i <= upDown * toNum; i += stepNum) {
-                params.add(getParameterForCount(i));
+                validationFail.failCheck(listener);
+            } else if (upDown * stepNum < 0) {
+                validationFail.failCheck(listener);
+            } else {
+                for (Long i = fromNum; upDown * i <= upDown * toNum; i += stepNum) {
+                    params.add(getParameterForCount(i));
+                }
             }
         }
         return params;
@@ -125,6 +164,10 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
 
     public String getParamExpr() {
         return paramExpr;
+    }
+
+    public SteppingValidationEnum getvalidationFail() {
+        return validationFail;
     }
 
     private static final VariableResolver<String> EMPTY_STRING_VARIABLE_RESOLVER = new VariableResolver<String>() {

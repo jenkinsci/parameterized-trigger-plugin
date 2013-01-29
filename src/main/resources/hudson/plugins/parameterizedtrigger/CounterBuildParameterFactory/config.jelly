@@ -9,7 +9,9 @@
   <f:entry field="step" title="${%Step}">
     <f:textbox default="1"/>
   </f:entry>
-
+  <f:entry field="validationFail" title="${%Action to perform when stepping validation fails}">
+    <f:enum>${it.getDescription()}</f:enum>
+  </f:entry>
   <f:entry field="paramExpr" title="${%Parameters}">
     <f:textarea />
   </f:entry>
