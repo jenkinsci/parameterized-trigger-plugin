@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011, Jørgen P. Tjernø <jorgenpt@gmail.com>
+ * Copyright (c) 2011-2, Jørgen P. Tjernø <jorgenpt@gmail.com> Chris Johnson
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,18 @@
 package hudson.plugins.parameterizedtrigger;
 
 import java.util.Map;
+import java.util.Arrays;
 
 import hudson.EnvVars;
+import hudson.Util;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.AbstractBuild;
 
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
+  public static final String ALL_JOBS_NAME_VARIABLE = "TRIGGERED_JOB_NAMES";
   public static final String BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBER_";
+  public static final String ALL_BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBERS_";
 
   private String buildName;
   private int buildNumber;
@@ -57,7 +61,27 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
 
   public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
-    env.put(JOB_NAME_VARIABLE, buildName);
-    env.put(BUILD_NUMBER_VARIABLE_PREFIX + buildName, Integer.toString(buildNumber));
+    String sanatizedBuildName = buildName.replaceAll("[^a-zA-Z0-9]+", "_");
+    // Note: this will only indicate the last project in the list that is ran
+    env.put(JOB_NAME_VARIABLE, sanatizedBuildName);
+    // All Triggered job names 
+    String originalvalue = env.get(ALL_JOBS_NAME_VARIABLE);
+    if(originalvalue == null) {
+        env.put(ALL_JOBS_NAME_VARIABLE, sanatizedBuildName);
+    } else {
+        String[] items = Util.tokenize(originalvalue, ",");
+        if(! Arrays.asList(items).contains(sanatizedBuildName))
+            env.put(ALL_JOBS_NAME_VARIABLE, originalvalue+","+sanatizedBuildName);
+    }
+    env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, Integer.toString(buildNumber));
+    
+    // handle case where multiple builds are triggered 
+    String buildVariable = ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName;
+    originalvalue = env.get(buildVariable);
+    if(originalvalue == null) {
+        env.put(buildVariable, Integer.toString(buildNumber));
+    } else {
+        env.put(buildVariable, originalvalue+","+Integer.toString(buildNumber));
+    }
   }
 }
