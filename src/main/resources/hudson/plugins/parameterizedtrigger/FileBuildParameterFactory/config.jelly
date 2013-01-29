@@ -3,5 +3,8 @@
   <f:entry field="filePattern" title="${%File Pattern}">
     <f:textarea />
   </f:entry>
+  <f:entry field="noFilesFoundAction" title="${%Action to perform when no files found}">
+    <f:enum>${it.getDescription()}</f:enum>
+  </f:entry>
 
 </j:jelly>

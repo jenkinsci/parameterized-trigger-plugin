@@ -267,16 +267,20 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             dynamicBuildParameters.add(Collections.<AbstractBuildParameters>emptyList());
             for (AbstractBuildParameterFactory configFactory : configFactories) {
                 List<List<AbstractBuildParameters>> newDynParameters = Lists.newArrayList();
-                for (AbstractBuildParameters config : configFactory.getParameters(build, listener)) {
-                    for (List<AbstractBuildParameters> dynamicBuildParameter : dynamicBuildParameters) {
-                        newDynParameters.add(
-                                ImmutableList.<AbstractBuildParameters>builder()
-                                        .addAll(dynamicBuildParameter)
-                                        .add(config)
-                                        .build());
+                List<AbstractBuildParameters> factoryParameters = configFactory.getParameters(build, listener);
+                // if factory returns 0 parameters we need to skip assigning newDynParameters to dynamicBuildParameters as we would add invalid list
+                if(factoryParameters.size() > 0) {
+                    for (AbstractBuildParameters config : factoryParameters) {
+                        for (List<AbstractBuildParameters> dynamicBuildParameter : dynamicBuildParameters) {
+                            newDynParameters.add(
+                                    ImmutableList.<AbstractBuildParameters>builder()
+                                            .addAll(dynamicBuildParameter)
+                                            .add(config)
+                                            .build());
+                        }
                     }
+                    dynamicBuildParameters = newDynParameters;
                 }
-                dynamicBuildParameters = newDynParameters;
             }
             return dynamicBuildParameters;
         }
