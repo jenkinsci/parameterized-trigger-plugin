@@ -31,6 +31,9 @@ import hudson.EnvVars;
 import hudson.Util;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.EnvironmentContributingAction;
+import jenkins.model.Jenkins;
 
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
@@ -40,11 +43,13 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
   private String buildName;
   private int buildNumber;
+  private final AbstractBuild<?, ?> parentBuild;
 
-  public BuildInfoExporterAction(String buildName, int buildNumber) {
+  public BuildInfoExporterAction(String buildName, int buildNumber, AbstractBuild<?,?> parentBuild) {
     super();
     this.buildName = buildName;
     this.buildNumber = buildNumber;
+        this.parentBuild = parentBuild;
   }
 
   public String getIconFileName() {
@@ -74,7 +79,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
             env.put(ALL_JOBS_NAME_VARIABLE, originalvalue+","+sanatizedBuildName);
     }
     env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, Integer.toString(buildNumber));
-    
+
     // handle case where multiple builds are triggered 
     String buildVariable = ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName;
     originalvalue = env.get(buildVariable);
@@ -84,4 +89,15 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
         env.put(buildVariable, originalvalue+","+Integer.toString(buildNumber));
     }
   }
+
+    public boolean isFirst() {
+        return parentBuild.getAction(BuildInfoExporterAction.class) == this;
+    }
+
+    public AbstractBuild<?,?> getTriggeredBuild() {
+        AbstractProject<?, ? extends AbstractBuild<?,?>> project =
+                Jenkins.getInstance().getItemByFullName(buildName, AbstractProject.class);
+        return project.getBuildByNumber(buildNumber);
+    }
+
 }
