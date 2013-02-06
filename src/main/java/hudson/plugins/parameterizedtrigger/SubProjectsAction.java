@@ -5,7 +5,15 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 
 import java.util.List;
-
+/**
+ * Action added Projects to track what projects are
+ * were triggered from the trigger builds on other projects buildstep.
+ *
+ * Provides a section on the project page indicating the triggered projects.
+ * see jobMain.groovy
+ *
+ * @author wolfs
+ */
 public class SubProjectsAction implements Action {
 
     private AbstractProject<?,?> project;

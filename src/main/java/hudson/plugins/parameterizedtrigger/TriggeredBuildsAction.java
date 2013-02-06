@@ -4,7 +4,15 @@ import com.google.common.collect.Lists;
 import hudson.model.AbstractBuild;
 
 import java.util.List;
-
+/**
+ * Action added to individual builds to track what projects/builds
+ * were started from the trigger builds on other projects buildstep
+ *
+ * Provides a section on the build page indicating the triggered projects/builds.
+ * see summary.groovy
+ *
+ * @author wolfs
+ */
 public class TriggeredBuildsAction {
     private AbstractBuild<?, ?> parentBuild;
 

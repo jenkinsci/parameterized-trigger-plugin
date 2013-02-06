@@ -142,7 +142,6 @@ public class TriggerBuilder extends Builder {
 
     @Override
     public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
-        List<AbstractProject<?,?>> subprojects = Lists.newLinkedList();
         return ImmutableList.of(new SubProjectsAction(project, configs));
     }
 
