@@ -65,23 +65,25 @@ public class BuildInfoExporterTest extends HudsonTestCase {
                 projectB.updateNextBuildNumber(3);
 
                 int expectedBuildNumber = projectB.getNextBuildNumber();
-		projectA.scheduleBuild2(0, new UserCause()).get();
+                AbstractBuild<?, ?> buildA = projectA.scheduleBuild2(0, new UserCause()).get();
 
                 EnvVars envVars = builder.getEnvVars();
                 assertThat(envVars, notNullValue());
                 assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
                 assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
-
+                assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildA.getResult().toString()));
+                
                 // The below test for expectedBuildNumber is meaningless if the
                 // value doesn't update, though it should always update.
                 assertThat(projectB.getNextBuildNumber(), is(not(expectedBuildNumber)));
 
                 expectedBuildNumber = projectB.getNextBuildNumber();
-		projectA.scheduleBuild2(0, new UserCause()).get();
+                buildA = projectA.scheduleBuild2(0, new UserCause()).get();
                 envVars = builder.getEnvVars();
 
                 assertThat(envVars, notNullValue());
                 assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
                 assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
+                assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildA.getResult().toString()));
 	}
 }

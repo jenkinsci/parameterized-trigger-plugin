@@ -114,7 +114,7 @@ public class TriggerBuilder extends Builder implements DependecyDeclarer {
                                 listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                                 AbstractBuild b = future.get();
                                 listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                build.getActions().add(new BuildInfoExporterAction(b.getProject().getFullName(), b.getNumber()));
+                                build.getActions().add(new BuildInfoExporterAction(b.getProject().getFullName(), b.getNumber(), b.getResult()));
                                 
                                 if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                     build.setResult(config.getBlock().mapBuildResult(b.getResult()));
