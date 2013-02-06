@@ -29,18 +29,22 @@ import java.util.Map;
 import hudson.EnvVars;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.AbstractBuild;
+import hudson.model.Result;
 
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
   public static final String BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBER_";
-
+  public static final String BUILD_RESULT_VARIABLE_PREFIX = "TRIGGERED_BUILD_RESULT_";
+  
   private String buildName;
   private int buildNumber;
-
-  public BuildInfoExporterAction(String buildName, int buildNumber) {
+  private Result buildResult;
+  	
+  public BuildInfoExporterAction(String buildName, int buildNumber, Result buildResult) {
     super();
     this.buildName = buildName;
     this.buildNumber = buildNumber;
+    this.buildResult = buildResult;
   }
 
   public String getIconFileName() {
@@ -59,5 +63,6 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
     env.put(JOB_NAME_VARIABLE, buildName);
     env.put(BUILD_NUMBER_VARIABLE_PREFIX + buildName, Integer.toString(buildNumber));
+    env.put(BUILD_RESULT_VARIABLE_PREFIX + buildName, buildResult.toString());
   }
 }
