@@ -71,24 +71,37 @@ public class BuildInfoExporterTest extends HudsonTestCase {
         projectB.updateNextBuildNumber(3);
 
         int expectedBuildNumber = projectB.getNextBuildNumber();
-        projectA.scheduleBuild2(0, new UserCause()).get();
+        AbstractBuild<?, ?> buildA1 = projectA.scheduleBuild2(0, new UserCause()).get();
 
         EnvVars envVars = builder.getEnvVars();
+        System.out.println("envVars: " + envVars);
+        
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB_RUN_1", Integer.toString(expectedBuildNumber)));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildA1.getResult().toString()));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_1", buildA1.getResult().toString()));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
+        assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
 
         // The below test for expectedBuildNumber is meaningless if the
         // value doesn't update, though it should always update.
         assertThat(projectB.getNextBuildNumber(), is(not(expectedBuildNumber)));
 
         expectedBuildNumber = projectB.getNextBuildNumber();
-        projectA.scheduleBuild2(0, new UserCause()).get();
+        AbstractBuild<?, ?> buildA2 = projectA.scheduleBuild2(0, new UserCause()).get();
         envVars = builder.getEnvVars();
 
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB_RUN_1", Integer.toString(expectedBuildNumber)));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildA2.getResult().toString()));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_1", buildA2.getResult().toString()));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
+        assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
+
     }
     
     public void test_oddchars() throws Exception {
@@ -115,7 +128,8 @@ public class BuildInfoExporterTest extends HudsonTestCase {
         projectA.scheduleBuild2(0, new UserCause()).get();
 
         EnvVars envVars = builder.getEnvVars();
-
+        System.out.println("envVars: " + envVars);
+        
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", testNameResult));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_"+testNameResult, Integer.toString(expectedBuildNumber)));
@@ -163,33 +177,39 @@ public class BuildInfoExporterTest extends HudsonTestCase {
 
         projectA.scheduleBuild2(0, new UserCause()).get();
         waitUntilNoActivity();
+
+        EnvVars envVars = builder.getEnvVars();
+        System.out.println("envVars: " + envVars);
         
         assertEquals(buildsToTest, projectB.getBuilds().size());
         assertEquals(buildsToTest, projectC.getBuilds().size());
-   
+
+        String allBuildNumbersB = "";
+        for (int run = 1, buildNumber = firstExpectedBuildNumberB; run <= buildsToTest; run ++, buildNumber++) {
+            if (allBuildNumbersB.length() > 0) {
+                allBuildNumbersB += ",";
+            }
+            allBuildNumbersB += buildNumber;
+            assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB_RUN_" + run, Integer.toString(buildNumber)));
+        }
+
+        String allBuildNumbersC = "";
+        for (int run = 1, buildNumber = firstExpectedBuildNumberC; run <= buildsToTest; run ++, buildNumber++) {
+            if (allBuildNumbersC.length() > 0) {
+                allBuildNumbersC += ",";
+            }
+            allBuildNumbersC += buildNumber;
+            assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectC_RUN_" + run, Integer.toString(buildNumber)));
+        }
+
         int lastBuildNumberB = firstExpectedBuildNumberB + (buildsToTest-1);
         int lastBuildNumberC = firstExpectedBuildNumberC + (buildsToTest-1);
-      
-        String allBuildNumbersB = Integer.toString(firstExpectedBuildNumberB);
-        while(firstExpectedBuildNumberB < lastBuildNumberB) {
-            firstExpectedBuildNumberB++;
-            allBuildNumbersB += "," + firstExpectedBuildNumberB;
-        }
-        String allBuildNumbersC = Integer.toString(firstExpectedBuildNumberC);
-        while(firstExpectedBuildNumberC < lastBuildNumberC) {
-            firstExpectedBuildNumberC++;
-            allBuildNumbersC += "," + firstExpectedBuildNumberC;
-        }
-        
-        EnvVars envVars = builder.getEnvVars();
-        
+
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", testNameResult2));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_"+testNameResult, Integer.toString(lastBuildNumberB)));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_"+testNameResult2, Integer.toString(lastBuildNumberC)));
-        
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", testNameResult + "," + testNameResult2));
-        
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_"+testNameResult, allBuildNumbersB));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_"+testNameResult2, allBuildNumbersC));
 
