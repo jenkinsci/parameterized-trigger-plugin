@@ -27,7 +27,6 @@ package hudson.plugins.parameterizedtrigger;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
 import hudson.*;
 import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
@@ -53,25 +52,25 @@ import java.util.concurrent.Future;
  */
 public class TriggerBuilder extends Builder {
 
-	private final ArrayList<BlockableBuildTriggerConfig> configs;
+    private final ArrayList<BlockableBuildTriggerConfig> configs;
 
     @DataBoundConstructor
-	public TriggerBuilder(List<BlockableBuildTriggerConfig> configs) {
-		this.configs = new ArrayList<BlockableBuildTriggerConfig>(Util.fixNull(configs));
-	}
+    public TriggerBuilder(List<BlockableBuildTriggerConfig> configs) {
+        this.configs = new ArrayList<BlockableBuildTriggerConfig>(Util.fixNull(configs));
+    }
 
-	public TriggerBuilder(BlockableBuildTriggerConfig... configs) {
-		this(Arrays.asList(configs));
-	}
+    public TriggerBuilder(BlockableBuildTriggerConfig... configs) {
+        this(Arrays.asList(configs));
+    }
 
-	public List<BlockableBuildTriggerConfig> getConfigs() {
-		return configs;
-	}
+    public List<BlockableBuildTriggerConfig> getConfigs() {
+        return configs;
+    }
 
-	@Override
-	public BuildStepMonitor getRequiredMonitorService() {
-		return BuildStepMonitor.NONE;
-	}
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
+        return BuildStepMonitor.NONE;
+    }
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
@@ -90,6 +89,9 @@ public class TriggerBuilder extends Builder {
                     //handle non-blocking configs
                     if(futures.isEmpty()){
                         listener.getLogger().println("Triggering projects: " + getProjectListAsString(projectList));
+                        for(AbstractProject p : projectList) {
+                            BuildInfoExporterAction.addBuildInfoExporterAction(build, p.getFullName());
+                        }
                         continue;
                     }
                     //handle blocking configs
@@ -104,7 +106,7 @@ public class TriggerBuilder extends Builder {
                                 listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                                 AbstractBuild b = future.get();
                                 listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                build.getActions().add(new BuildInfoExporterAction(b.getProject().getFullName(), b.getNumber(), build, b.getResult()));
+                                BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getProject().getFullName(), b.getNumber(), b.getResult());
 
                                 if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                     build.setResult(config.getBlock().mapBuildResult(b.getResult()));
@@ -128,7 +130,7 @@ public class TriggerBuilder extends Builder {
     }
 
     private String getProjectListAsString(List<AbstractProject> projectList){
-        StringBuffer projectListString = new StringBuffer();
+        StringBuilder projectListString = new StringBuilder();
         for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
             AbstractProject project = (AbstractProject) iterator.next();
             projectListString.append(HyperlinkNote.encodeTo('/'+ project.getUrl(), project.getFullDisplayName()));
@@ -146,15 +148,16 @@ public class TriggerBuilder extends Builder {
     }
 
     @Extension
-	public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-		@Override
-		public String getDisplayName() {
-			return "Trigger/call builds on other projects";
-		}
+    public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-		@Override
-		public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-			return true;
-		}
-	}
+        @Override
+        public String getDisplayName() {
+            return "Trigger/call builds on other projects";
+        }
+
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+            return true;
+        }
+    }
 }

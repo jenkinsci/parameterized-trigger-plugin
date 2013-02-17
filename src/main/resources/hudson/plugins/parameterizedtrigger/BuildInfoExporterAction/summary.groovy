@@ -4,22 +4,43 @@ def f=namespace(lib.FormTagLib)
 def j=namespace(lib.JenkinsTagLib)
 def l=namespace(lib.LayoutTagLib)
 
-if (my.first) {
-    h2("Subproject Builds");
+def builds = my.triggeredBuilds
+if(builds.size() > 0) {
+	h2("Subproject Builds");
+
+	ul(style:"list-style-type: none;") {
+		for (item in builds) {
+			li {
+				if (item != null) {
+					a(href:"${rootURL}/${item.project.url}", class:"model-link") {
+						text(item.project.displayName)
+					}
+					a(href:"${rootURL}/${item.url}", class:"model-link") {
+						img(src:"${imagesURL}/16x16/${item.buildStatusUrl}",
+								alt:"${item.iconColor.description}", height:"16", width:"16")
+						text(item.displayName)
+					}
+				}
+			}
+		}
+	} 
 }
 
-def build = my.triggeredBuild
+def projects = my.triggeredProjects
+if (projects.size > 0) {
+	h2("Subprojects triggered but not blocked for");
 
-ul(style:"list-style-type: none;") {
-    li {
-        a(href:"${rootURL}/${build.project.url}", class:"model-link") {
-            text(build.project.displayName)
-        }
-        a(href:"${rootURL}/${build.url}", class:"model-link") {
-            img(src:"${imagesURL}/16x16/${build.buildStatusUrl}",
-                    alt:"${build.iconColor.description}", height:"16", width:"16")
-            text(build.displayName)
-        }
-    }
+	ul(style:"list-style-type: none;") {
+		for (item in projects) {
+			li {
+				print "${item}"
+				if (item != null) {
+					a(href:"${rootURL}/${item.url}", class:"model-link") {
+						text(item.displayName)
+					}
+				}
+			}
+		}
+	}
 }
 
