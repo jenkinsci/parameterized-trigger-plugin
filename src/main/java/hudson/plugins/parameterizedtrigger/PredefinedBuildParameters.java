@@ -2,13 +2,14 @@ package hudson.plugins.parameterizedtrigger;
 
 import hudson.EnvVars;
 import hudson.Extension;
-import hudson.model.AbstractBuild;
 import hudson.model.Action;
-import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
+import hudson.model.TaskListener;
+import hudson.model.AbstractBuild;
+import hudson.model.Descriptor;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
-import hudson.model.TaskListener;
+import hudson.model.TextParameterValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,8 +39,14 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
-			values.add(new StringParameterValue(entry.getKey().toString(),
-					env.expand(entry.getValue().toString())));
+			// support multi-line parameters correctly
+			if(entry.getValue().toString().contains("\n")) {
+				values.add(new TextParameterValue(entry.getKey().toString(),
+						env.expand(entry.getValue().toString())));
+			} else {
+				values.add(new StringParameterValue(entry.getKey().toString(),
+						env.expand(entry.getValue().toString())));
+			}
 		}
 
 		return new ParametersAction(values);
