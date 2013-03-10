@@ -19,6 +19,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.model.TextParameterValue;
 import hudson.util.FormValidation;
 
 import org.apache.commons.io.IOUtils;
@@ -143,8 +144,13 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			Properties p = ParameterizedTriggerUtils.loadProperties(s);
 
 			for (Map.Entry<Object, Object> entry : p.entrySet()) {
-				values.add(new StringParameterValue(entry.getKey().toString(),
-						entry.getValue().toString()));
+				// support multi-line parameters correctly
+				s = entry.getValue().toString();
+				if(s.contains("\n")) {
+					values.add(new TextParameterValue(entry.getKey().toString(), s));
+				} else {
+					values.add(new StringParameterValue(entry.getKey().toString(), s));
+				}
 			}
 		}
 		return values;

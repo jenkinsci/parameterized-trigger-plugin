@@ -9,6 +9,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.model.TextParameterValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,8 +37,13 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
-			values.add(new StringParameterValue(entry.getKey().toString(),
-					env.expand(entry.getValue().toString())));
+			// support multi-line parameters correctly
+			String s = entry.getValue().toString();
+			if(s.contains("\n")) {
+				values.add(new TextParameterValue(entry.getKey().toString(), env.expand(s)));
+			} else {
+				values.add(new StringParameterValue(entry.getKey().toString(), env.expand(s)));
+			}
 		}
 
 		return new ParametersAction(values);
