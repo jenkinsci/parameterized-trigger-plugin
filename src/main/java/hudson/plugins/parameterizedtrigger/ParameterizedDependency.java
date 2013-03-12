@@ -1,11 +1,13 @@
 package hudson.plugins.parameterizedtrigger;
 
+import groovy.lang.GroovyShell;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.DependencyGraph;
 import hudson.model.DependencyGraph.Dependency;
 import hudson.model.TaskListener;
+import hudson.plugins.parameterizedtrigger.matrix.MatrixSubsetAction;
 
 import java.util.List;
 
@@ -56,10 +58,17 @@ public class ParameterizedDependency extends Dependency {
 		}
 		try {
 			List<Action> actionList = config.getBaseActions(build, listener);
-			if (!actionList.isEmpty()) {
-				actions.addAll(config.getBuildActions(actionList, getDownstreamProject()));
-				return true;
-			}
+            if (!actionList.isEmpty()) {
+                GroovyShell shell = new GroovyShell();
+                for (Action action : actionList) {
+                    if (action instanceof MatrixSubsetAction &&
+                            Boolean.FALSE.equals(shell.evaluate(((MatrixSubsetAction) action).getFilter()))) {
+                        return false;
+                    }
+                }
+                actions.addAll(config.getBuildActions(actionList, getDownstreamProject()));
+                return true;
+            }
 
             if (config.getTriggerWithNoParameters()) {
                 return true;
