@@ -13,6 +13,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
+import hudson.model.Cause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -28,6 +29,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
+import hudson.plugins.promoted_builds.Promotion;
 import hudson.tasks.Messages;
 import hudson.util.FormValidation;
 
@@ -286,10 +288,39 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
     }
 
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
-        return project.scheduleBuild2(project.getQuietPeriod(),
-                new UpstreamCause((Run) build),
+    /**
+     * Create UpstreamCause that triggers a downstream build.
+     * 
+     * If the upstream build is a promotion, return the UpstreamCause
+     * as triggered by the target of the promotion.
+     * 
+     * @param build an upstream build
+     * @return UpstreamCause
+     */
+    protected Cause createUpstreamCause(AbstractBuild<?, ?> build) {
+        if(Jenkins.getInstance().getPlugin("promoted-builds") != null) {
+            // Test only when promoted-builds is installed.
+            if(build instanceof Promotion) {
+                Promotion promotion = (Promotion)build;
+                
+                // This cannot be done for PromotionCause#PromotionCause is in a package scope.
+                // return new PromotionCause(build, promotion.getTarget());
+                
+                return new UpstreamCause((Run<?,?>)promotion.getTarget());
+            }
+        }
+        return new UpstreamCause((Run) build);
+    }
+
+    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
+        Cause cause = createUpstreamCause(build);
+        return project.scheduleBuild2(quietPeriod,
+                cause,
                 list.toArray(new Action[list.size()]));
+    }
+
+    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
+        return schedule(build, project, project.getQuietPeriod(), list);
     }
 
     public boolean onJobRenamed(String oldName, String newName) {
