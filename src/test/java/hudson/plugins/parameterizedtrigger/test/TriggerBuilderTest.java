@@ -275,6 +275,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
     @Bug(17751)
     public void testTriggerFromPromotion() throws Exception {
+        assertNotNull("promoted-builds must be installed.", Jenkins.getInstance().getPlugin("promoted-builds"));
         // Test combination with PromotedBuilds.
         // Assert that the original build can be tracked from triggered build.
         // The configuration is as following:
