@@ -4,6 +4,12 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import jenkins.model.Jenkins;
+import hudson.Functions;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause;
 import hudson.model.ParametersAction;
@@ -14,6 +20,7 @@ import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.NodeParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.slaves.DumbSlave;
+import hudson.util.IOUtils;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
@@ -23,6 +30,40 @@ import org.jvnet.hudson.test.HudsonTestCase;
  */
 public class NodeParametersTest extends HudsonTestCase {
 
+	protected List<DumbSlave> slaves = new ArrayList<DumbSlave>();
+	
+	@Override
+	public DumbSlave createOnlineSlave() throws Exception {
+		DumbSlave slave = super.createOnlineSlave();
+		if(slave != null) {
+			slaves.add(slave);
+		}
+		return slave;
+	}
+	
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		slaves.clear();
+	}
+	
+	@Override
+	protected void tearDown() throws Exception {
+		// In Jenkins < 1.441, log files of slave nodes are not closed here,
+		// so tearDown fails in Windows.
+		// Close files to avoid this failure.
+		if(Functions.isWindows()) {
+			for(DumbSlave slave: slaves) {
+				slave.getComputer().cliDisconnect("tearDown");
+				OutputStream out = slave.getComputer().openLogFile();
+				Jenkins.getInstance().removeNode(slave);
+				IOUtils.closeQuietly(out);
+			}
+		}
+		slaves.clear();
+		super.tearDown();
+	}
+	
 	public void test() throws Exception {
 
 		DumbSlave slave0 = createOnlineSlave();
