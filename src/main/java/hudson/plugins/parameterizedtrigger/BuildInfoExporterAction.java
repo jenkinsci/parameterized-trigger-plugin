@@ -277,7 +277,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    * @param separator
    * @return list of projects separated by separator
    */
-  private String getProjectListString(String separator) {
+  protected String getProjectListString(String separator) {
     Set<String> refs = getProjectsWithBuilds();
     StringBuilder buf = new StringBuilder();
     boolean first = true;
