@@ -1,0 +1,16 @@
+<div>
+  Look for files that match the specified pattern in the current build, then
+  for each of them trigger a build of the specified project(s) by passing
+  that file as a file parameter.
+
+  <p>
+  This implementation does not interpret the contents of those files, and instead
+  it simply gets passed and placed into the workspace of the triggered project(s)
+  under the name specified here.
+
+  <p>
+  This is useful, for example, when you have a portion of the job that can be split
+  into concurrently executable subtasks. In such a situation, you can have an earlier
+  step produce subtask work units by packaging necessary stuff into individual files,
+  then use this mode to execute them all in parallel.
+</div>

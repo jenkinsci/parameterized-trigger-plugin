@@ -6,7 +6,6 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractBuild;
-import hudson.model.Descriptor;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import hudson.util.VariableResolver;

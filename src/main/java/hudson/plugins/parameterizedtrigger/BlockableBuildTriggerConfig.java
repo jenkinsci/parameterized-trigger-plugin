@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.collect.ImmutableList;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -62,6 +63,10 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
         if (block!=null) {
             while (true) {
+                // add DifferentiatingAction to make sure this doesn't get merged with something else,
+                // which is most likely unintended. Might make sense to do it at BuildTriggerConfig for all.
+                list = ImmutableList.<Action>builder().addAll(list).add(new DifferentiatingAction()).build();
+
                 // if we fail to add the item to the queue, wait and retry.
                 // it also means we have to force quiet period = 0, or else it'll never leave the queue
                 Future f = project.scheduleBuild2(0, new UpstreamCause((Run) build), list.toArray(new Action[list.size()]));

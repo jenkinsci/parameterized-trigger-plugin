@@ -1,0 +1,13 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+  <f:entry field="filePattern" title="${%File Pattern}">
+    <f:textbox />
+  </f:entry>
+  <f:entry field="parameterName" title="${%File Name In Child Projects}">
+    <f:textbox />
+  </f:entry>
+  <f:entry field="noFilesFoundAction" title="${%Action to perform when no files found}">
+    <f:enum>${it.getDescription()}</f:enum>
+  </f:entry>
+
+</j:jelly>

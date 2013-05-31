@@ -33,6 +33,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 
 /**
+ * For each matching property file, invoke a build.
  *
  * @author shoughton
  * @author Chris Johnson
