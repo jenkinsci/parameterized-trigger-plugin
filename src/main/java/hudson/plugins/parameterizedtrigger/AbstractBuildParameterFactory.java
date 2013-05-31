@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.ExtensionPoint;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.TaskListener;
@@ -11,7 +12,7 @@ import java.util.List;
  * Generates Build Parameters. These will can be used in the TriggerBuilder to trigger the same projects with many different
  * parameters.
  */
-public abstract class AbstractBuildParameterFactory extends AbstractDescribableImpl<AbstractBuildParameterFactory> {
+public abstract class AbstractBuildParameterFactory extends AbstractDescribableImpl<AbstractBuildParameterFactory> implements ExtensionPoint {
     /**
      * Let N be the length of the list returned by this method, and each item in this list X1, X2, X3, ... XN.
      *
