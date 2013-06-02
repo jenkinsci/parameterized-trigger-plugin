@@ -100,12 +100,6 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
     @Extension
     public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
         @Override
-        public synchronized void load() {
-            super.load();
-            addHelpFileRedirect("noFilesFoundAction", FileBuildParameterFactory.class, "noFilesFoundAction");
-        }
-
-        @Override
         public String getDisplayName() {
             return Messages.BinaryFileParameterFactory_DisplayName();
         }
