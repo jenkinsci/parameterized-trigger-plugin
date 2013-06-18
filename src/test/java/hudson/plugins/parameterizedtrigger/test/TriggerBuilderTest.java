@@ -23,8 +23,12 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import hudson.model.Project;
+import hudson.model.FreeStyleBuild;
 import hudson.model.Result;
+import hudson.model.Cause.UpstreamCause;
 import hudson.model.FreeStyleProject;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -32,6 +36,8 @@ import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.plugins.promoted_builds.PromotionProcess;
+import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
 import org.jvnet.hudson.test.Bug;
 
 import hudson.matrix.TextAxis;
@@ -40,18 +46,27 @@ import hudson.matrix.MatrixRun;
 import hudson.matrix.AxisList;
 
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.io.File;
 import java.io.IOException;
 
 import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.recipes.Recipe;
+import org.jvnet.hudson.test.recipes.WithPlugin;
+import org.jvnet.hudson.test.recipes.Recipe.Runner;
+
 import com.google.common.collect.ImmutableList;
 import hudson.model.Run;
-import java.io.IOException;
 import java.lang.System;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import jenkins.model.Jenkins;
 
 public class TriggerBuilderTest extends HudsonTestCase {
 
@@ -266,6 +281,157 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "project5 #[0-9] completed. Result was SUCCESS",
                 "project6 #[0-9] completed. Result was SUCCESS");
         }
+    }
+    
+    /**
+     * annotation to allow install multiple plugins.
+     * just trigger each WithPlugin annotation.
+     */
+    @Target(METHOD)
+    @Retention(RUNTIME)
+    @Recipe(WithPlugins.RunnerImpl.class)
+    public static @interface WithPlugins {
+        WithPlugin[] value();
+        public class RunnerImpl extends Recipe.Runner<WithPlugins> {
+            static private class WithPluginInfo {
+                WithPlugin plugin;
+                Runner<WithPlugin> runner;
+                
+                public WithPluginInfo(WithPlugin plugin, Runner<WithPlugin> runner)
+                {
+                    this.plugin = plugin;
+                    this.runner = runner;
+                }
+            }
+            private WithPlugins a;
+            private List<WithPluginInfo> recipes = new ArrayList<WithPluginInfo>();
+            
+            @Override
+            public void setup(HudsonTestCase testCase, WithPlugins recipe) throws Exception {
+                a = recipe;
+                for(WithPlugin plugin: a.value()) {
+                    Recipe r = plugin.annotationType().getAnnotation(Recipe.class);
+                    if(r==null)continue;
+                    @SuppressWarnings("unchecked")
+                    final Runner<WithPlugin> runner = (Runner<WithPlugin>)r.value().newInstance();
+                    recipes.add(new WithPluginInfo(plugin, runner));
+                    runner.setup(testCase,plugin);
+                }
+            }
+            
+            @Override
+            public void tearDown(HudsonTestCase testCase, WithPlugins recipe)
+                    throws Exception
+            {
+                for(WithPluginInfo info: recipes) {
+                    info.runner.tearDown(testCase, info.plugin);
+                }
+                super.tearDown(testCase, recipe);
+            }
+
+            @Override
+            public void decorateHome(HudsonTestCase testCase, File home) throws Exception {
+                for(WithPluginInfo info: recipes) {
+                    info.runner.decorateHome(testCase, home);
+                }
+            }
+        }
+    }
+    
+    @Bug(17751)
+    @WithPlugins({@WithPlugin("javadoc-1.0.hpi"), @WithPlugin("promoted-builds-2.10.hpi")})
+    public void testTriggerFromPromotion() throws Exception {
+        assertNotNull("promoted-builds must be installed.", Jenkins.getInstance().getPlugin("promoted-builds"));
+        // Test combination with PromotedBuilds.
+        // Assert that the original build can be tracked from triggered build.
+        // The configuration is as following:
+        // Project1 -> (built-in trigger) -> Project2
+        //          -> (promotion) -> Project1/Promotion/TRIGGER -> (Parameterrized Trigger) -> Project3
+        FreeStyleProject project1 = createFreeStyleProject();
+        FreeStyleProject project2 = createFreeStyleProject();
+        FreeStyleProject project3 = createFreeStyleProject();
+        
+        // project1 -> project2
+        project1.getPublishersList().add(new hudson.tasks.BuildTrigger(project2.getName(), "SUCCESS"));
+        
+        // promotion for project1.
+        hudson.plugins.promoted_builds.JobPropertyImpl promote = new hudson.plugins.promoted_builds.JobPropertyImpl(project1);
+        project1.addProperty(promote);
+        
+        // promotion process to trigger project3
+        PromotionProcess pp = promote.addProcess("TRIGGER");
+        pp.conditions.add(new DownstreamPassCondition(project2.getName()));
+        pp.getBuildSteps().add(new TriggerBuilder(createTriggerConfig(project3.getName())));
+        // When using built-in BuildTrigger, set up as following:
+        //pp.getBuildSteps().add(new hudson.tasks.BuildTrigger(project3.getName(), "SUCCESS"));
+        
+        // Are there any other ways to enable a new BuildTrigger?
+        Jenkins.getInstance().rebuildDependencyGraph();
+        
+        project1.scheduleBuild2(0);
+        
+        // wait for all builds finish
+        long timeout = 30000;
+        long till = System.currentTimeMillis() + timeout;
+        FreeStyleBuild project1_build = null;
+        FreeStyleBuild project2_build = null;
+        FreeStyleBuild project3_build = null;
+        
+        while(true) {
+            Thread.sleep(1000);
+            if(project1_build == null) {
+                project1_build = project1.getLastBuild();
+            }
+            if(project2_build == null) {
+                project2_build = project2.getLastBuild();
+            }
+            if(project3_build == null) {
+                project3_build = project3.getLastBuild();
+            }
+            if(project1_build != null && !project1_build.isBuilding()
+                    && project2_build != null && !project2_build.isBuilding()
+                    && project3_build != null && !project3_build.isBuilding()
+            ) {
+                break;
+            }
+            
+            if(System.currentTimeMillis() > till) {
+                // something not completed.
+                assertNotNull(
+                        String.format("Failed to trigger project1(%s)", project1.getName()),
+                        project1_build
+                );
+                assertFalse(
+                        String.format("project1(%s) does not finish.", project1.getName()),
+                        project1_build.isBuilding()
+                );
+                assertNotNull(
+                        String.format("Failed to trigger project2(%s)", project2.getName()),
+                        project2_build
+                );
+                assertFalse(
+                        String.format("project2(%s) does not finish.", project2.getName()),
+                        project2_build.isBuilding()
+                );
+                assertNotNull(
+                        String.format("Failed to trigger project3(%s)", project3.getName()),
+                        project3_build
+                );
+                assertFalse(
+                        String.format("project3(%s) does not finish.", project3.getName()),
+                        project3_build.isBuilding()
+                );
+                break;
+            }
+        }
+        
+        assertBuildStatusSuccess(project1_build);
+        assertBuildStatusSuccess(project2_build);
+        assertBuildStatusSuccess(project3_build);
+        
+        UpstreamCause c = project3_build.getCause(UpstreamCause.class);
+        assertNotNull(String.format("Failed to get UpstreamCause from project3(%s)", project3.getName()), c);
+        assertEquals("UpstreamCause is not properly set.", project1.getName(), c.getUpstreamProject());
     }
 
 
