@@ -125,11 +125,6 @@ public class Plugin extends hudson.Plugin {
             }
             
             
-            private boolean isConditionalBuildStepInstalled(){
-                final hudson.Plugin plugin = Jenkins.getInstance().getPlugin("conditional-buildstep");
-                return plugin != null ? plugin.getWrapper().isActive() : false;
-            }
-            
             /**
              * renames the project references within all {@link TriggerBuilder}s which are wrapped by a conditional buildsteps
              * @param p the project the check
@@ -219,5 +214,10 @@ public class Plugin extends hudson.Plugin {
                 return changed;
             }
             
+        }
+        
+        public static boolean isConditionalBuildStepInstalled(){
+            final hudson.Plugin plugin = Jenkins.getInstance().getPlugin("conditional-buildstep");
+            return plugin != null ? plugin.getWrapper().isActive() : false;
         }
 }
