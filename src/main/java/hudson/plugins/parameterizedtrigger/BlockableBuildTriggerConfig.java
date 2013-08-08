@@ -69,7 +69,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
 
                 // if we fail to add the item to the queue, wait and retry.
                 // it also means we have to force quiet period = 0, or else it'll never leave the queue
-                Future f = super.schedule(build, project, 0, list);
+                Future f = schedule(build, project, 0, list);
                 //when a project is disabled or the configuration is not yet saved f will always be null and we'ure caught in a loop, therefore we need to check for it
                 if (f!=null || (f==null && !project.isBuildable())){
                     return f;
