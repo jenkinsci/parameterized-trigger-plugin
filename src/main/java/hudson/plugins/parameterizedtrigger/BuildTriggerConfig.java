@@ -44,14 +44,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.concurrent.Future;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
@@ -140,123 +138,107 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	}
 
     /**
-     * Provides a list containing four set, each containing projects to be displayed on the project view
-     * for projects using the parameterized trigger plugin under 'Subprojects'.<br>
+     * Provides a SubProjectData object containing four set, each containing projects to be displayed on the project
+     * view under 'Subprojects' section.<br>
      * <li>
-     * The first set contains statically configured project to trigger.
+     * The first set contains fixed (statically) configured project to be trigger.
      * The second set contains dynamically configured project, resolved by back tracking builds environment variables.
-     * The third set contains other triggered project found during back tracking builds
-     * The fourth set contains project that couldn't be resolved or project that doesn't exists.
+     * The third set contains other recently triggered project found during back tracking builds
+     * The fourth set contains dynamically configured project that couldn't be resolved or project that doesn't exists.
      * </li>
      *
-     * @param context The container with which to resolve relative project names.
-     * @return A list containing sets with Projects
+     * @param context   The container with which to resolve relative project names.
+     * @return A data object containing sets with projects
      */
-    public List<Set<?>> getProjectInfo(AbstractProject context) {
+    public SubProjectData getProjectInfo(AbstractProject context) {
 
-        Comparator customComparator = new Comparator<AbstractProject>() {
-            public int compare(AbstractProject abstractProject1, AbstractProject abstractProject2) {
-                return abstractProject1.getFullName().compareTo(abstractProject2.getFullName());
-            }
-        };
+        SubProjectData subProjectData = new SubProjectData();
 
-        Set<AbstractProject> dynamicProject = new TreeSet<AbstractProject>(customComparator);
-        Set<AbstractProject> staticProject = new TreeSet<AbstractProject>(customComparator);
-        Set<AbstractProject> triggeredProject = new TreeSet<AbstractProject>(customComparator);
-        Set<String> unresolvedProject = new TreeSet<String>();
-
-        iterateBuilds(context, projects, dynamicProject, staticProject, triggeredProject, unresolvedProject);
+        iterateBuilds(context, projects, subProjectData);
 
         // We don't want to show a project twice
-        triggeredProject.removeAll(dynamicProject);
-        triggeredProject.removeAll(staticProject);
+        subProjectData.getTriggered().removeAll(subProjectData.getDynamic());
+        subProjectData.getTriggered().removeAll(subProjectData.getFixed());
 
-        return Arrays.asList(staticProject, dynamicProject, triggeredProject, unresolvedProject);
+        return subProjectData;
     }
 
     /**
-     * Resolves static project and iterating old builds to resolve dynamic builds and collecting triggered builds.<br>
+     * Resolves fixed (static) project and iterating old builds to resolve dynamic and collecting triggered
+     * projects.<br>
      * <br>
-     * If static defined project and/or unresolved projects exists they are returned. If old builds exists it tries
-     * to resolve them by back tracking the last five builds and as a last resource the last successful build.<br>
+     * If fixed project and/or resolved projects exists they are returned in fixed or dynamic in subProjectData.
+     * If old builds exists it tries to resolve projects by back tracking the last five builds and as a last resource
+     * the last successful build.<br>
      * <br>
-     * During the back tracking process all actually trigger projects from those builds are also collected.<br>
+     * During the back tracking process all actually trigger projects from those builds are also collected and stored
+     * in triggered in subProjectData.<br>
      * <br>
      *
-     * @param context              The container with which to resolve relative project names.
-     * @param projects             String containing the defined projects to build
-     * @param dynamicProjectSet    A Set where to add dynamic project
-     * @param staticProjectSet     A Set where to add static project
-     * @param triggeredProjectSet  A Set where to add triggered project
-     * @param unsolvedProjectNames A Set where to add unsolved project
+     * @param context           The container with which to resolve relative project names.
+     * @param projects          String containing the defined projects to build
+     * @param subProjectData    Data object containing sets storing projects
      */
-    private static void iterateBuilds(AbstractProject context, String projects,
-                                      Set<AbstractProject> dynamicProjectSet, Set<AbstractProject> staticProjectSet,
-                                      Set<AbstractProject> triggeredProjectSet, Set<String> unsolvedProjectNames) {
+    private static void iterateBuilds(AbstractProject context, String projects, SubProjectData subProjectData) {
 
         StringTokenizer stringTokenizer = new StringTokenizer(projects, ",");
         while (stringTokenizer.hasMoreTokens()) {
-            unsolvedProjectNames.add(stringTokenizer.nextToken().trim());
+            subProjectData.getUnresolved().add(stringTokenizer.nextToken().trim());
         }
 
         // Nbr of builds to back track
         final int BACK_TRACK = 5;
 
-        if (!unsolvedProjectNames.isEmpty()) {
+        if (!subProjectData.getUnresolved().isEmpty()) {
 
             AbstractBuild currentBuild = (AbstractBuild)context.getLastBuild();
 
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
                 // But we can still get statically defined project
-                staticProjectSet.addAll(Items.fromNameList(context.getParent(), projects, AbstractProject.class));
+                subProjectData.getFixed().addAll(Items.fromNameList(context.getParent(), projects, AbstractProject.class));
                 // Remove them from unsolved
-                for (AbstractProject staticProject : staticProjectSet) {
-                    unsolvedProjectNames.remove(staticProject.getFullName());
+                for (AbstractProject staticProject : subProjectData.getFixed()) {
+                    subProjectData.getUnresolved().remove(staticProject.getFullName());
                 }
                 return;
             }
 
             // check the last build
-            resolveProject(currentBuild, dynamicProjectSet, staticProjectSet, triggeredProjectSet, unsolvedProjectNames);
+            resolveProject(currentBuild, subProjectData);
             currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
 
             int backTrackCount = 0;
             // as long we have more builds to examine we continue,
             while (currentBuild != null && backTrackCount < BACK_TRACK) {
-                resolveProject(currentBuild, dynamicProjectSet, staticProjectSet, triggeredProjectSet, unsolvedProjectNames);
+                resolveProject(currentBuild, subProjectData);
                 currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
                 backTrackCount++;
             }
 
             // If oldBuild is null then we have already examined LastSuccessfulBuild as well.
             if (currentBuild != null) {
-                resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), dynamicProjectSet, staticProjectSet, triggeredProjectSet, unsolvedProjectNames);
+                resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), subProjectData);
             }
         }
     }
 
     /**
      * Retrieves the environment variable from a build and tries to resolves the remaining unresolved projects. If
-     * resolved it ends up either in the dynamic or static Set of project. It also collect all actually triggered
-     * project and store them in a Set.
+     * resolved it ends up either in the dynamic or fixed in subProjectData. It also collect all actually triggered
+     * project and store them in triggered in subProjectData.
      *
-     * @param build                The build to retrieve environment variables from and collect triggered projects
-     * @param dynamicProjectSet    A Set where to add dynamic project
-     * @param staticProjectSet     A Set where to add static project
-     * @param triggeredProjectSet  A Set where to add triggered project
-     * @param unsolvedProjectNames A Set where to add unsolved project
+     * @param build             The build to retrieve environment variables from and collect triggered projects
+     * @param subProjectData    Data object containing sets storing projects
      */
-    private static void resolveProject(AbstractBuild build,
-                                       Set<AbstractProject> dynamicProjectSet, Set<AbstractProject> staticProjectSet,
-                                       Set<AbstractProject> triggeredProjectSet, Set<String> unsolvedProjectNames) {
+    private static void resolveProject(AbstractBuild build, SubProjectData subProjectData) {
 
-        Iterator<String> unsolvedProjectIterator = unsolvedProjectNames.iterator();
+        Iterator<String> unsolvedProjectIterator = subProjectData.getUnresolved().iterator();
 
         while (unsolvedProjectIterator.hasNext()) {
 
             String unresolvedProjectName = unsolvedProjectIterator.next();
-            Set<AbstractProject> destinationSet = staticProjectSet;
+            Set<AbstractProject> destinationSet = subProjectData.getFixed();
 
             // expand variables if applicable
             if (unresolvedProjectName.contains("$")) {
@@ -269,7 +251,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
 
                 unresolvedProjectName = env != null ? env.expand(unresolvedProjectName) : unresolvedProjectName;
-                destinationSet = dynamicProjectSet;
+                destinationSet = subProjectData.getDynamic();
             }
 
             AbstractProject resolvedProject = Jenkins.getInstance().getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
@@ -281,7 +263,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         if (build != null && build.getAction(BuildInfoExporterAction.class) != null) {
             String triggeredProjects = build.getAction(BuildInfoExporterAction.class).getProjectListString(",");
-            triggeredProjectSet.addAll(Items.fromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
+            subProjectData.getTriggered().addAll(Items.fromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
         }
     }
 

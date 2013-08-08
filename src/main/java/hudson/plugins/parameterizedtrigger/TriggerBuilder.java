@@ -74,7 +74,7 @@ public class TriggerBuilder extends Builder {
 
     @Override
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-                           BuildListener listener) throws InterruptedException, IOException {
+            BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
@@ -84,7 +84,7 @@ public class TriggerBuilder extends Builder {
             for (BlockableBuildTriggerConfig config : configs) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
                 // Only contains resolved projects
-                List<AbstractProject> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(), env);
+                List<AbstractProject> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(),env);
 
                 // Get the actual defined projects
                 StringTokenizer tokenizer = new StringTokenizer(config.getProjects(), ",");
@@ -115,9 +115,9 @@ public class TriggerBuilder extends Builder {
                     throw new AbortException("Build aborted. Can't trigger undefined projects. "+nbrOfResolved+" of the below project(s) can't be resolved:\n" + missingProject.toString() + "Check your configuration!");
                 } else {
                     //handle non-blocking configs
-                    if (futures.isEmpty()) {
+                    if(futures.isEmpty()){
                         listener.getLogger().println("Triggering projects: " + getProjectListAsString(projectList));
-                        for (AbstractProject p : projectList) {
+                        for(AbstractProject p : projectList) {
                             BuildInfoExporterAction.addBuildInfoExporterAction(build, p.getFullName());
                         }
                         continue;
@@ -125,24 +125,24 @@ public class TriggerBuilder extends Builder {
                     //handle blocking configs
                     for (AbstractProject p : projectList) {
                         //handle non-buildable projects
-                        if (!p.isBuildable()) {
-                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/' + p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
+                        if(!p.isBuildable()){
+                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
                             continue;
                         }
                         for (Future<AbstractBuild> future : futures.get(p)) {
                             try {
-                                listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/' + p.getUrl(), p.getFullDisplayName()));
+                                listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                                 AbstractBuild b = future.get();
-                                listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
+                                listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
                                 BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getProject().getFullName(), b.getNumber(), b.getResult());
 
-                                if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
+                                if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                     build.setResult(config.getBlock().mapBuildResult(b.getResult()));
                                 } else {
                                     buildStepResult = false;
                                 }
                             } catch (CancellationException x) {
-                                throw new AbortException(p.getFullDisplayName() + " aborted.");
+                                throw new AbortException(p.getFullDisplayName() +" aborted.");
                             }
                         }
                     }
