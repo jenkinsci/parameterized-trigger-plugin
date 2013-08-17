@@ -9,7 +9,7 @@
 
     <artifactId>parameterized-trigger</artifactId>
     <packaging>hpi</packaging>
-    <version>2.19-SNAPSHOT</version>
+    <version>2.20-SNAPSHOT</version>
     <name>Jenkins Parameterized Trigger plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin</url>
 
@@ -29,6 +29,12 @@
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>subversion</artifactId>
             <version>1.25</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>promoted-builds</artifactId>
+            <version>2.10</version>
             <optional>true</optional>
         </dependency>
         <dependency>

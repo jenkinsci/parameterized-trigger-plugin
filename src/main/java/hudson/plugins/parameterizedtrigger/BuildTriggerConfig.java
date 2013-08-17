@@ -13,6 +13,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
+import hudson.model.Cause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -28,6 +29,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
+import hudson.plugins.promoted_builds.Promotion;
 import hudson.tasks.Messages;
 import hudson.util.FormValidation;
 
@@ -42,24 +44,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.concurrent.Future;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
-	private final List<AbstractBuildParameters> configs;
+    private final List<AbstractBuildParameters> configs;
     private final List<AbstractBuildParameterFactory> configFactories;
 
-	private String projects;
-	private final ResultCondition condition;
-	private boolean triggerWithNoParameters;
+    private String projects;
+    private final ResultCondition condition;
+    private boolean triggerWithNoParameters;
 
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
@@ -76,34 +76,34 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         this(projects, condition, triggerWithNoParameters, null, configs);
     }
 
-	public BuildTriggerConfig(String projects, ResultCondition condition,
-			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
-	}
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            AbstractBuildParameters... configs) {
+        this(projects, condition, false, null, Arrays.asList(configs));
+    }
 
-	public BuildTriggerConfig(String projects, ResultCondition condition,
+    public BuildTriggerConfig(String projects, ResultCondition condition,
             List<AbstractBuildParameterFactory> configFactories,
-			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
-	}
+            AbstractBuildParameters... configs) {
+        this(projects, condition, false, configFactories, Arrays.asList(configs));
+    }
 
-	public List<AbstractBuildParameters> getConfigs() {
-		return configs;
-	}
+    public List<AbstractBuildParameters> getConfigs() {
+        return configs;
+    }
 
     public List<AbstractBuildParameterFactory> getConfigFactories() {
         return configFactories;
     }
 
     public String getProjects() {
-		return projects;
-	}
+        return projects;
+    }
 
-	public ResultCondition getCondition() {
-		return condition;
-	}
+    public ResultCondition getCondition() {
+        return condition;
+    }
 
-	public boolean getTriggerWithNoParameters() {
+    public boolean getTriggerWithNoParameters() {
         return triggerWithNoParameters;
     }
 
@@ -120,7 +120,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param context
      *      The container with which to resolve relative project names.
      */
-	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
+    public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
         List<AbstractProject> projectList = new ArrayList<AbstractProject>();
 
         // expand variables if applicable
@@ -134,127 +134,111 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
 
         projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
-		return projectList;
-	}
-
-	private static final Comparator PROJECT_NAME_COMPARATOR = new Comparator<AbstractProject>() {
-        public int compare(AbstractProject abstractProject1, AbstractProject abstractProject2) {
-            return abstractProject1.getFullName().compareTo(abstractProject2.getFullName());
-        }
-    };
-	
-    /**
-     * Provides a list containing four set, each containing projects to be displayed on the project view
-     * for projects using the parameterized trigger plugin under 'Subprojects'.<br>
-     * <li>
-     * The first set contains statically configured project to trigger.
-     * The second set contains dynamically configured project, resolved by back tracking builds environment variables.
-     * The third set contains other triggered project found during back tracking builds
-     * The fourth set contains project that couldn't be resolved or project that doesn't exists.
-     * </li>
-     *
-     * @param context The container with which to resolve relative project names.
-     * @return A list containing sets with Projects
-     */
-    public List<Set<?>> getProjectInfo(AbstractProject context) {
-
-        Set<AbstractProject> dynamicProject = new TreeSet<AbstractProject>(PROJECT_NAME_COMPARATOR);
-        Set<AbstractProject> staticProject = new TreeSet<AbstractProject>(PROJECT_NAME_COMPARATOR);
-        Set<AbstractProject> triggeredProject = new TreeSet<AbstractProject>(PROJECT_NAME_COMPARATOR);
-        Set<String> unresolvedProject = new TreeSet<String>();
-
-        iterateBuilds(context, projects, dynamicProject, staticProject, triggeredProject, unresolvedProject);
-
-        // We don't want to show a project twice
-        triggeredProject.removeAll(dynamicProject);
-        triggeredProject.removeAll(staticProject);
-
-        return Arrays.asList(staticProject, dynamicProject, triggeredProject, unresolvedProject);
+        return projectList;
     }
 
     /**
-     * Resolves static project and iterating old builds to resolve dynamic builds and collecting triggered builds.<br>
+     * Provides a SubProjectData object containing four set, each containing projects to be displayed on the project
+     * view under 'Subprojects' section.<br>
+     * <li>
+     * The first set contains fixed (statically) configured project to be trigger.
+     * The second set contains dynamically configured project, resolved by back tracking builds environment variables.
+     * The third set contains other recently triggered project found during back tracking builds
+     * The fourth set contains dynamically configured project that couldn't be resolved or project that doesn't exists.
+     * </li>
+     *
+     * @param context   The container with which to resolve relative project names.
+     * @return A data object containing sets with projects
+     */
+    public SubProjectData getProjectInfo(AbstractProject context) {
+
+        SubProjectData subProjectData = new SubProjectData();
+
+        iterateBuilds(context, projects, subProjectData);
+
+        // We don't want to show a project twice
+        subProjectData.getTriggered().removeAll(subProjectData.getDynamic());
+        subProjectData.getTriggered().removeAll(subProjectData.getFixed());
+
+        return subProjectData;
+    }
+
+    /**
+     * Resolves fixed (static) project and iterating old builds to resolve dynamic and collecting triggered
+     * projects.<br>
      * <br>
-     * If static defined project and/or unresolved projects exists they are returned. If old builds exists it tries
-     * to resolve them by back tracking the last five builds and as a last resource the last successful build.<br>
+     * If fixed project and/or resolved projects exists they are returned in fixed or dynamic in subProjectData.
+     * If old builds exists it tries to resolve projects by back tracking the last five builds and as a last resource
+     * the last successful build.<br>
      * <br>
-     * During the back tracking process all actually trigger projects from those builds are also collected.<br>
+     * During the back tracking process all actually trigger projects from those builds are also collected and stored
+     * in triggered in subProjectData.<br>
      * <br>
      *
-     * @param context              The container with which to resolve relative project names.
-     * @param projects             String containing the defined projects to build
-     * @param dynamicProjectSet    A Set where to add dynamic project
-     * @param staticProjectSet     A Set where to add static project
-     * @param triggeredProjectSet  A Set where to add triggered project
-     * @param unsolvedProjectNames A Set where to add unsolved project
+     * @param context           The container with which to resolve relative project names.
+     * @param projects          String containing the defined projects to build
+     * @param subProjectData    Data object containing sets storing projects
      */
-    private static void iterateBuilds(AbstractProject context, String projects,
-                                      Set<AbstractProject> dynamicProjectSet, Set<AbstractProject> staticProjectSet,
-                                      Set<AbstractProject> triggeredProjectSet, Set<String> unsolvedProjectNames) {
+    private static void iterateBuilds(AbstractProject context, String projects, SubProjectData subProjectData) {
 
         StringTokenizer stringTokenizer = new StringTokenizer(projects, ",");
         while (stringTokenizer.hasMoreTokens()) {
-            unsolvedProjectNames.add(stringTokenizer.nextToken().trim());
+            subProjectData.getUnresolved().add(stringTokenizer.nextToken().trim());
         }
 
         // Nbr of builds to back track
         final int BACK_TRACK = 5;
 
-        if (!unsolvedProjectNames.isEmpty()) {
+        if (!subProjectData.getUnresolved().isEmpty()) {
 
             AbstractBuild currentBuild = (AbstractBuild)context.getLastBuild();
 
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
                 // But we can still get statically defined project
-                staticProjectSet.addAll(Items.fromNameList(context.getParent(), projects, AbstractProject.class));
+                subProjectData.getFixed().addAll(Items.fromNameList(context.getParent(), projects, AbstractProject.class));
                 // Remove them from unsolved
-                for (AbstractProject staticProject : staticProjectSet) {
-                    unsolvedProjectNames.remove(staticProject.getFullName());
+                for (AbstractProject staticProject : subProjectData.getFixed()) {
+                    subProjectData.getUnresolved().remove(staticProject.getFullName());
                 }
                 return;
             }
 
             // check the last build
-            resolveProject(currentBuild, dynamicProjectSet, staticProjectSet, triggeredProjectSet, unsolvedProjectNames);
+            resolveProject(currentBuild, subProjectData);
             currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
 
             int backTrackCount = 0;
             // as long we have more builds to examine we continue,
             while (currentBuild != null && backTrackCount < BACK_TRACK) {
-                resolveProject(currentBuild, dynamicProjectSet, staticProjectSet, triggeredProjectSet, unsolvedProjectNames);
+                resolveProject(currentBuild, subProjectData);
                 currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
                 backTrackCount++;
             }
 
             // If oldBuild is null then we have already examined LastSuccessfulBuild as well.
             if (currentBuild != null) {
-                resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), dynamicProjectSet, staticProjectSet, triggeredProjectSet, unsolvedProjectNames);
+                resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), subProjectData);
             }
         }
     }
 
     /**
      * Retrieves the environment variable from a build and tries to resolves the remaining unresolved projects. If
-     * resolved it ends up either in the dynamic or static Set of project. It also collect all actually triggered
-     * project and store them in a Set.
+     * resolved it ends up either in the dynamic or fixed in subProjectData. It also collect all actually triggered
+     * project and store them in triggered in subProjectData.
      *
-     * @param build                The build to retrieve environment variables from and collect triggered projects
-     * @param dynamicProjectSet    A Set where to add dynamic project
-     * @param staticProjectSet     A Set where to add static project
-     * @param triggeredProjectSet  A Set where to add triggered project
-     * @param unsolvedProjectNames A Set where to add unsolved project
+     * @param build             The build to retrieve environment variables from and collect triggered projects
+     * @param subProjectData    Data object containing sets storing projects
      */
-    private static void resolveProject(AbstractBuild build,
-                                       Set<AbstractProject> dynamicProjectSet, Set<AbstractProject> staticProjectSet,
-                                       Set<AbstractProject> triggeredProjectSet, Set<String> unsolvedProjectNames) {
+    private static void resolveProject(AbstractBuild build, SubProjectData subProjectData) {
 
-        Iterator<String> unsolvedProjectIterator = unsolvedProjectNames.iterator();
+        Iterator<String> unsolvedProjectIterator = subProjectData.getUnresolved().iterator();
 
         while (unsolvedProjectIterator.hasNext()) {
 
             String unresolvedProjectName = unsolvedProjectIterator.next();
-            Set<AbstractProject> destinationSet = staticProjectSet;
+            Set<AbstractProject> destinationSet = subProjectData.getFixed();
 
             // expand variables if applicable
             if (unresolvedProjectName.contains("$")) {
@@ -267,7 +251,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
 
                 unresolvedProjectName = env != null ? env.expand(unresolvedProjectName) : unresolvedProjectName;
-                destinationSet = dynamicProjectSet;
+                destinationSet = subProjectData.getDynamic();
             }
 
             AbstractProject resolvedProject = Jenkins.getInstance().getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
@@ -279,33 +263,33 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         if (build != null && build.getAction(BuildInfoExporterAction.class) != null) {
             String triggeredProjects = build.getAction(BuildInfoExporterAction.class).getProjectListString(",");
-            triggeredProjectSet.addAll(Items.fromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
+            subProjectData.getTriggered().addAll(Items.fromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
         }
     }
 
-	private static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
-		LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
-		for (ParameterValue param : base.getParameters())
-			params.put(param.getName(), param);
-		for (ParameterValue param : overlay.getParameters())
-			params.put(param.getName(), param);
-		return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
-	}
+    private static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
+        LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
+        for (ParameterValue param : base.getParameters())
+            params.put(param.getName(), param);
+        for (ParameterValue param : overlay.getParameters())
+            params.put(param.getName(), param);
+        return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
+    }
 
-	private static ParametersAction getDefaultParameters(AbstractProject<?,?> project) {
-		ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
-		if (property == null) {
-			return null;
-		}
+    private static ParametersAction getDefaultParameters(AbstractProject<?,?> project) {
+        ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
+        if (property == null) {
+            return null;
+        }
 
-		List<ParameterValue> parameters = new ArrayList<ParameterValue>();
-		for (ParameterDefinition pd : property.getParameterDefinitions()) {
-			ParameterValue param = pd.getDefaultParameterValue();
-			if (param != null) parameters.add(param);
-		}
+        List<ParameterValue> parameters = new ArrayList<ParameterValue>();
+        for (ParameterDefinition pd : property.getParameterDefinitions()) {
+            ParameterValue param = pd.getDefaultParameterValue();
+            if (param != null) parameters.add(param);
+        }
 
-		return new ParametersAction(parameters);
-	}
+        return new ParametersAction(parameters);
+    }
 
     List<Action> getBaseActions(AbstractBuild<?,?> build, TaskListener listener)
             throws IOException, InterruptedException, DontTriggerException {
@@ -314,49 +298,49 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     List<Action> getBaseActions(Collection<AbstractBuildParameters> configs, AbstractBuild<?,?> build, TaskListener listener)
             throws IOException, InterruptedException, DontTriggerException {
-		List<Action> actions = new ArrayList<Action>();
-		ParametersAction params = null;
-		for (AbstractBuildParameters config : configs) {
-			Action a = config.getAction(build, listener);
-			if (a instanceof ParametersAction) {
-				params = params == null ? (ParametersAction)a
-					: mergeParameters(params, (ParametersAction)a);
-			} else if (a != null) {
-				actions.add(a);
-			}
-		}
-		if (params != null) actions.add(params);
-		return actions;
-	}
+        List<Action> actions = new ArrayList<Action>();
+        ParametersAction params = null;
+        for (AbstractBuildParameters config : configs) {
+            Action a = config.getAction(build, listener);
+            if (a instanceof ParametersAction) {
+                params = params == null ? (ParametersAction)a
+                    : mergeParameters(params, (ParametersAction)a);
+            } else if (a != null) {
+                actions.add(a);
+            }
+        }
+        if (params != null) actions.add(params);
+        return actions;
+    }
 
-	List<Action> getBuildActions(List<Action> baseActions, AbstractProject project) {
-		List<Action> actions = new ArrayList<Action>(baseActions);
+    List<Action> getBuildActions(List<Action> baseActions, AbstractProject project) {
+        List<Action> actions = new ArrayList<Action>(baseActions);
 
-		ParametersAction defaultParameters = getDefaultParameters(project);
-		if (defaultParameters != null) {
-			Action a = null;
-			for (ListIterator<Action> it = actions.listIterator(); it.hasNext();)
-				if ((a = it.next()) instanceof ParametersAction) {
-					it.set(mergeParameters(defaultParameters, (ParametersAction)a));
-					break;
+        ParametersAction defaultParameters = getDefaultParameters(project);
+        if (defaultParameters != null) {
+            Action a = null;
+            for (ListIterator<Action> it = actions.listIterator(); it.hasNext();)
+                if ((a = it.next()) instanceof ParametersAction) {
+                    it.set(mergeParameters(defaultParameters, (ParametersAction)a));
+                    break;
                                 }
-			if (!(a instanceof ParametersAction))
-				actions.add(defaultParameters);
-		}
-		return actions;
-	}
+            if (!(a instanceof ParametersAction))
+                actions.add(defaultParameters);
+        }
+        return actions;
+    }
 
-	/**
+    /**
      * Note that with Hudson 1.341, trigger should be using
-	 * {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)}.
-	 */
-	public List<Future<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
+     * {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)}.
+     */
+    public List<Future<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
         try {
-			if (condition.isMet(build.getResult())) {
+            if (condition.isMet(build.getResult())) {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
@@ -371,12 +355,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
 
                 return futures;
-			}
-		} catch (DontTriggerException e) {
-			// don't trigger on this configuration
-		}
+            }
+        } catch (DontTriggerException e) {
+            // don't trigger on this configuration
+        }
         return Collections.emptyList();
-	}
+    }
 
     public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
@@ -435,37 +419,66 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
     }
 
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
-        return project.scheduleBuild2(project.getQuietPeriod(),
-                new UpstreamCause((Run) build),
+    /**
+     * Create UpstreamCause that triggers a downstream build.
+     * 
+     * If the upstream build is a promotion, return the UpstreamCause
+     * as triggered by the target of the promotion.
+     * 
+     * @param build an upstream build
+     * @return UpstreamCause
+     */
+    protected Cause createUpstreamCause(AbstractBuild<?, ?> build) {
+        if(Jenkins.getInstance().getPlugin("promoted-builds") != null) {
+            // Test only when promoted-builds is installed.
+            if(build instanceof Promotion) {
+                Promotion promotion = (Promotion)build;
+                
+                // This cannot be done for PromotionCause#PromotionCause is in a package scope.
+                // return new PromotionCause(build, promotion.getTarget());
+                
+                return new UpstreamCause((Run<?,?>)promotion.getTarget());
+            }
+        }
+        return new UpstreamCause((Run) build);
+    }
+
+    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
+        Cause cause = createUpstreamCause(build);
+        return project.scheduleBuild2(quietPeriod,
+                cause,
                 list.toArray(new Action[list.size()]));
     }
 
+    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
+        return schedule(build, project, project.getQuietPeriod(), list);
+    }
+
     public boolean onJobRenamed(String oldName, String newName) {
-    	boolean changed = false;
-    	String[] list = projects.split(",");
-    	for (int i = 0; i < list.length; i++) {
-    		if (list[i].trim().equals(oldName)) {
-    			list[i] = newName;
-    			changed = true;
-    		}
-    	}
-    	if (changed) {
-    		StringBuilder buf = new StringBuilder();
-    		for (int i = 0; i < list.length; i++) {
-    			if (list[i] == null) continue;
-    			if (buf.length() > 0){
-    				buf.append(',');
-    			}
-    			buf.append(list[i]);
-    		}
-    		projects = buf.toString();
-    	}
-    	return changed;
+        boolean changed = false;
+        String[] list = projects.split(",");
+        for (int i = 0; i < list.length; i++) {
+            if (list[i].trim().equals(oldName)) {
+                list[i] = newName;
+                changed = true;
+            }
+        }
+        if (changed) {
+            StringBuilder buf = new StringBuilder();
+            for (int i = 0; i < list.length; i++) {
+                if (list[i] == null) continue;
+                if (buf.length() > 0){
+                    buf.append(',');
+                }
+                buf.append(list[i]);
+            }
+            projects = buf.toString();
+        }
+        return changed;
     }
 
     public boolean onDeleted(String oldName) {
-    	return onJobRenamed(oldName, null);
+        return onJobRenamed(oldName, null);
     }
 
     public Descriptor<BuildTriggerConfig> getDescriptor() {
@@ -473,10 +486,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     @Override
-	public String toString() {
-		return getClass().getName()+" [projects=" + projects + ", condition="
-				+ condition + ", configs=" + configs + "]";
-	}
+    public String toString() {
+        return getClass().getName()+" [projects=" + projects + ", condition="
+                + condition + ", configs=" + configs + "]";
+    }
 
     @Extension
     public static class DescriptorImpl extends Descriptor<BuildTriggerConfig> {
@@ -503,14 +516,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         public FormValidation doCheckProjects(@AncestorInPath Item project, @QueryParameter String value ) {
             // Require CONFIGURE permission on this project
             if(!project.hasPermission(Item.CONFIGURE)){
-            	return FormValidation.ok();
+                return FormValidation.ok();
             }
             StringTokenizer tokens = new StringTokenizer(Util.fixNull(value),",");
             boolean hasProjects = false;
             while(tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
                 if (StringUtils.isNotBlank(projectName)) {
-                	Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
+                    Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
                     if(item==null){
                         return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName,AbstractProject.findNearest(projectName).getName()));
                     }
@@ -521,8 +534,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
             }
             if (!hasProjects) {
-//            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
-            	return FormValidation.error("No project specified");
+//              return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
+                return FormValidation.error("No project specified");
             }
 
             return FormValidation.ok();
