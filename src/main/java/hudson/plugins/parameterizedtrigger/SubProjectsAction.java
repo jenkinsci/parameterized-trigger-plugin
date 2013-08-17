@@ -1,10 +1,12 @@
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.ImmutableList;
-import hudson.model.AbstractProject;
 import hudson.model.Action;
+import hudson.model.AbstractProject;
 
 import java.util.List;
+
+import com.google.common.collect.ImmutableList;
+
 /**
  * Action added Projects to track what projects are
  * were triggered from the trigger builds on other projects buildstep.
@@ -57,4 +59,5 @@ public class SubProjectsAction implements Action {
     private boolean isFirst() {
         return project.getAction(SubProjectsAction.class) == this;
     }
+    
 }

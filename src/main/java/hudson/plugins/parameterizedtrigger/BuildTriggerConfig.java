@@ -54,12 +54,12 @@ import java.util.concurrent.Future;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
-	private final List<AbstractBuildParameters> configs;
+    private final List<AbstractBuildParameters> configs;
     private final List<AbstractBuildParameterFactory> configFactories;
 
-	private String projects;
-	private final ResultCondition condition;
-	private boolean triggerWithNoParameters;
+    private String projects;
+    private final ResultCondition condition;
+    private boolean triggerWithNoParameters;
 
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
@@ -76,34 +76,34 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         this(projects, condition, triggerWithNoParameters, null, configs);
     }
 
-	public BuildTriggerConfig(String projects, ResultCondition condition,
-			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
-	}
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            AbstractBuildParameters... configs) {
+        this(projects, condition, false, null, Arrays.asList(configs));
+    }
 
-	public BuildTriggerConfig(String projects, ResultCondition condition,
+    public BuildTriggerConfig(String projects, ResultCondition condition,
             List<AbstractBuildParameterFactory> configFactories,
-			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
-	}
+            AbstractBuildParameters... configs) {
+        this(projects, condition, false, configFactories, Arrays.asList(configs));
+    }
 
-	public List<AbstractBuildParameters> getConfigs() {
-		return configs;
-	}
+    public List<AbstractBuildParameters> getConfigs() {
+        return configs;
+    }
 
     public List<AbstractBuildParameterFactory> getConfigFactories() {
         return configFactories;
     }
 
     public String getProjects() {
-		return projects;
-	}
+        return projects;
+    }
 
-	public ResultCondition getCondition() {
-		return condition;
-	}
+    public ResultCondition getCondition() {
+        return condition;
+    }
 
-	public boolean getTriggerWithNoParameters() {
+    public boolean getTriggerWithNoParameters() {
         return triggerWithNoParameters;
     }
 
@@ -120,7 +120,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param context
      *      The container with which to resolve relative project names.
      */
-	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
+    public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
         List<AbstractProject> projectList = new ArrayList<AbstractProject>();
 
         // expand variables if applicable
@@ -134,8 +134,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
 
         projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
-		return projectList;
-	}
+        return projectList;
+    }
 
     /**
      * Provides a SubProjectData object containing four set, each containing projects to be displayed on the project
@@ -267,29 +267,29 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
     }
 
-	private static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
-		LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
-		for (ParameterValue param : base.getParameters())
-			params.put(param.getName(), param);
-		for (ParameterValue param : overlay.getParameters())
-			params.put(param.getName(), param);
-		return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
-	}
+    private static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
+        LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
+        for (ParameterValue param : base.getParameters())
+            params.put(param.getName(), param);
+        for (ParameterValue param : overlay.getParameters())
+            params.put(param.getName(), param);
+        return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
+    }
 
-	private static ParametersAction getDefaultParameters(AbstractProject<?,?> project) {
-		ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
-		if (property == null) {
-			return null;
-		}
+    private static ParametersAction getDefaultParameters(AbstractProject<?,?> project) {
+        ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
+        if (property == null) {
+            return null;
+        }
 
-		List<ParameterValue> parameters = new ArrayList<ParameterValue>();
-		for (ParameterDefinition pd : property.getParameterDefinitions()) {
-			ParameterValue param = pd.getDefaultParameterValue();
-			if (param != null) parameters.add(param);
-		}
+        List<ParameterValue> parameters = new ArrayList<ParameterValue>();
+        for (ParameterDefinition pd : property.getParameterDefinitions()) {
+            ParameterValue param = pd.getDefaultParameterValue();
+            if (param != null) parameters.add(param);
+        }
 
-		return new ParametersAction(parameters);
-	}
+        return new ParametersAction(parameters);
+    }
 
     List<Action> getBaseActions(AbstractBuild<?,?> build, TaskListener listener)
             throws IOException, InterruptedException, DontTriggerException {
@@ -298,49 +298,49 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     List<Action> getBaseActions(Collection<AbstractBuildParameters> configs, AbstractBuild<?,?> build, TaskListener listener)
             throws IOException, InterruptedException, DontTriggerException {
-		List<Action> actions = new ArrayList<Action>();
-		ParametersAction params = null;
-		for (AbstractBuildParameters config : configs) {
-			Action a = config.getAction(build, listener);
-			if (a instanceof ParametersAction) {
-				params = params == null ? (ParametersAction)a
-					: mergeParameters(params, (ParametersAction)a);
-			} else if (a != null) {
-				actions.add(a);
-			}
-		}
-		if (params != null) actions.add(params);
-		return actions;
-	}
+        List<Action> actions = new ArrayList<Action>();
+        ParametersAction params = null;
+        for (AbstractBuildParameters config : configs) {
+            Action a = config.getAction(build, listener);
+            if (a instanceof ParametersAction) {
+                params = params == null ? (ParametersAction)a
+                    : mergeParameters(params, (ParametersAction)a);
+            } else if (a != null) {
+                actions.add(a);
+            }
+        }
+        if (params != null) actions.add(params);
+        return actions;
+    }
 
-	List<Action> getBuildActions(List<Action> baseActions, AbstractProject project) {
-		List<Action> actions = new ArrayList<Action>(baseActions);
+    List<Action> getBuildActions(List<Action> baseActions, AbstractProject project) {
+        List<Action> actions = new ArrayList<Action>(baseActions);
 
-		ParametersAction defaultParameters = getDefaultParameters(project);
-		if (defaultParameters != null) {
-			Action a = null;
-			for (ListIterator<Action> it = actions.listIterator(); it.hasNext();)
-				if ((a = it.next()) instanceof ParametersAction) {
-					it.set(mergeParameters(defaultParameters, (ParametersAction)a));
-					break;
+        ParametersAction defaultParameters = getDefaultParameters(project);
+        if (defaultParameters != null) {
+            Action a = null;
+            for (ListIterator<Action> it = actions.listIterator(); it.hasNext();)
+                if ((a = it.next()) instanceof ParametersAction) {
+                    it.set(mergeParameters(defaultParameters, (ParametersAction)a));
+                    break;
                                 }
-			if (!(a instanceof ParametersAction))
-				actions.add(defaultParameters);
-		}
-		return actions;
-	}
+            if (!(a instanceof ParametersAction))
+                actions.add(defaultParameters);
+        }
+        return actions;
+    }
 
-	/**
+    /**
      * Note that with Hudson 1.341, trigger should be using
-	 * {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)}.
-	 */
-	public List<Future<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
+     * {@link BuildTrigger#buildDependencyGraph(AbstractProject, hudson.model.DependencyGraph)}.
+     */
+    public List<Future<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
         try {
-			if (condition.isMet(build.getResult())) {
+            if (condition.isMet(build.getResult())) {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
@@ -355,12 +355,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
 
                 return futures;
-			}
-		} catch (DontTriggerException e) {
-			// don't trigger on this configuration
-		}
+            }
+        } catch (DontTriggerException e) {
+            // don't trigger on this configuration
+        }
         return Collections.emptyList();
-	}
+    }
 
     public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
@@ -455,30 +455,30 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     public boolean onJobRenamed(String oldName, String newName) {
-    	boolean changed = false;
-    	String[] list = projects.split(",");
-    	for (int i = 0; i < list.length; i++) {
-    		if (list[i].trim().equals(oldName)) {
-    			list[i] = newName;
-    			changed = true;
-    		}
-    	}
-    	if (changed) {
-    		StringBuilder buf = new StringBuilder();
-    		for (int i = 0; i < list.length; i++) {
-    			if (list[i] == null) continue;
-    			if (buf.length() > 0){
-    				buf.append(',');
-    			}
-    			buf.append(list[i]);
-    		}
-    		projects = buf.toString();
-    	}
-    	return changed;
+        boolean changed = false;
+        String[] list = projects.split(",");
+        for (int i = 0; i < list.length; i++) {
+            if (list[i].trim().equals(oldName)) {
+                list[i] = newName;
+                changed = true;
+            }
+        }
+        if (changed) {
+            StringBuilder buf = new StringBuilder();
+            for (int i = 0; i < list.length; i++) {
+                if (list[i] == null) continue;
+                if (buf.length() > 0){
+                    buf.append(',');
+                }
+                buf.append(list[i]);
+            }
+            projects = buf.toString();
+        }
+        return changed;
     }
 
     public boolean onDeleted(String oldName) {
-    	return onJobRenamed(oldName, null);
+        return onJobRenamed(oldName, null);
     }
 
     public Descriptor<BuildTriggerConfig> getDescriptor() {
@@ -486,10 +486,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     @Override
-	public String toString() {
-		return getClass().getName()+" [projects=" + projects + ", condition="
-				+ condition + ", configs=" + configs + "]";
-	}
+    public String toString() {
+        return getClass().getName()+" [projects=" + projects + ", condition="
+                + condition + ", configs=" + configs + "]";
+    }
 
     @Extension
     public static class DescriptorImpl extends Descriptor<BuildTriggerConfig> {
@@ -516,14 +516,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         public FormValidation doCheckProjects(@AncestorInPath Item project, @QueryParameter String value ) {
             // Require CONFIGURE permission on this project
             if(!project.hasPermission(Item.CONFIGURE)){
-            	return FormValidation.ok();
+                return FormValidation.ok();
             }
             StringTokenizer tokens = new StringTokenizer(Util.fixNull(value),",");
             boolean hasProjects = false;
             while(tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
                 if (StringUtils.isNotBlank(projectName)) {
-                	Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
+                    Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
                     if(item==null){
                         return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName,AbstractProject.findNearest(projectName).getName()));
                     }
@@ -534,8 +534,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
             }
             if (!hasProjects) {
-//            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
-            	return FormValidation.error("No project specified");
+//              return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
+                return FormValidation.error("No project specified");
             }
 
             return FormValidation.ok();
