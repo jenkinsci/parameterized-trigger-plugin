@@ -137,6 +137,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return projectList;
 	}
 
+	private static final Comparator PROJECT_NAME_COMPARATOR = new Comparator<AbstractProject>() {
+        public int compare(AbstractProject abstractProject1, AbstractProject abstractProject2) {
+            return abstractProject1.getFullName().compareTo(abstractProject2.getFullName());
+        }
+    };
+	
     /**
      * Provides a list containing four set, each containing projects to be displayed on the project view
      * for projects using the parameterized trigger plugin under 'Subprojects'.<br>
@@ -152,15 +158,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      */
     public List<Set<?>> getProjectInfo(AbstractProject context) {
 
-        Comparator customComparator = new Comparator<AbstractProject>() {
-            public int compare(AbstractProject abstractProject1, AbstractProject abstractProject2) {
-                return abstractProject1.getFullName().compareTo(abstractProject2.getFullName());
-            }
-        };
-
-        Set<AbstractProject> dynamicProject = new TreeSet<AbstractProject>(customComparator);
-        Set<AbstractProject> staticProject = new TreeSet<AbstractProject>(customComparator);
-        Set<AbstractProject> triggeredProject = new TreeSet<AbstractProject>(customComparator);
+        Set<AbstractProject> dynamicProject = new TreeSet<AbstractProject>(PROJECT_NAME_COMPARATOR);
+        Set<AbstractProject> staticProject = new TreeSet<AbstractProject>(PROJECT_NAME_COMPARATOR);
+        Set<AbstractProject> triggeredProject = new TreeSet<AbstractProject>(PROJECT_NAME_COMPARATOR);
         Set<String> unresolvedProject = new TreeSet<String>();
 
         iterateBuilds(context, projects, dynamicProject, staticProject, triggeredProject, unresolvedProject);
