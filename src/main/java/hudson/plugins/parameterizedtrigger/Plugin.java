@@ -34,14 +34,14 @@ public class Plugin extends hudson.Plugin {
                     BuildTrigger bt = p.getPublishersList().get(BuildTrigger.class);
                     if (bt != null) {
                         for (BuildTriggerConfig c : bt.getConfigs()){
-                            changed |= c.onJobRenamed(oldName, newName);
+                            changed |= c.onJobRenamed(item.getParent(), oldName, newName);
                         }
                     }
                     //iterate over build step triggers
                     TriggerBuilder tb = p.getBuildersList().get(TriggerBuilder.class);
                     if (tb != null) {
                     	for (BuildTriggerConfig co : tb.getConfigs()){
-                    		changed |= co.onJobRenamed(oldName, newName);
+                    		changed |= co.onJobRenamed(item.getParent(), oldName, newName);
                     	}
                     }
                     //if something changed, save the project
@@ -67,7 +67,7 @@ public class Plugin extends hudson.Plugin {
                     if (bt != null) {
                         for (ListIterator<BuildTriggerConfig> btc = bt.getConfigs().listIterator(); btc.hasNext();) {
                             BuildTriggerConfig c = btc.next();
-                            if (c.onDeleted(oldName)) {
+                            if (c.onDeleted(p.getParent(), oldName)) {
                                 changed = true;
                                 if (c.getProjects().length() == 0){
                                     btc.remove();
@@ -80,7 +80,7 @@ public class Plugin extends hudson.Plugin {
                     if (tb != null) {
                         for (ListIterator<BlockableBuildTriggerConfig> bbtc = tb.getConfigs().listIterator(); bbtc.hasNext();) {
                             BuildTriggerConfig c = bbtc.next();
-                            if (c.onDeleted(oldName)) {
+                            if (c.onDeleted(p.getParent(), oldName)) {
                                 changed = true;
                                 if (c.getProjects().length() == 0){
                                     bbtc.remove();

@@ -454,31 +454,26 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return schedule(build, project, project.getQuietPeriod(), list);
     }
 
-    public boolean onJobRenamed(String oldName, String newName) {
-    	boolean changed = false;
-    	String[] list = projects.split(",");
-    	for (int i = 0; i < list.length; i++) {
-    		if (list[i].trim().equals(oldName)) {
-    			list[i] = newName;
-    			changed = true;
-    		}
-    	}
-    	if (changed) {
-    		StringBuilder buf = new StringBuilder();
-    		for (int i = 0; i < list.length; i++) {
-    			if (list[i] == null) continue;
-    			if (buf.length() > 0){
-    				buf.append(',');
-    			}
-    			buf.append(list[i]);
-    		}
-    		projects = buf.toString();
-    	}
+    public boolean onJobRenamed(ItemGroup context, String oldName, String newName) {
+        String newProjects = Items.computeRelativeNamesAfterRenaming(oldName, newName, projects, context);
+    	boolean changed = !projects.equals(newProjects);
+        projects = newProjects;
     	return changed;
     }
 
-    public boolean onDeleted(String oldName) {
-    	return onJobRenamed(oldName, null);
+    public boolean onDeleted(ItemGroup context, String oldName) {
+        List<String> newNames = new ArrayList<String>();
+        StringTokenizer tokens = new StringTokenizer(projects,",");
+        List<String> newValue = new ArrayList<String>();
+        while (tokens.hasMoreTokens()) {
+            String relativeName = tokens.nextToken().trim();
+            String fullName = Items.getCanonicalName(context, relativeName);
+            if (!fullName.equals(oldName)) newNames.add(relativeName);
+        }
+        String newProjects = StringUtils.join(newNames, ",");
+        boolean changed = !projects.equals(newProjects);
+        projects = newProjects;
+        return changed;
     }
 
     public Descriptor<BuildTriggerConfig> getDescriptor() {
