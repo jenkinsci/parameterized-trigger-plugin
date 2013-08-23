@@ -95,6 +95,7 @@
       </plugins>
         <pluginManagement>
             <plugins>
+                <!-- Ignore animal-sniffer plugin when run with m2e on Eclipse. -->
                 <plugin>
                     <groupId>org.eclipse.m2e</groupId>
                     <artifactId>lifecycle-mapping</artifactId>
