@@ -544,13 +544,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
          * @param value
          * @return
          */
-        public AutoCompletionCandidates doAutoCompleteProjects(@QueryParameter String value) {
+        public AutoCompletionCandidates doAutoCompleteProjects(@QueryParameter String value, @AncestorInPath ItemGroup context) {
             AutoCompletionCandidates candidates = new AutoCompletionCandidates();
-            List<Job> jobs = Hudson.getInstance().getItems(Job.class);
+            List<Job> jobs = Jenkins.getInstance().getAllItems(Job.class);
             for (Job job: jobs) {
-                if (job.getFullName().startsWith(value)) {
+                String relativeName = job.getRelativeNameFrom(context);
+                if (relativeName.startsWith(value)) {
                     if (job.hasPermission(Item.READ)) {
-                        candidates.add(job.getFullName());
+                        candidates.add(relativeName);
                     }
                 }
             }
