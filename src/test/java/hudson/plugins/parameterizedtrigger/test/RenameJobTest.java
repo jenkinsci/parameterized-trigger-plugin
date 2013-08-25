@@ -82,14 +82,10 @@ public class RenameJobTest extends HudsonTestCase {
 	    final List<ConditionalBuilder> all = projectA.getBuildersList().getAll(ConditionalBuilder.class);
 	    final TriggerBuilder wrappedBuilder0 = (TriggerBuilder)all.get(0).getConditionalbuilders().get(0);
 	    assertEquals("build step trigger project within first conditionalbuildstep should be renamed", "projectB-renamed,projectC", wrappedBuilder0.getConfigs().get(0).getProjects());
-	    final TriggerBuilder wrappedBuilder1 = (TriggerBuilder)all.get(1).getConditionalbuilders().get(0);
-        assertEquals("build step trigger project within second conditionalbuildstep should be renamed", "projectB-renamed,projectC", wrappedBuilder1.getConfigs().get(0).getProjects());
 
 	    final List<SingleConditionalBuilder> allSingleConditions = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
 	    final TriggerBuilder singleCondTrigger0 = (TriggerBuilder)allSingleConditions.get(0).getBuildStep();
         assertEquals("build step trigger project within first singleconditionalbuildstep should be renamed", "projectB-renamed,projectC", singleCondTrigger0.getConfigs().get(0).getProjects());
-        final TriggerBuilder singleCondTrigger1 = (TriggerBuilder)allSingleConditions.get(1).getBuildStep();
-        assertEquals("build step trigger project within second singleconditionalbuildstep should be renamed", "projectB-renamed,projectC", singleCondTrigger1.getConfigs().get(0).getProjects());
 
 		//confirm projectA's post build trigger is updated automatically
 		assertEquals("post build trigger project should be renamed", "projectB-renamed,projectC", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
@@ -106,15 +102,11 @@ public class RenameJobTest extends HudsonTestCase {
         final List<ConditionalBuilder> allAfterDelete = projectA.getBuildersList().getAll(ConditionalBuilder.class);
         final TriggerBuilder wrappedBuilderAfterDel0 = (TriggerBuilder)allAfterDelete.get(0).getConditionalbuilders().get(0);
         assertEquals("build step trigger project within first conditionalbuildstep should be removed", "projectC", wrappedBuilderAfterDel0.getConfigs().get(0).getProjects());
-        final TriggerBuilder wrappedBuilderAfterDel1 = (TriggerBuilder)allAfterDelete.get(1).getConditionalbuilders().get(0);
-        assertEquals("build step trigger project within second conditionalbuildstep should be removed", "projectC", wrappedBuilderAfterDel1.getConfigs().get(0).getProjects());
         
 
         final List<SingleConditionalBuilder> allSingleAfterDelete = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
         final TriggerBuilder singleCondTriggerAfterDel0 = (TriggerBuilder)allSingleAfterDelete.get(0).getBuildStep();
         assertEquals("build step trigger project within first singleconditionalbuildstep should be removed", "projectC", singleCondTriggerAfterDel0.getConfigs().get(0).getProjects());
-        final TriggerBuilder singleCondTriggerAfterDel1 = (TriggerBuilder)allSingleAfterDelete.get(1).getBuildStep();
-        assertEquals("build step trigger project within second singleconditionalbuildstep should be removed", "projectC", singleCondTriggerAfterDel1.getConfigs().get(0).getProjects());
 
 	}
 
@@ -134,15 +126,16 @@ public class RenameJobTest extends HudsonTestCase {
 		//setup build step trigger
 		project.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig(childJobNamesString.toString(), null, buildParameters)));
 		
-	    TriggerBuilder tb = new TriggerBuilder(new BlockableBuildTriggerConfig(childJobNamesString.toString(), null, buildParameters));
-	    List<BuildStep> blist = new ArrayList<BuildStep>();
+		// setup triggers for conditional buildsteps
+		// test conditional builder (multi)
+		List<BuildStep> blist = new ArrayList<BuildStep>();
+		TriggerBuilder tb = new TriggerBuilder(new BlockableBuildTriggerConfig(childJobNamesString.toString(), null, buildParameters));
 	    blist.add(tb);
 	    project.getBuildersList().add(new ConditionalBuilder(new AlwaysRun(), new BuildStepRunner.Run(), blist));
-	    project.getBuildersList().add(new ConditionalBuilder(new AlwaysRun(), new BuildStepRunner.Run(), blist));
-
-	    TriggerBuilder tb2 = new TriggerBuilder(new BlockableBuildTriggerConfig(childJobNamesString.toString(), null, buildParameters));
+	    
+	    // test conditional builder (single)
+	    TriggerBuilder tb2 = new TriggerBuilder(new BlockableBuildTriggerConfig(childJobNamesString.toString(), null, buildParameters));		    
 	    project.getBuildersList().add(new SingleConditionalBuilder(tb2, new AlwaysRun(), new BuildStepRunner.Run()));
-        project.getBuildersList().add(new SingleConditionalBuilder(tb2, new AlwaysRun(), new BuildStepRunner.Run()));
 
 		//setup post build trigger
 		project.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(childJobNamesString.toString(), ResultCondition.SUCCESS, new CurrentBuildParameters())));
