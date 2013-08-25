@@ -3,6 +3,7 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.Extension;
 import hudson.model.Hudson;
 import hudson.model.Item;
+import hudson.model.ItemGroup;
 import hudson.model.Project;
 import hudson.model.listeners.ItemListener;
 import hudson.util.EnumConverter;
@@ -11,7 +12,10 @@ import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.Stapler;
+
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 public class Plugin extends hudson.Plugin {
 
@@ -28,20 +32,24 @@ public class Plugin extends hudson.Plugin {
         public static final class RenameListener extends ItemListener {
             @Override
             public void onRenamed(Item item, String oldName, String newName) {
-                for (Project<?,?> p : Hudson.getInstance().getProjects()) {
+                ItemGroup context = item.getParent();
+                String full = isEmpty(context.getFullName()) ? "" : context.getFullName() + '/';
+                String fullOldName = full + oldName;
+                String fullNewName = full + newName;
+                for (Project<?,?> p : Jenkins.getInstance().getAllItems(Project.class)) {
                     boolean changed = false;
                     //iterate over post build triggers
                     BuildTrigger bt = p.getPublishersList().get(BuildTrigger.class);
                     if (bt != null) {
                         for (BuildTriggerConfig c : bt.getConfigs()){
-                            changed |= c.onJobRenamed(item.getParent(), oldName, newName);
+                            changed |= c.onJobRenamed(p.getParent(), fullOldName, fullNewName);
                         }
                     }
                     //iterate over build step triggers
                     TriggerBuilder tb = p.getBuildersList().get(TriggerBuilder.class);
                     if (tb != null) {
                     	for (BuildTriggerConfig co : tb.getConfigs()){
-                    		changed |= co.onJobRenamed(item.getParent(), oldName, newName);
+                    		changed |= co.onJobRenamed(p.getParent(), fullOldName, fullNewName);
                     	}
                     }
                     //if something changed, save the project
@@ -50,7 +58,7 @@ public class Plugin extends hudson.Plugin {
 	                    	p.save();
 	                    } catch (IOException e) {
 	                    	Logger.getLogger(RenameListener.class.getName()).log(Level.WARNING,
-	                    			"Failed to persist project setting during rename from "+oldName+" to "+newName, e);
+	                    			"Failed to persist project setting during rename from "+fullOldName+" to "+fullNewName, e);
 	                    }
                     }
                     
@@ -59,8 +67,8 @@ public class Plugin extends hudson.Plugin {
 
             @Override
             public void onDeleted(Item item) {
-                for (Project<?,?> p : Hudson.getInstance().getProjects()) {
-                    String oldName = item.getName();
+                for (Project<?,?> p : Jenkins.getInstance().getAllItems(Project.class)) {
+                    String oldName = item.getFullName();
                     boolean changed = false;
                     //iterate over post build triggers
                     BuildTrigger bt = p.getPublishersList().get(BuildTrigger.class);
