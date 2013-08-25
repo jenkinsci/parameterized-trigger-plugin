@@ -1,18 +1,23 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.Extension;
+import hudson.model.Item;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Project;
 import hudson.model.listeners.ItemListener;
 import hudson.util.EnumConverter;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jenkins.model.Jenkins;
+
+import org.jenkinsci.plugins.conditionalbuildstep.ConditionalBuildStepHelper;
 import org.kohsuke.stapler.Stapler;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -52,6 +57,12 @@ public class Plugin extends hudson.Plugin {
                     		changed |= co.onJobRenamed(p.getParent(), fullOldName, fullNewName);
                     	}
                     }
+                    
+                    //iterate the BuildTriggers within conditional buildsteps
+                    if(isConditionalBuildStepInstalled()) {
+                        changed |= renameInConditionalBuildStep(p, oldName, newName);
+                    }                
+                    
                     //if something changed, save the project
                     if (changed){
 	                   	try {
@@ -96,6 +107,12 @@ public class Plugin extends hudson.Plugin {
                             }
                         }
                     }
+                    
+                    //iterate the BuildTriggers within conditional buildsteps
+                    if(isConditionalBuildStepInstalled()) {
+                        changed |= deleteInConditionalBuildStep(p, oldName);
+                    }                    
+                    
                     //if something changed, save the project
                     if (changed){
 	                    try {
@@ -113,5 +130,52 @@ public class Plugin extends hudson.Plugin {
                     }
                 }
             }
+            
+            /**
+            * renames the project references within all {@link TriggerBuilder}s which are wrapped by a conditional buildsteps
+            * @param p the project the check
+            * @param oldName the old project name
+            * @param newName the new project name
+            * @return whether a change has been made
+            */
+            private boolean renameInConditionalBuildStep(Project<?,?> p, String oldName, String newName) {
+                boolean changed = false;
+                final List<TriggerBuilder> containedBuilders = ConditionalBuildStepHelper.getContainedBuilders(p, TriggerBuilder.class);
+                for (TriggerBuilder triggerBuilder : containedBuilders) {
+                    for (BuildTriggerConfig co : triggerBuilder.getConfigs()){
+                        changed |= co.onJobRenamed(oldName, newName);
+                    }
+                }
+                return changed;
+            }
+            
+            /**
+            * removes the project references within all {@link TriggerBuilder}s which are wrapped by a conditional buildsteps
+            * @param p the project the check
+            * @param oldName the old project name
+            * @return whether a change has been made
+            */
+            private boolean deleteInConditionalBuildStep(Project<?,?> p, String oldName) {
+                boolean changed = false;
+                final List<TriggerBuilder> containedBuilders = ConditionalBuildStepHelper.getContainedBuilders(p, TriggerBuilder.class);
+                for (TriggerBuilder triggerBuilder : containedBuilders) {
+                    for (ListIterator<BlockableBuildTriggerConfig> bbtc = triggerBuilder.getConfigs().listIterator(); bbtc.hasNext();) {
+                        BuildTriggerConfig c = bbtc.next();
+                        if (c.onDeleted(oldName)) {
+                            changed = true;
+                            if (c.getProjects().length() == 0){
+                                bbtc.remove();
+                            }
+                        }
+                    }
+                }
+                return changed;
+            }
+            
+        }
+        
+        public static boolean isConditionalBuildStepInstalled(){
+            final hudson.Plugin plugin = Jenkins.getInstance().getPlugin("conditional-buildstep");
+            return plugin != null ? plugin.getWrapper().isActive() : false;
         }
 }
