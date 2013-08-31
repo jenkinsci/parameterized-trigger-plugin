@@ -199,9 +199,11 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     for (String projectName : this.buildRefs.keySet()) {
       AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
               Jenkins.getInstance().getItemByFullName(projectName, AbstractProject.class);
-      for (BuildReference br : this.buildRefs.get(projectName)) {
-        if (br.buildNumber != 0) {
-          builds.add(project.getBuildByNumber(br.buildNumber));
+      if (project != null) {
+        for (BuildReference br : this.buildRefs.get(projectName)) {
+          if (br.buildNumber != 0) {
+            builds.add(project.getBuildByNumber(br.buildNumber));
+          }
         }
       }
     }
