@@ -190,7 +190,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    * were non blocking, which we don't have a builds for. Used in the UI for see
    * Summary.groovy
    *
-   * @return a list of builds that are triggered by this build
+   * @return a list of builds that are triggered by this build. May contains null if a project or a build is deleted.
    */
   public List<AbstractBuild<?, ?>> getTriggeredBuilds() {
 
@@ -199,11 +199,9 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     for (String projectName : this.buildRefs.keySet()) {
       AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
               Jenkins.getInstance().getItemByFullName(projectName, AbstractProject.class);
-      if (project != null) {
-        for (BuildReference br : this.buildRefs.get(projectName)) {
-          if (br.buildNumber != 0) {
-            builds.add(project.getBuildByNumber(br.buildNumber));
-          }
+      for (BuildReference br : this.buildRefs.get(projectName)) {
+        if (br.buildNumber != 0) {
+          builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
         }
       }
     }
@@ -215,7 +213,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    * which we don't have a builds for. Does not include builds that are returned
    * in #link{getTriggeredBuilds} Used in the UI for see Summary.groovy
    *
-   * @return List of Projects that are triggered by this build
+   * @return List of Projects that are triggered by this build. May contains null if a project is deleted.
    */
   public List<AbstractProject<?, ?>> getTriggeredProjects() {
     List<AbstractProject<?, ?>> projects = new ArrayList<AbstractProject<?, ?>>();
