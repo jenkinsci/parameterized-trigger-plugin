@@ -48,6 +48,7 @@ import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
 import hudson.model.AbstractItem;
 import hudson.model.Job;
+import hudson.model.listeners.ItemListener;
 
 /**
  * Replace this to org.jvnet.hudson.test.MockFolder
@@ -118,6 +119,9 @@ public class MockFolder extends AbstractItem implements ModifiableTopLevelItemGr
 
     @Override
     public void onDeleted(TopLevelItem item) throws IOException {
+        for (ItemListener l: ItemListener.all()) {
+            l.onDeleted(item);
+        }
         getItems().remove(item);
     }
 

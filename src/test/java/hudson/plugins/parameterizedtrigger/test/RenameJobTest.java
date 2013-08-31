@@ -147,7 +147,7 @@ public class RenameJobTest extends HudsonTestCase {
 		return project;
 	}
 
-    public void testRenameJobInSameFolder() throws Exception {
+    public void testRenameAndDeleteJobInSameFolder() throws Exception {
         MockFolder folder1 = (MockFolder)jenkins.createProject(
                 (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
                 "Folder1",
@@ -208,9 +208,12 @@ public class RenameJobTest extends HudsonTestCase {
             assertBuildStatusSuccess(b);
             b.delete();
         }
+        
+        p2.delete();
+        assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
 
-    public void testRenameJobInSubFolder() throws Exception {
+    public void testRenameAndDeleteJobInSubFolder() throws Exception {
         MockFolder folder1 = (MockFolder)jenkins.createProject(
                 (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
                 "Folder1",
@@ -278,9 +281,12 @@ public class RenameJobTest extends HudsonTestCase {
             assertBuildStatusSuccess(b);
             b.delete();
         }
+        
+        p2.delete();
+        assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
     
-    public void testRenameJobInParentFolder() throws Exception {
+    public void testRenameAndDeleteJobInParentFolder() throws Exception {
         MockFolder folder1 = (MockFolder)jenkins.createProject(
                 (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
                 "Folder1",
@@ -348,5 +354,40 @@ public class RenameJobTest extends HudsonTestCase {
             assertBuildStatusSuccess(b);
             b.delete();
         }
+        
+        p2.delete();
+        assertNull(p1.getPublishersList().get(BuildTrigger.class));
+    }
+    
+    /**
+     * {@link hudson.model.Items#computeRelativeNamesAfterRenaming(String, String, String, hudson.model.ItemGroup)} has a bug
+     * that renaming names that contains the target name as prefix.
+     * E.g. renaming ProjectB to ProjectB-renamed results in renaming ProjectB2 to ProjectB-renamed2.
+     * This is fixed in Jenkins 1.530.
+     * 
+     * This test verifies this plugin is not affected by that problem.
+     */
+    public void testComputeRelativeNamesAfterRenaming() throws Exception {
+        FreeStyleProject projectA = createFreeStyleProject("ProjectA");
+        FreeStyleProject projectB = createFreeStyleProject("ProjectB");
+        FreeStyleProject projectB2 = createFreeStyleProject("ProjectB2");
+        
+        projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
+                String.format("%s,%s", projectB.getName(), projectB2.getName()),
+                ResultCondition.ALWAYS,
+                true,
+                null,
+                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
+        )));
+        
+        jenkins.rebuildDependencyGraph();
+        
+        projectB.renameTo("ProjectB-renamed");
+        
+        // assertRenamed
+        assertEquals(
+                String.format("%s,%s", projectB.getName(), projectB2.getName()),
+                projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects()
+        );
     }
 }
