@@ -32,6 +32,7 @@ import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerEx
 import hudson.plugins.promoted_builds.Promotion;
 import hudson.tasks.Messages;
 import hudson.util.FormValidation;
+import hudson.util.VersionNumber;
 
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -454,8 +455,70 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return schedule(build, project, project.getQuietPeriod(), list);
     }
 
+    /**
+     * A backport of {@link Items#computeRelativeNamesAfterRenaming(String, String, String, ItemGroup)} in Jenkins 1.530.
+     * 
+     * computeRelativeNamesAfterRenaming contains a bug in Jenkins < 1.530.
+     * Replace this to {@link Items#computeRelativeNamesAfterRenaming(String, String, String, ItemGroup)}
+     * when updated the target version to >= 1.530.
+     * 
+     * @param oldFullName
+     * @param newFullName
+     * @param relativeNames
+     * @param context
+     * @return
+     */
+    private static String computeRelativeNamesAfterRenaming(String oldFullName, String newFullName, String relativeNames, ItemGroup<?> context) {
+        if(!Jenkins.getVersion().isOlderThan(new VersionNumber("1.530"))) {
+            return Items.computeRelativeNamesAfterRenaming(oldFullName, newFullName, relativeNames, context);
+        }
+        StringTokenizer tokens = new StringTokenizer(relativeNames,",");
+        List<String> newValue = new ArrayList<String>();
+        while(tokens.hasMoreTokens()) {
+            String relativeName = tokens.nextToken().trim();
+            String canonicalName = Items.getCanonicalName(context, relativeName);
+            if (canonicalName.equals(oldFullName) || canonicalName.startsWith(oldFullName + "/")) {
+                String newCanonicalName = newFullName + canonicalName.substring(oldFullName.length());
+                // relative name points to the renamed item, let's compute the new relative name
+                newValue.add( computeRelativeNameAfterRenaming(canonicalName, newCanonicalName, relativeName) );
+            } else {
+                newValue.add(relativeName);
+            }
+        }
+        return StringUtils.join(newValue, ",");
+    }
+
+    private static String computeRelativeNameAfterRenaming(String oldFullName, String newFullName, String relativeName) {
+
+        String[] a = oldFullName.split("/");
+        String[] n = newFullName.split("/");
+        assert a.length == n.length;
+        String[] r = relativeName.split("/");
+
+        int j = a.length-1;
+        for(int i=r.length-1;i>=0;i--) {
+            String part = r[i];
+            if (part.equals("") && i==0) {
+                continue;
+            }
+            if (part.equals(".")) {
+                continue;
+            }
+            if (part.equals("..")) {
+                j--;
+                continue;
+            }
+            if (part.equals(a[j])) {
+                r[i] = n[j];
+                j--;
+                continue;
+            }
+        }
+        return StringUtils.join(r, '/');
+    }
+
     public boolean onJobRenamed(ItemGroup context, String oldName, String newName) {
-        String newProjects = Items.computeRelativeNamesAfterRenaming(oldName, newName, projects, context);
+        String newProjects = computeRelativeNamesAfterRenaming(oldName, newName, projects, context);
     	boolean changed = !projects.equals(newProjects);
         projects = newProjects;
     	return changed;
