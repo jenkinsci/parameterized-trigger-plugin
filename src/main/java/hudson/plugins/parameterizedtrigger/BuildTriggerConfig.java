@@ -100,6 +100,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return projects;
 	}
 
+    public String getProjects(EnvVars env) {
+        return (env != null ? env.expand(projects) : projects);
+    }
+
 	public ResultCondition getCondition() {
 		return condition;
 	}
@@ -123,18 +127,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      */
 	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
         List<AbstractProject> projectList = new ArrayList<AbstractProject>();
-
-        // expand variables if applicable
-        StringBuilder projectNames = new StringBuilder();
-        StringTokenizer tokens = new StringTokenizer(projects,",");
-        while(tokens.hasMoreTokens()) {
-            if(projectNames.length() > 0) {
-                projectNames.append(',');
-            }
-            projectNames.append(env != null ? env.expand(tokens.nextToken().trim()) : tokens.nextToken().trim());
-        }
-
-        projectList.addAll(Items.fromNameList(context, projectNames.toString(), AbstractProject.class));
+        projectList.addAll(Items.fromNameList(context, getProjects(env), AbstractProject.class));
 		return projectList;
 	}
 

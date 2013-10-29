@@ -87,7 +87,7 @@ public class TriggerBuilder extends Builder {
                 List<AbstractProject> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(),env);
 
                 // Get the actual defined projects
-                StringTokenizer tokenizer = new StringTokenizer(config.getProjects(), ",");
+                StringTokenizer tokenizer = new StringTokenizer(config.getProjects(env), ",");
 
                 if (tokenizer.countTokens() == 0) {
                     throw new AbortException("Build aborted. No projects to trigger. Check your configuration!");
