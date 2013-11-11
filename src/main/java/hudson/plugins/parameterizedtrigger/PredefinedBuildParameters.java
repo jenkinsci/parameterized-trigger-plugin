@@ -11,6 +11,8 @@ import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		EnvVars env = getEnvironment(build, listener);
 
 		Properties p = new Properties();
-		p.load(new StringInputStream(properties));
+		p.load(new InputStreamReader(new StringInputStream(properties), Charset.defaultCharset()));
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
