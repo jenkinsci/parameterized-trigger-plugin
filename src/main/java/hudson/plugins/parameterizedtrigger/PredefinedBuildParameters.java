@@ -11,12 +11,12 @@ import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PredefinedBuildParameters extends AbstractBuildParameters {
@@ -34,7 +34,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		EnvVars env = getEnvironment(build, listener);
 
 		Properties p = new Properties();
-		p.load(new StringInputStream(properties));
+		p.load(new StringReader(properties));
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {

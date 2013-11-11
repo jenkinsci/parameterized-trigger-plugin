@@ -13,12 +13,12 @@ import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class FileBuildParameters extends AbstractBuildParameters {
@@ -68,7 +68,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			String s = f.readToString();
 			s = env.expand(s);
 			Properties p = new Properties();
-			p.load(new StringInputStream(s));
+			p.load(new StringReader(s));
 
 			for (Map.Entry<Object, Object> entry : p.entrySet()) {
 				values.add(new StringParameterValue(entry.getKey().toString(),
