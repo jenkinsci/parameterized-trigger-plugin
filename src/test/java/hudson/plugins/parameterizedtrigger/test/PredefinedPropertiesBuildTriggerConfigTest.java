@@ -28,30 +28,45 @@ import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
-
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
+import static com.google.common.base.Joiner.on;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
+
 public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 
-	public void test() throws Exception {
+    public static final String VALUE_CYRILLIC = "значение";
+    public static final String VALUE_EN = "value";
+    public static final String PROPERTY_KEY = "KEY";
+    public static final String PROPERTY_KEY_CYRILLIC = "KEY2";
 
-		Project projectA = createFreeStyleProject("projectA");
-		String properties = "KEY=value";
-		projectA.getPublishersList().add(
-				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new PredefinedBuildParameters(properties))));
+    public void testAllKeyValuePairsShouldBeRecordAsSended() throws Exception {
 
-		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
-		projectB.getBuildersList().add(builder);
-		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+        Project projectA = createFreeStyleProject("projectA");
+        String properties = on("\n")
+                .join(
+                        PROPERTY_KEY + "=" + VALUE_EN,
+                        PROPERTY_KEY_CYRILLIC + "=" + VALUE_CYRILLIC
+                );
+        projectA.getPublishersList().add(
+                new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+                        new PredefinedBuildParameters(properties))));
 
-		projectA.scheduleBuild2(0).get();
-		hudson.getQueue().getItem(projectB).getFuture().get();
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        Project projectB = createFreeStyleProject("projectB");
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
+        hudson.rebuildDependencyGraph();
 
-		assertNotNull("builder should record environment", builder.getEnvVars());
-		assertEquals("value", builder.getEnvVars().get("KEY"));
-	}
+        projectA.scheduleBuild2(0).get();
+        hudson.getQueue().getItem(projectB).getFuture().get();
+
+        assertNotNull("builder should record environment", builder.getEnvVars());
+
+        assertThat(builder.getEnvVars(), hasEntry(PROPERTY_KEY, VALUE_EN));
+        assertThat("Problem with cyrillic value",
+                builder.getEnvVars(), hasEntry(PROPERTY_KEY_CYRILLIC, VALUE_CYRILLIC));
+    }
 }
