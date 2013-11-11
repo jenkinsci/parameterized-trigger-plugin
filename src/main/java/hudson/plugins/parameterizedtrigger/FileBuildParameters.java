@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.base.Charsets;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -70,7 +71,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			String s = f.readToString();
 			s = env.expand(s);
 			Properties p = new Properties();
-			p.load(new InputStreamReader(new StringInputStream(s), Charset.defaultCharset()));
+			p.load(new InputStreamReader(new StringInputStream(s), Charsets.UTF_8));
 
 			for (Map.Entry<Object, Object> entry : p.entrySet()) {
 				values.add(new StringParameterValue(entry.getKey().toString(),

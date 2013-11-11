@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.base.Charsets;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.AbstractBuild;
@@ -36,7 +37,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		EnvVars env = getEnvironment(build, listener);
 
 		Properties p = new Properties();
-		p.load(new InputStreamReader(new StringInputStream(properties), Charset.defaultCharset()));
+		p.load(new InputStreamReader(new StringInputStream(properties), Charsets.UTF_8));
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
