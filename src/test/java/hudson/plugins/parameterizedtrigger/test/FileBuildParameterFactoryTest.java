@@ -30,6 +30,7 @@ import hudson.Launcher;
 import hudson.model.*;
 import hudson.plugins.parameterizedtrigger.*;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
+import org.hamcrest.Matcher;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.TestBuilder;
 
@@ -131,16 +132,20 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         assertThat("wrong number of builds was triggered", builds, hasSize(2));
 
 
-        List<Map<? extends String, ? extends String>> buildEnvVars = LambdaCollections.with(builds)
+        Iterable<Map<? extends String, ? extends String>> buildEnvVars = LambdaCollections.with(builds)
                 .convert(getEnvVars(builder));
 
-        assertThat(buildEnvVars, hasItem(allOf(
+        Matcher<Map<? extends String,? extends String>> firstMatcher = allOf(
                 hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1),
-                not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2)))));
+                not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2)));
 
-        assertThat(buildEnvVars, hasItem(allOf(
+        assertThat(buildEnvVars, hasItem(firstMatcher));
+
+        Matcher<Map<? extends String, ? extends String>> secondMatcher = allOf(
                 hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2),
-                not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1)))));
+                not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1)));
+
+        assertThat(buildEnvVars, hasItem(secondMatcher));
     }
 
     public void testNoFilesSkip() throws Exception {
