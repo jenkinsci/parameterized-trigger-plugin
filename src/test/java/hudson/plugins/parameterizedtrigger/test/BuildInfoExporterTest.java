@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableList;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause.UserCause;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -34,10 +36,13 @@ import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
+import hudson.plugins.parameterizedtrigger.BuildInfoExporterAction;
 import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
+import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import static org.hamcrest.MatcherAssert.*;
@@ -254,5 +259,59 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_NUMBER_projectC", Integer.toString(expectedBuildNumberC))));
     assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + Integer.toString(expectedBuildNumberC), buildC1.getResult().toString())));
 
+  }
+  
+  public void testProjectDeleted() throws Exception {
+      FreeStyleProject p1 = createFreeStyleProject();
+      FreeStyleProject p2 = createFreeStyleProject();
+      
+      // Blocked build
+      p1.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig(
+              p2.getName(),
+              new BlockingBehaviour(
+                      Result.FAILURE,
+                      Result.UNSTABLE,
+                      Result.FAILURE
+              ),
+              Arrays.<AbstractBuildParameters>asList(
+                      new PredefinedBuildParameters("test=test")
+              )
+      )));
+      
+      FreeStyleBuild blockedBuild = p1.scheduleBuild2(0).get();
+      assertBuildStatusSuccess(blockedBuild);
+      
+      // Unblocked build
+      p1.getBuildersList().clear();
+      p1.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig(
+              p2.getName(),
+              null,
+              Arrays.<AbstractBuildParameters>asList(
+                      new PredefinedBuildParameters("test=test")
+              )
+      )));
+      
+      FreeStyleBuild unblockedBuild = p1.scheduleBuild2(0).get();
+      assertBuildStatusSuccess(unblockedBuild);
+      
+      waitUntilNoActivity();
+      
+      assertEquals(1, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
+      assertEquals(p2.getBuildByNumber(1), blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().get(0));
+      assertEquals(0, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
+      
+      assertEquals(0, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
+      assertEquals(1, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
+      assertEquals(p2, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().get(0));
+      
+      p2.delete();
+      
+      assertEquals(1, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
+      assertNull(blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().get(0));
+      assertEquals(0, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
+      
+      assertEquals(0, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
+      assertEquals(1, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
+      assertNull(unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().get(0));
   }
 }
