@@ -23,26 +23,47 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import ch.lambdaj.collection.LambdaCollections;
-import ch.lambdaj.function.convert.Converter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+
+import hudson.EnvVars;
 import hudson.Launcher;
-import hudson.model.*;
-import hudson.plugins.parameterizedtrigger.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.Project;
+import hudson.model.Result;
+import hudson.plugins.parameterizedtrigger.BuildTrigger;
+import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.FileBuildParameters;
+import hudson.plugins.parameterizedtrigger.ResultCondition;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
+import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
+import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
+import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
-import org.hamcrest.Matcher;
+import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+
+import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.TestBuilder;
-
-import java.io.IOException;
+import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.io.IOException;
 
+import java.util.Map;
+import org.hamcrest.Matcher;
+import ch.lambdaj.collection.LambdaCollections;
+import ch.lambdaj.function.convert.Converter;
 import static com.google.common.base.Joiner.on;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-
 
 public class FileBuildParameterFactoryTest extends HudsonTestCase {
 
@@ -53,18 +74,18 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
     public static final String PROPERTY_VALUE_2 = "hello_xyz";
 
 
-    private TriggerBuilder createTriggerBuilder(AbstractProject project, NoFilesFoundEnum action) {
+    private TriggerBuilder createTriggerBuilder(AbstractProject project, NoFilesFoundEnum action){
 
         TriggerBuilder tBuilder = new TriggerBuilder(
-                new BlockableBuildTriggerConfig(project.getName(),
-                        new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                        ImmutableList.<AbstractBuildParameterFactory>of(
-                                new FileBuildParameterFactory("*.txt", action)),
-                        Collections.<AbstractBuildParameters>emptyList()));
+                                new BlockableBuildTriggerConfig(project.getName(),
+                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+                                ImmutableList.<AbstractBuildParameterFactory>of(
+                                    new FileBuildParameterFactory("*.txt", action)),
+                                Collections.<AbstractBuildParameters>emptyList()));
         return tBuilder;
     }
 
-    public void testSingleFile() throws Exception {
+	public void testSingleFile() throws Exception {
 
         //create triggered build, with capture env builder
         Project projectB = createFreeStyleProject();
@@ -75,13 +96,12 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         FreeStyleProject projectA = createFreeStyleProject();
         projectA.getBuildersList().add(new TestBuilder() {
             public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-                                   BuildListener listener) throws InterruptedException, IOException {
-                build.getWorkspace().child("abc.txt")
-                        .write(on("\n").join(
-                                PROPERTY_KEY + "=" + PROPERTY_VALUE_1,
-                                PROPERTY_KEY_CYRILLIC + "=" + PROPERTY_VALUE_CYRILLIC
-                        ), "UTF-8");
-                return true;
+            BuildListener listener) throws InterruptedException, IOException {
+            build.getWorkspace().child("abc.txt").write(
+                    on("\n").join(
+                        PROPERTY_KEY + "=" + PROPERTY_VALUE_1,
+                        PROPERTY_KEY_CYRILLIC + "=" + PROPERTY_VALUE_CYRILLIC), "UTF-8");
+            return true;
             }
         });
 
@@ -95,11 +115,10 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertThat("there is not 1 build in list", builds, hasSize(1));
 
-        List<Map<? extends String, ? extends String>> buildEnvVars = LambdaCollections.with(builds)
-                .convert(getEnvVars(builder));
+        Map<String, String> buildEnvVars = builder.getEnvVars().get(builds.get(0).getId());
 
-        assertThat(buildEnvVars, everyItem(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1)));
-        assertThat(buildEnvVars, everyItem(hasEntry(PROPERTY_KEY_CYRILLIC, PROPERTY_VALUE_CYRILLIC)));
+        assertThat(buildEnvVars, hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1));
+        assertThat(buildEnvVars, hasEntry(PROPERTY_KEY_CYRILLIC, PROPERTY_VALUE_CYRILLIC));
     }
 
     public void testMultipleFiles() throws Exception {
@@ -113,11 +132,11 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         FreeStyleProject projectA = createFreeStyleProject();
         projectA.getBuildersList().add(new TestBuilder() {
             public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-                                   BuildListener listener) throws InterruptedException, IOException {
-                build.getWorkspace().child("abc.txt").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_1, "UTF-8");
-                build.getWorkspace().child("xyz.txt").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_2, "UTF-8");
-                build.getWorkspace().child("xyz.properties").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_2, "UTF-8");
-                return true;
+            BuildListener listener) throws InterruptedException, IOException {
+            build.getWorkspace().child("abc.txt").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_1, "UTF-8");
+            build.getWorkspace().child("xyz.txt").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_2, "UTF-8");
+            build.getWorkspace().child("xyz.properties").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_2, "UTF-8");
+            return true;
             }
         });
 
@@ -131,10 +150,12 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertThat("wrong number of builds was triggered", builds, hasSize(2));
 
-
+        // Some magic with generics in 1.6. Will be simplified in 1.7
+        // If list of two build envs contains in one time prop with val_1 and val_2 - all ok
         Iterable<Map<? extends String, ? extends String>> buildEnvVars = LambdaCollections.with(builds)
                 .convert(getEnvVars(builder));
 
+        // Has prop with val_1 AND not(has prop with val_2)
         Matcher<Map<? extends String,? extends String>> firstMatcher = allOf(
                 hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1),
                 not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2)));
@@ -142,6 +163,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         Matcher<Iterable<? super Map<? extends String, ? extends String>>> hasProp1DontHasProp2 = hasItem(firstMatcher);
         assertThat(buildEnvVars, hasProp1DontHasProp2);
 
+        // Has prop with val_2 AND not(has prop with val_1)
         Matcher<Map<? extends String, ? extends String>> secondMatcher = allOf(
                 hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2),
                 not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1)));

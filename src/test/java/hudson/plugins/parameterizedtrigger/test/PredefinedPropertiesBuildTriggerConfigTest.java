@@ -28,6 +28,7 @@ import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
+
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
@@ -43,28 +44,27 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 
     public void testAllKeyValuePairsShouldBeRecordAsSended() throws Exception {
 
-        Project projectA = createFreeStyleProject("projectA");
+		Project projectA = createFreeStyleProject("projectA");
         String properties = String.format("%s%n%s",
                 PROPERTY_KEY + "=" + VALUE_EN,
                 PROPERTY_KEY_CYRILLIC + "=" + VALUE_CYRILLIC
         );
-        projectA.getPublishersList().add(
-                new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-                        new PredefinedBuildParameters(properties))));
+		projectA.getPublishersList().add(
+				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+						new PredefinedBuildParameters(properties))));
 
-        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-        Project projectB = createFreeStyleProject("projectB");
-        projectB.getBuildersList().add(builder);
-        projectB.setQuietPeriod(1);
-        hudson.rebuildDependencyGraph();
+		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+		Project projectB = createFreeStyleProject("projectB");
+		projectB.getBuildersList().add(builder);
+		projectB.setQuietPeriod(1);
+		hudson.rebuildDependencyGraph();
 
-        projectA.scheduleBuild2(0).get();
-        hudson.getQueue().getItem(projectB).getFuture().get();
+		projectA.scheduleBuild2(0).get();
+		hudson.getQueue().getItem(projectB).getFuture().get();
 
         assertNotNull("builder should record environment", builder.getEnvVars());
-
         assertThat(builder.getEnvVars(), hasEntry(PROPERTY_KEY, VALUE_EN));
         assertThat("Problem with cyrillic value",
                 builder.getEnvVars(), hasEntry(PROPERTY_KEY_CYRILLIC, VALUE_CYRILLIC));
-    }
+	}
 }
