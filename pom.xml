@@ -36,6 +36,12 @@
             <artifactId>promoted-builds</artifactId>
             <version>2.10</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.sonatype.sisu</groupId>
+                    <artifactId>sisu-guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
           <groupId>org.hamcrest</groupId>
@@ -49,13 +55,6 @@
           <version>1.8.5</version>
           <scope>test</scope>
         </dependency>
-      <dependency>
-        <!-- this comes from core, but somehow intelliJ doesn't recognize it unless added explicitly -->
-        <groupId>org.sonatype.sisu</groupId>
-        <artifactId>sisu-guice</artifactId>
-        <version>3.1.0</version>
-        <scope>provided</scope>
-      </dependency>
       <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>conditional-buildstep</artifactId>
