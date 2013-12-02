@@ -49,7 +49,10 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   //now unused as part of map
   private transient String buildName;
   private transient int buildNumber;
-  private Map<String, List<BuildReference>> buildRefs;
+  
+  // used in version =< 2.21.
+  // this is now migrated to this.builds.
+  private transient Map<String, List<BuildReference>> buildRefs;
 
   private List<BuildReference> builds;
   private BuildReference lastReference;
@@ -187,7 +190,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
         return refs;
     }
 
-    /**
+  /**
    * Gets all the builds triggered from this one, filters out the items that
    * were non blocking, which we don't have a builds for. Used in the UI for see
    * Summary.groovy
