@@ -25,6 +25,31 @@
     </developers>
 
     <dependencies>
+        <!-- Test deps -->
+        <dependency>
+            <!--it must be before org.jenkins-ci.plugins:promoted-builds:2.10 -->
+            <!--(to avoid excludes of mockito and etc)-->
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>1.9.5</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <!--http://code.google.com/p/lambdaj/-->
+            <groupId>com.googlecode.lambdaj</groupId>
+            <artifactId>lambdaj</artifactId>
+            <version>2.3.3</version>
+            <scope>test</scope>
+        </dependency>
+        <!--/ Test deps-->
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>subversion</artifactId>
@@ -43,36 +68,33 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-          <groupId>org.hamcrest</groupId>
-          <artifactId>hamcrest-all</artifactId>
-          <version>1.3</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.mockito</groupId>
-          <artifactId>mockito-core</artifactId>
-          <version>1.8.5</version>
-          <scope>test</scope>
-        </dependency>
       <dependency>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>conditional-buildstep</artifactId>
         <version>1.3.1</version>
         <optional>true</optional>
-      </dependency>      
+      </dependency>
     </dependencies>
 
     <build>
       <plugins>
        <plugin>
+              <!--rewrite build lang lvl from parent-->
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                  <source>1.6</source>
+                  <target>1.6</target>
+              </configuration>
+          </plugin>
+          <plugin>
             <groupId>org.jenkins-ci.tools</groupId>
             <artifactId>maven-hpi-plugin</artifactId>
             <version>1.97</version>
             <extensions>true</extensions>
-        </plugin>      
+        </plugin>
         <plugin>
-          <!-- make sure our code doesn't have 1.6 dependencies except where we know it -->
+          <!-- make sure our code doesn't have 1.7 dependencies except where we know it -->
           <groupId>org.jvnet</groupId>
           <artifactId>animal-sniffer</artifactId>
           <version>1.2</version>
@@ -84,7 +106,7 @@
               <configuration>
                 <signature>
                   <groupId>org.jvnet.animal-sniffer</groupId>
-                  <artifactId>java1.5</artifactId>
+                  <artifactId>java1.6</artifactId>
                   <version>1.0</version>
                 </signature>
               </configuration>
@@ -120,7 +142,7 @@
                     </configuration>
                 </plugin>
             </plugins>
-        </pluginManagement>      
+        </pluginManagement>
     </build>
 
     <scm>
@@ -141,5 +163,9 @@
             <url>http://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 </project>  
 

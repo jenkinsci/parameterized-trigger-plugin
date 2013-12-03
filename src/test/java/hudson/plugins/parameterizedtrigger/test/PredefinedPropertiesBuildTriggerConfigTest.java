@@ -32,12 +32,23 @@ import hudson.plugins.parameterizedtrigger.ResultCondition;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
+
 public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 
-	public void test() throws Exception {
+    public static final String VALUE_CYRILLIC = "значение";
+    public static final String VALUE_EN = "value";
+    public static final String PROPERTY_KEY = "KEY";
+    public static final String PROPERTY_KEY_CYRILLIC = "KEY2";
+
+    public void testAllKeyValuePairsShouldBeRecordAsSended() throws Exception {
 
 		Project projectA = createFreeStyleProject("projectA");
-		String properties = "KEY=value";
+        String properties = String.format("%s%n%s",
+                PROPERTY_KEY + "=" + VALUE_EN,
+                PROPERTY_KEY_CYRILLIC + "=" + VALUE_CYRILLIC
+        );
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
 						new PredefinedBuildParameters(properties))));
@@ -51,7 +62,9 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 		projectA.scheduleBuild2(0).get();
 		hudson.getQueue().getItem(projectB).getFuture().get();
 
-		assertNotNull("builder should record environment", builder.getEnvVars());
-		assertEquals("value", builder.getEnvVars().get("KEY"));
+        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertThat(builder.getEnvVars(), hasEntry(PROPERTY_KEY, VALUE_EN));
+        assertThat("Problem with cyrillic value",
+                builder.getEnvVars(), hasEntry(PROPERTY_KEY_CYRILLIC, VALUE_CYRILLIC));
 	}
 }

@@ -57,8 +57,22 @@ import java.util.List;
 import java.util.Set;
 import java.io.IOException;
 
+import java.util.Map;
+import org.hamcrest.Matcher;
+import ch.lambdaj.collection.LambdaCollections;
+import ch.lambdaj.function.convert.Converter;
+import static com.google.common.base.Joiner.on;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 public class FileBuildParameterFactoryTest extends HudsonTestCase {
+
+    public static final String PROPERTY_KEY = "TEST";
+    public static final String PROPERTY_KEY_CYRILLIC = "TEST2";
+    public static final String PROPERTY_VALUE_CYRILLIC = "значение";
+    public static final String PROPERTY_VALUE_1 = "hello_abc";
+    public static final String PROPERTY_VALUE_2 = "hello_xyz";
+
 
     private TriggerBuilder createTriggerBuilder(AbstractProject project, NoFilesFoundEnum action){
 
@@ -71,7 +85,6 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         return tBuilder;
     }
 
-    @Test
 	public void testSingleFile() throws Exception {
 
         //create triggered build, with capture env builder
@@ -84,7 +97,10 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         projectA.getBuildersList().add(new TestBuilder() {
             public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) throws InterruptedException, IOException {
-            build.getWorkspace().child("abc.txt").write("TEST=hello_abc","UTF-8");
+            build.getWorkspace().child("abc.txt").write(
+                    on("\n").join(
+                        PROPERTY_KEY + "=" + PROPERTY_VALUE_1,
+                        PROPERTY_KEY_CYRILLIC + "=" + PROPERTY_VALUE_CYRILLIC), "UTF-8");
             return true;
             }
         });
@@ -97,19 +113,14 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         // check triggered builds are correct.
         waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
-        assertEquals(1, builds.size());
+        assertThat("there is not 1 build in list", builds, hasSize(1));
 
-        Set<String> values = Sets.newHashSet();
-        for (FreeStyleBuild build : builds) {
-            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-            assertTrue(buildEnvVar.containsKey("TEST"));
-            values.add(buildEnvVar.get("TEST"));
-        }
-        assertEquals(ImmutableSet.of("hello_abc"), values);
+        Map<String, String> buildEnvVars = builder.getEnvVars().get(builds.get(0).getId());
 
+        assertThat(buildEnvVars, hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1));
+        assertThat(buildEnvVars, hasEntry(PROPERTY_KEY_CYRILLIC, PROPERTY_VALUE_CYRILLIC));
     }
 
-    @Test
     public void testMultipleFiles() throws Exception {
 
         //create triggered build, with capture env builder
@@ -122,9 +133,9 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         projectA.getBuildersList().add(new TestBuilder() {
             public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
             BuildListener listener) throws InterruptedException, IOException {
-            build.getWorkspace().child("abc.txt").write("TEST=hello_abc","UTF-8");
-            build.getWorkspace().child("xyz.txt").write("TEST=hello_xyz","UTF-8");
-            build.getWorkspace().child("xyz.properties").write("TEST=hello_xyz","UTF-8");
+            build.getWorkspace().child("abc.txt").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_1, "UTF-8");
+            build.getWorkspace().child("xyz.txt").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_2, "UTF-8");
+            build.getWorkspace().child("xyz.properties").write(PROPERTY_KEY + "=" + PROPERTY_VALUE_2, "UTF-8");
             return true;
             }
         });
@@ -137,19 +148,30 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         // check triggered builds are correct.
         waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
-        assertEquals(2, builds.size());
+        assertThat("wrong number of builds was triggered", builds, hasSize(2));
 
-        Set<String> values = Sets.newHashSet();
-        for (FreeStyleBuild build : builds) {
-            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-            assertTrue(buildEnvVar.containsKey("TEST"));
-            values.add(buildEnvVar.get("TEST"));
-        }
-        assertEquals(ImmutableSet.of("hello_abc","hello_xyz"), values);
+        // Some magic with generics in 1.6. Will be simplified in 1.7
+        // If list of two build envs contains in one time prop with val_1 and val_2 - all ok
+        Iterable<Map<? extends String, ? extends String>> buildEnvVars = LambdaCollections.with(builds)
+                .convert(getEnvVars(builder));
 
+        // Has prop with val_1 AND not(has prop with val_2)
+        Matcher<Map<? extends String,? extends String>> firstMatcher = allOf(
+                hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1),
+                not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2)));
+
+        Matcher<Iterable<? super Map<? extends String, ? extends String>>> hasProp1DontHasProp2 = hasItem(firstMatcher);
+        assertThat(buildEnvVars, hasProp1DontHasProp2);
+
+        // Has prop with val_2 AND not(has prop with val_1)
+        Matcher<Map<? extends String, ? extends String>> secondMatcher = allOf(
+                hasEntry(PROPERTY_KEY, PROPERTY_VALUE_2),
+                not(hasEntry(PROPERTY_KEY, PROPERTY_VALUE_1)));
+
+        Matcher<Iterable<? super Map<? extends String, ? extends String>>> hasProp2DontHasProp1 = hasItem(secondMatcher);
+        assertThat(buildEnvVars, hasProp2DontHasProp1);
     }
 
-    @Test
     public void testNoFilesSkip() throws Exception {
 
         //create triggered build, with capture env builder
@@ -171,7 +193,6 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         assertEquals(0, builds.size());
     }
 
-    @Test
     public void testNoFilesNoParms() throws Exception {
 
         //create triggered build, with capture env builder
@@ -193,7 +214,6 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         assertEquals(1, builds.size());
     }
 
-    @Test(expected = RuntimeException.class)
     public void testNoFilesFail() throws Exception {
 
         //create triggered build, with capture env builder
@@ -213,6 +233,22 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(0, builds.size());
+    }
+
+
+    /**
+     * Transforms builds IDs to EnvVars (casted to Map<String, String>)
+     *
+     * @param builder - it captures envvars for every build
+     * @return lambda-style converter
+     */
+    private Converter<FreeStyleBuild, Map<? extends String, ? extends String>> getEnvVars(
+            final CaptureAllEnvironmentBuilder builder) {
+        return new Converter<FreeStyleBuild, Map<? extends String, ? extends String>>() {
+            public Map<String, String> convert(FreeStyleBuild from) {
+                return builder.getEnvVars().get(from.getId());
+            }
+        };
     }
 
 }
