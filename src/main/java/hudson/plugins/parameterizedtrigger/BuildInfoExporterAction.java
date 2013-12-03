@@ -31,9 +31,9 @@ import hudson.model.AbstractProject;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.Result;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import jenkins.model.Jenkins;
 
@@ -49,15 +49,19 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   //now unused as part of map
   private transient String buildName;
   private transient int buildNumber;
-  //Map of triggered projects grouped by project.
-  private HashMap<String, List<BuildReference>> buildRefs;
+  
+  // used in version =< 2.21.
+  // this is now migrated to this.builds.
+  private transient Map<String, List<BuildReference>> buildRefs;
+
+  private List<BuildReference> builds;
   private BuildReference lastReference;
 
   public BuildInfoExporterAction(BuildReference buildRef) {
     super();
 
-    this.buildRefs = new HashMap<String, List<BuildReference>>();
-    addTobuildRefsMap(buildRef);
+    this.builds = new ArrayList<BuildReference>();
+    addBuild(buildRef);
     lastReference = buildRef;
   }
 
@@ -88,16 +92,9 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     return action;
   }
 
-  private void addTobuildRefsMap(BuildReference br) {
-    if (this.buildRefs.containsKey(br.projectName)) {
-      //project already in map add to existing array
-      this.buildRefs.get(br.projectName).add(br);
-    } else {
-      //project not yet in map add it
-      ArrayList<BuildReference> brs = new ArrayList<BuildReference>();
-      brs.add(br);
-      this.buildRefs.put(br.projectName, brs);
-    }
+  private void addBuild(BuildReference br) {
+    this.builds.add(br);
+
     if (br.buildNumber != 0) {
       this.lastReference = br;
     }
@@ -105,11 +102,11 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
   public void addBuildReference(String triggeredProject, int buildNumber, Result buildResult) {
     BuildReference buildRef = new BuildReference(triggeredProject, buildNumber, buildResult);
-    addTobuildRefsMap(buildRef);
+    addBuild(buildRef);
   }
 
   public void addBuildReference(BuildReference buildRef) {
-    addTobuildRefsMap(buildRef);
+    addBuild(buildRef);
   }
 
   public static class BuildReference {
@@ -156,12 +153,12 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     String sanatizedProjectList = getProjectListString(",");
     env.put(ALL_JOBS_NAME_VARIABLE, sanatizedProjectList);
 
-    for (String project : this.buildRefs.keySet()) {
+    for (String project : getProjectsWithBuilds()) {
       // for each project add the following variables once
       // all buildnumbers, lastbuildnumber
       // all Run results, last build result
       String sanatizedBuildName = project.replaceAll("[^a-zA-Z0-9]+", "_");
-      List<BuildReference> refs = this.buildRefs.get(project);
+      List<BuildReference> refs = getBuildRefs(project);
 
       env.put(ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, getBuildNumbersString(refs, ","));
       env.put(BUILD_RUN_COUNT_PREFIX + sanatizedBuildName, Integer.toString(refs.size()));
@@ -185,6 +182,14 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     }
   }
 
+    private List<BuildReference> getBuildRefs(String project) {
+        List<BuildReference> refs = new ArrayList<BuildReference>();
+        for (BuildReference br : builds) {
+            if (br.projectName.equals(project)) refs.add(br);
+        }
+        return refs;
+    }
+
   /**
    * Gets all the builds triggered from this one, filters out the items that
    * were non blocking, which we don't have a builds for. Used in the UI for see
@@ -196,14 +201,12 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
     List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
 
-    for (String projectName : this.buildRefs.keySet()) {
-      AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-              Jenkins.getInstance().getItemByFullName(projectName, AbstractProject.class);
-      for (BuildReference br : this.buildRefs.get(projectName)) {
+    for (BuildReference br : this.builds) {
+        AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
+              Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
         if (br.buildNumber != 0) {
-          builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
+            builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
         }
-      }
     }
     return builds;
   }
@@ -218,14 +221,12 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public List<AbstractProject<?, ?>> getTriggeredProjects() {
     List<AbstractProject<?, ?>> projects = new ArrayList<AbstractProject<?, ?>>();
 
-    for (String projectName : this.buildRefs.keySet()) {
-      AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-              Jenkins.getInstance().getItemByFullName(projectName, AbstractProject.class);
-      for (BuildReference br : this.buildRefs.get(projectName)) {
+    for (BuildReference br : this.builds) {
         if (br.buildNumber == 0) {
-          projects.add(project);
+            AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
+                    Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
+            projects.add(project);
         }
-      }
     }
     return projects;
   }
@@ -240,8 +241,13 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     if (this.lastReference == null) {
       this.lastReference = new BuildReference(this.buildName, this.buildNumber, Result.NOT_BUILT);
     }
-    if (this.buildRefs == null) {
-      this.buildRefs = new HashMap<String, List<BuildReference>>();
+    if (this.builds == null) {
+      this.builds = new ArrayList<BuildReference>();
+    }
+    if (this.buildRefs != null) {
+        for (List<BuildReference> buildReferences : buildRefs.values()) {
+            this.builds.addAll(buildReferences);
+        }
     }
     return this;
   }
@@ -301,12 +307,10 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   private Set<String> getProjectsWithBuilds() {
     Set<String> projects = new HashSet<String>();
 
-    for (String projectName : this.buildRefs.keySet()) {
-      for (BuildReference br : this.buildRefs.get(projectName)) {
+    for (BuildReference br : this.builds) {
         if (br.buildNumber != 0) {
-          projects.add(projectName);
+          projects.add(br.projectName);
         }
-      }
     }
     return projects;
   }

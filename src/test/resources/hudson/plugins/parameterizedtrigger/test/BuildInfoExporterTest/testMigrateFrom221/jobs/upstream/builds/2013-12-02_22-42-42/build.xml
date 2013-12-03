@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<build>
+  <actions>
+    <hudson.model.CauseAction>
+      <causes>
+        <hudson.model.Cause_-UserIdCause/>
+      </causes>
+    </hudson.model.CauseAction>
+    <hudson.plugins.parameterizedtrigger.BuildInfoExporterAction>
+      <buildRefs>
+        <entry>
+          <string>downstream2</string>
+          <list>
+            <hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference>
+              <projectName>downstream2</projectName>
+              <buildNumber>1</buildNumber>
+              <buildResult>SUCCESS</buildResult>
+            </hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference>
+          </list>
+        </entry>
+        <entry>
+          <string>downstream1</string>
+          <list>
+            <hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference>
+              <projectName>downstream1</projectName>
+              <buildNumber>1</buildNumber>
+              <buildResult>SUCCESS</buildResult>
+            </hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference>
+            <hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference>
+              <projectName>downstream1</projectName>
+              <buildNumber>2</buildNumber>
+              <buildResult>SUCCESS</buildResult>
+            </hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference>
+          </list>
+        </entry>
+      </buildRefs>
+      <lastReference reference="../buildRefs/entry[2]/list/hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference[2]"/>
+    </hudson.plugins.parameterizedtrigger.BuildInfoExporterAction>
+  </actions>
+  <number>1</number>
+  <result>SUCCESS</result>
+  <duration>1503</duration>
+  <charset>UTF-8</charset>
+  <keepLog>false</keepLog>
+  <builtOn></builtOn>
+  <workspace>workspace/upstream</workspace>
+  <hudsonVersion>1.480</hudsonVersion>
+  <scm class="hudson.scm.NullChangeLogParser"/>
+  <culprits class="com.google.common.collect.EmptyImmutableSortedSet"/>
+</build>

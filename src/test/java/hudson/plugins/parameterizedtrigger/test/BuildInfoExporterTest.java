@@ -24,6 +24,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause.UserCause;
@@ -44,11 +45,13 @@ import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.jvnet.hudson.test.recipes.LocalData;
 import org.jvnet.hudson.test.HudsonTestCase;
 
 public class BuildInfoExporterTest extends HudsonTestCase {
@@ -313,5 +316,69 @@ public class BuildInfoExporterTest extends HudsonTestCase {
       assertEquals(0, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
       assertEquals(1, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
       assertNull(unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().get(0));
+  }
+  
+  @LocalData
+  public void testMigrateFrom221() throws Exception
+  {
+      // lastReference should be preserved after migration.
+      String lastReferenceValue = null;
+      
+      {
+          FreeStyleProject p = jenkins.getItemByFullName("upstream", FreeStyleProject.class);
+          assertNotNull(p);
+          FreeStyleBuild b = p.getLastBuild();
+          assertNotNull(b);
+          BuildInfoExporterAction action = b.getAction(BuildInfoExporterAction.class);
+          assertNotNull(action);
+          
+          // action should contain following builds:
+          //  downstream1#1
+          //  downstream1#2
+          //  downstream2#1
+          
+          assertEquals(
+              Sets.newHashSet(
+                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
+                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
+                      jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
+              ),
+              new HashSet<AbstractBuild<?,?>>(action.getTriggeredBuilds())
+          );
+          
+          EnvVars env = new EnvVars();
+          action.buildEnvVars(b, env);
+          lastReferenceValue = env.get(BuildInfoExporterAction.JOB_NAME_VARIABLE);
+          assertEquals("downstream1", lastReferenceValue);
+          
+          b.save();
+      }
+      
+      {
+          FreeStyleProject p = jenkins.getItemByFullName("upstream", FreeStyleProject.class);
+          assertNotNull(p);
+          FreeStyleBuild b = p.getLastBuild();
+          assertNotNull(b);
+          BuildInfoExporterAction action = b.getAction(BuildInfoExporterAction.class);
+          assertNotNull(action);
+          
+          // action should contain following builds:
+          //  downstream1#1
+          //  downstream1#2
+          //  downstream2#1
+          
+          assertEquals(
+              Sets.newHashSet(
+                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
+                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
+                      jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
+              ),
+              new HashSet<AbstractBuild<?,?>>(action.getTriggeredBuilds())
+          );
+          
+          EnvVars env = new EnvVars();
+          action.buildEnvVars(b, env);
+          assertEquals(lastReferenceValue, env.get(BuildInfoExporterAction.JOB_NAME_VARIABLE));
+      }
   }
 }
