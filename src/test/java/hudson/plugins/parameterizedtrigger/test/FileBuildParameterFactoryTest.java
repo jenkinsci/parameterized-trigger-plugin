@@ -47,6 +47,7 @@ import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.util.FormValidation;
 
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
@@ -61,12 +62,16 @@ import java.io.IOException;
 public class FileBuildParameterFactoryTest extends HudsonTestCase {
 
     private TriggerBuilder createTriggerBuilder(AbstractProject project, NoFilesFoundEnum action){
+        return createTriggerBuilder(project, action, null);
+    }
+    
+    private TriggerBuilder createTriggerBuilder(AbstractProject project, NoFilesFoundEnum action, String encoding){
 
         TriggerBuilder tBuilder = new TriggerBuilder(
                                 new BlockableBuildTriggerConfig(project.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
                                 ImmutableList.<AbstractBuildParameterFactory>of(
-                                    new FileBuildParameterFactory("*.txt", action)),
+                                    new FileBuildParameterFactory("*.txt", encoding, action)),
                                 Collections.<AbstractBuildParameters>emptyList()));
         return tBuilder;
     }
@@ -213,6 +218,157 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(0, builds.size());
+    }
+
+    public void testUtf8File() throws Exception {
+
+        //create triggered build, with capture env builder
+        Project projectB = createFreeStyleProject();
+        CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
+        projectB.getBuildersList().add(builder);
+
+        //create triggering build
+        FreeStyleProject projectA = createFreeStyleProject();
+        projectA.getBuildersList().add(new TestBuilder() {
+            public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
+            build.getWorkspace().child("abc.txt").write(
+                    "TEST=こんにちは\n"  // "hello" in Japanese.
+                    + "ＴＥＳＴ=hello_abc", // TEST in multibytes.
+                    "UTF-8"
+            );
+            return true;
+            }
+        });
+
+        // add Trigger builder, with file paramter factory
+        projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "UTF-8"));
+
+        projectA.scheduleBuild2(0).get();
+
+        // check triggered builds are correct.
+        waitUntilNoActivity();
+        List<FreeStyleBuild> builds = projectB.getBuilds();
+        assertEquals(1, builds.size());
+
+        for (FreeStyleBuild build : builds) {
+            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+            System.out.println(String.format("'%s'", "こんにちは"));
+            System.out.println(String.format("'%s'", buildEnvVar.get("TEST")));
+            assertEquals("こんにちは", buildEnvVar.get("TEST"));
+            assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
+        }
+
+    }
+
+    public void testShiftJISFile() throws Exception {
+        // ShiftJIS is an encoding of Japanese texts.
+        // I test here that a non-UTF-8 encoding also works.
+
+        //create triggered build, with capture env builder
+        Project projectB = createFreeStyleProject();
+        CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
+        projectB.getBuildersList().add(builder);
+
+        //create triggering build
+        FreeStyleProject projectA = createFreeStyleProject();
+        projectA.getBuildersList().add(new TestBuilder() {
+            public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
+            build.getWorkspace().child("abc.txt").write(
+                    "TEST=こんにちは\n"  // "hello" in Japanese.
+                    + "ＴＥＳＴ=hello_abc", // TEST in multibytes.
+                    "Shift_JIS"
+            );
+            return true;
+            }
+        });
+
+        // add Trigger builder, with file paramter factory
+        projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "Shift_JIS"));
+
+        projectA.scheduleBuild2(0).get();
+
+        // check triggered builds are correct.
+        waitUntilNoActivity();
+        List<FreeStyleBuild> builds = projectB.getBuilds();
+        assertEquals(1, builds.size());
+
+        for (FreeStyleBuild build : builds) {
+            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+            assertEquals("こんにちは", buildEnvVar.get("TEST"));
+            assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
+        }
+
+    }
+
+    public void testPlatformDefaultEncodedFile() throws Exception {
+
+        //create triggered build, with capture env builder
+        Project projectB = createFreeStyleProject();
+        CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
+        projectB.getBuildersList().add(builder);
+
+        //create triggering build
+        FreeStyleProject projectA = createFreeStyleProject();
+        projectA.getBuildersList().add(new TestBuilder() {
+            public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
+            build.getWorkspace().child("abc.txt").write(
+                    "ＴＥＳＴ=ｈｅｌｌｏ＿ａｂｃ", // TEST=hello_abc in multibytes.
+                    null
+            );
+            return true;
+            }
+        });
+
+        // add Trigger builder, with file paramter factory
+        projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, ""));
+
+        projectA.scheduleBuild2(0).get();
+
+        // check triggered builds are correct.
+        waitUntilNoActivity();
+        List<FreeStyleBuild> builds = projectB.getBuilds();
+        assertEquals(1, builds.size());
+
+        for (FreeStyleBuild build : builds) {
+            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+            assertEquals("ｈｅｌｌｏ＿ａｂｃ", buildEnvVar.get("ＴＥＳＴ"));
+        }
+
+    }
+    
+    public void testDoCheckEncoding() throws Exception {
+        FileBuildParameterFactory.DescriptorImpl d
+            = (FileBuildParameterFactory.DescriptorImpl)jenkins.getDescriptorOrDie(FileBuildParameterFactory.class);
+        
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding(null).kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("  ").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("UTF-8").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("Shift_JIS").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding(" UTF-8 ").kind);
+        assertEquals(FormValidation.Kind.ERROR, d.doCheckEncoding("NoSuchEncoding").kind);
+    }
+    
+    public void testNullifyEncoding() throws Exception {
+        // to use default encoding, encoding must be null.
+        {
+            FileBuildParameterFactory target
+                = new FileBuildParameterFactory("*.properties", null, NoFilesFoundEnum.SKIP);
+            assertNull(target.getEncoding());
+        }
+        {
+            FileBuildParameterFactory target
+                = new FileBuildParameterFactory("*.properties", "", NoFilesFoundEnum.SKIP);
+            assertNull(target.getEncoding());
+        }
+        {
+            FileBuildParameterFactory target
+                = new FileBuildParameterFactory("*.properties", "  ", NoFilesFoundEnum.SKIP);
+            assertNull(target.getEncoding());
+        }
     }
 
 }
