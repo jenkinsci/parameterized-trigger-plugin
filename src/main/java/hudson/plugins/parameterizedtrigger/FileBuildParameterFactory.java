@@ -12,6 +12,7 @@ import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.remoting.VirtualChannel;
+import hudson.util.FormValidation;
 import hudson.util.LogTaskListener;
 import hudson.util.StreamTaskListener;
 import hudson.util.VariableResolver;
@@ -25,11 +26,14 @@ import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.types.FileSet;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 
 /**
@@ -77,12 +81,18 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
     }
 
     private final String filePattern;
+    private final String encoding;
     private final NoFilesFoundEnum noFilesFoundAction;
 
     @DataBoundConstructor
-    public FileBuildParameterFactory(String filePattern, NoFilesFoundEnum noFilesFoundAction) {
+    public FileBuildParameterFactory(String filePattern, String encoding, NoFilesFoundEnum noFilesFoundAction) {
         this.filePattern = filePattern;
+        this.encoding = Util.fixEmptyAndTrim(encoding);
         this.noFilesFoundAction = noFilesFoundAction;
+    }
+
+    public FileBuildParameterFactory(String filePattern, NoFilesFoundEnum noFilesFoundAction) {
+        this(filePattern, null, noFilesFoundAction);
     }
 
     public FileBuildParameterFactory(String filePattern) {
@@ -91,6 +101,10 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
 
     public String getFilePattern() {
         return filePattern;
+    }
+
+    public String getEncoding() {
+        return encoding;
     }
 
     public NoFilesFoundEnum getNoFilesFoundAction() {
@@ -109,7 +123,7 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
                 noFilesFoundAction.failCheck(listener);
             } else {
                 for(FilePath f: files) {
-                    String parametersStr = f.readToString();
+                    String parametersStr = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
                     Logger.getLogger(FileBuildParameterFactory.class.getName()).log(Level.INFO, null, "Triggering build with " + f.getName());
                     result.add(new PredefinedBuildParameters(parametersStr));
                 }
@@ -134,6 +148,20 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
         @Override
         public String getDisplayName() {
             return Messages.FileBuildParameterFactory_FileBuildParameterFactory();
+        }
+        
+        public FormValidation doCheckEncoding(@QueryParameter String encoding) {
+            if (!StringUtils.isBlank(encoding)) {
+                try {
+                    Charset.forName(encoding.trim());
+                } catch(Exception e) {
+                    return FormValidation.error(e, "Unsupported Encoding");
+                }
+                if(!ParameterizedTriggerUtils.isSupportNonAsciiPropertiesFile()) {
+                    return FormValidation.warning("Non-ascii properties files are supported only since Java 1.6.");
+                }
+            }
+            return FormValidation.ok();
         }
     }
 }

@@ -11,25 +11,34 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.util.FormValidation;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.tools.ant.filters.StringInputStream;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 public class FileBuildParameters extends AbstractBuildParameters {
 
 	private final String propertiesFile;
+	private final String encoding;
 	private final boolean failTriggerOnMissing;
 
 	@DataBoundConstructor
-	public FileBuildParameters(String propertiesFile, boolean failTriggerOnMissing) {
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing) {
 		this.propertiesFile = propertiesFile;
+		this.encoding = Util.fixEmptyAndTrim(encoding);
 		this.failTriggerOnMissing = failTriggerOnMissing;
+	}
+
+	public FileBuildParameters(String propertiesFile, boolean failTriggerOnMissing) {
+		this(propertiesFile, null, failTriggerOnMissing);
 	}
 
 	public FileBuildParameters(String propertiesFile) {
@@ -65,10 +74,9 @@ public class FileBuildParameters extends AbstractBuildParameters {
 				continue;
 			}
 
-			String s = f.readToString();
+			String s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
 			s = env.expand(s);
-			Properties p = new Properties();
-			p.load(new StringInputStream(s));
+			Properties p = ParameterizedTriggerUtils.loadProperties(s);
 
 			for (Map.Entry<Object, Object> entry : p.entrySet()) {
 				values.add(new StringParameterValue(entry.getKey().toString(),
@@ -84,6 +92,10 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		return propertiesFile;
 	}
 
+	public String getEncoding() {
+		return encoding;
+	}
+
 	public boolean getFailTriggerOnMissing() {
 		return failTriggerOnMissing;
 	}
@@ -93,6 +105,20 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		@Override
 		public String getDisplayName() {
 			return "Parameters from properties file";
+		}
+		
+		public FormValidation doCheckEncoding(@QueryParameter String encoding) {
+			if (!StringUtils.isBlank(encoding)) {
+				try {
+					Charset.forName(encoding.trim());
+				} catch(Exception e) {
+					return FormValidation.error(e, "Unsupported Encoding");
+				}
+				if(!ParameterizedTriggerUtils.isSupportNonAsciiPropertiesFile()) {
+					return FormValidation.warning("Non-ascii properties files are supported only since Java 1.6.");
+				}
+			}
+			return FormValidation.ok();
 		}
 	}
 

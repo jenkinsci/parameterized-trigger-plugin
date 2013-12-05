@@ -6,5 +6,10 @@
   <f:entry field="noFilesFoundAction" title="${%Action to perform when no files found}">
     <f:enum>${it.getDescription()}</f:enum>
   </f:entry>
+  <f:advanced>
+    <f:entry field="encoding" title="${%File Encoding}">
+      <f:textbox />
+    </f:entry>
+  </f:advanced>
 
 </j:jelly>
