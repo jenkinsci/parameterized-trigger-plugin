@@ -15,6 +15,8 @@ import hudson.util.FormValidation;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -111,8 +113,10 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			if (!StringUtils.isBlank(encoding)) {
 				try {
 					Charset.forName(encoding.trim());
-				} catch(Exception e) {
-					return FormValidation.error(e, "Unsupported Encoding");
+				} catch(UnsupportedCharsetException e) {
+					return FormValidation.error("Unsupported Encoding");
+				} catch(IllegalCharsetNameException e) {
+					return FormValidation.error("Bad Encoding Name");
 				}
 				if(!ParameterizedTriggerUtils.isSupportNonAsciiPropertiesFile()) {
 					return FormValidation.warning("Non-ascii properties files are supported only since Java 1.6.");

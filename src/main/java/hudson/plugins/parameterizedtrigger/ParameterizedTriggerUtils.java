@@ -84,7 +84,7 @@ public class ParameterizedTriggerUtils {
         try {
             // Is {@link Properties#load(java.io.Reader)} supported?
             Properties.class.getMethod("load", Reader.class);
-        } catch(Exception _) {
+        } catch(NoSuchMethodException _) {
             return false;
         }
         return true;
