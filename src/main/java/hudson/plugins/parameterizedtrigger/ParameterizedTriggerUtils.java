@@ -53,7 +53,7 @@ public class ParameterizedTriggerUtils {
         Properties p = new Properties();
         try {
             p.load(new StringReader(properties));
-        } catch(LinkageError _) {
+        } catch(NoSuchMethodError _) {
             // {@link Properties#load(java.io.Reader)} is supported since Java 1.6
             // When used with Java1.5, fall back to
             // {@link Properties#load(java.io.InputStream)}, which does not support
