@@ -59,6 +59,9 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		}
 	}
 
+	public FileBuildParameters(String propertiesFile, boolean failTriggerOnMissing) {
+		this(propertiesFile, failTriggerOnMissing, null);
+	}
 	public FileBuildParameters(String propertiesFile) {
 		this(propertiesFile, false, null);
 	}
