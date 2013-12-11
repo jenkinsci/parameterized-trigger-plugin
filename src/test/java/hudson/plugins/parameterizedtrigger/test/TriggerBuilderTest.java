@@ -23,11 +23,8 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.model.Project;
-import hudson.model.FreeStyleBuild;
-import hudson.model.Result;
+import hudson.model.*;
 import hudson.model.Cause.UpstreamCause;
-import hudson.model.FreeStyleProject;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -53,7 +50,7 @@ import java.io.IOException;
 
 import org.jvnet.hudson.test.HudsonTestCase;
 import com.google.common.collect.ImmutableList;
-import hudson.model.Run;
+
 import java.lang.System;
 
 import jenkins.model.Jenkins;
@@ -378,6 +375,28 @@ public class TriggerBuilderTest extends HudsonTestCase {
         p.setAxes(axes);
 
         return p;
+    }
+
+    public void testExpansionOfMultipleProjectsInEnvVariable() throws Exception {
+        FreeStyleProject upstream = createFreeStyleProject();
+        upstream.addProperty(new ParametersDefinitionProperty(
+                new StringParameterDefinition("PARAM", "downstream1,downstream2")
+        ));
+
+        FreeStyleProject downstream1 = createFreeStyleProject("downstream1");
+        FreeStyleProject downstream2 = createFreeStyleProject("downstream2");
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("${PARAM}", null, null);
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+
+        upstream.getBuildersList().add(triggerBuilder);
+
+        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new Cause.UserCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
+        assertBuildStatusSuccess(upstreamBuild);
+        waitUntilNoActivity();
+        FreeStyleBuild downstream1Build = downstream1.getLastBuild();
+        FreeStyleBuild downstream2Build = downstream2.getLastBuild();
+        assertBuildStatusSuccess(downstream1Build);
+        assertBuildStatusSuccess(downstream2Build);
     }
 
     private void assertLines(Run<?,?> build, String... lines) throws IOException {
