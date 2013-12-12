@@ -27,7 +27,7 @@ if(builds.size() > 0) {
 }
 
 def projects = my.triggeredProjects
-if (projects.size > 0) {
+if (projects.size() > 0) {
 	h2("Subprojects triggered but not blocked for");
 
 	ul(style:"list-style-type: none;") {
