@@ -3,6 +3,9 @@
   <f:entry field="propertiesFile" title="${%Use properties from file}">
     <f:textbox />
   </f:entry>
+  <f:entry field="sourceNode" title="Node axis to use">
+    <f:textbox />
+  </f:entry>
   <f:entry field="failTriggerOnMissing" title="${%Don't trigger if any files are missing}">
     <f:checkbox default="false" />
   </f:entry>
