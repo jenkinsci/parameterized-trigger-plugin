@@ -211,7 +211,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             }
 
             // If oldBuild is null then we have already examined LastSuccessfulBuild as well.
-            if (currentBuild != null) {
+            if (currentBuild != null && context.getLastSuccessfulBuild() != null) {
                 resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), subProjectData);
             }
         }
