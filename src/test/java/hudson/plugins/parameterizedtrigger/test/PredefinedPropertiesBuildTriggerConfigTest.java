@@ -54,4 +54,27 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		assertEquals("value", builder.getEnvVars().get("KEY"));
 	}
+	
+    public void testNonAscii() throws Exception {
+
+        Project projectA = createFreeStyleProject("projectA");
+        String properties = "KEY=１２３\n" // 123 in multibytes
+                + "ＫＥＹ=value\n";    // "KEY" in multibytes
+        projectA.getPublishersList().add(
+                new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+                        new PredefinedBuildParameters(properties))));
+
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        Project projectB = createFreeStyleProject("projectB");
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
+        hudson.rebuildDependencyGraph();
+
+        projectA.scheduleBuild2(0).get();
+        hudson.getQueue().getItem(projectB).getFuture().get();
+
+        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertEquals("１２３", builder.getEnvVars().get("KEY"));
+        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+    }
 }

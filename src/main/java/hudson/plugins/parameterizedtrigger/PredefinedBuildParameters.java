@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 public class PredefinedBuildParameters extends AbstractBuildParameters {
@@ -33,8 +32,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 		EnvVars env = getEnvironment(build, listener);
 
-		Properties p = new Properties();
-		p.load(new StringInputStream(properties));
+		Properties p = ParameterizedTriggerUtils.loadProperties(getProperties());
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {

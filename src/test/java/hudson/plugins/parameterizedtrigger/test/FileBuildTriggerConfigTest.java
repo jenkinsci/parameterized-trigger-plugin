@@ -23,11 +23,13 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.FileBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
+import hudson.util.FormValidation;
 
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
@@ -109,4 +111,115 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 		// There should be no builds of projectB as not triggered.
 		assertEquals(0, projectB.getBuilds().size());
 	}
+	
+    public void testUtf8File() throws Exception {
+
+        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        String properties = "KEY=こんにちは\n"  // "hello" in Japanese.
+                + "ＫＥＹ=value"; // "KEY" in multibytes.
+        projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes("UTF-8")));
+        projectA.getPublishersList().add(
+                new BuildTrigger(
+                new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+                        new FileBuildParameters("properties.txt", "UTF-8", true))));
+
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
+        hudson.rebuildDependencyGraph();
+
+        projectA.scheduleBuild2(0).get();
+        hudson.getQueue().getItem(projectB).getFuture().get();
+
+        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+    }
+
+    public void testShiftJISFile() throws Exception {
+        // ShiftJIS is an encoding of Japanese texts.
+        // I test here that a non-UTF-8 encoding also works.
+
+        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        String properties = "KEY=こんにちは\n"  // "hello" in Japanese.
+                + "ＫＥＹ=value"; // "KEY" in multibytes.
+        projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes("Shift_JIS")));
+        projectA.getPublishersList().add(
+                new BuildTrigger(
+                new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+                        new FileBuildParameters("properties.txt", "Shift_JIS", true))));
+
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
+        hudson.rebuildDependencyGraph();
+
+        projectA.scheduleBuild2(0).get();
+        hudson.getQueue().getItem(projectB).getFuture().get();
+
+        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+    }
+    
+    public void testPlatformDefaultEncodedFile() throws Exception {
+        // ShiftJIS is an encoding of Japanese texts.
+        // I test here that a non-UTF-8 encoding also works.
+
+        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        String properties = "KEY=こんにちは\n"  // "hello" in Japanese.
+                + "ＫＥＹ=value"; // "KEY" in multibytes.
+        projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes()));
+        projectA.getPublishersList().add(
+                new BuildTrigger(
+                new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+                        new FileBuildParameters("properties.txt"))));
+
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
+        hudson.rebuildDependencyGraph();
+
+        projectA.scheduleBuild2(0).get();
+        hudson.getQueue().getItem(projectB).getFuture().get();
+
+        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+    }
+
+    public void testDoCheckEncoding() throws Exception {
+        FileBuildParameters.DescriptorImpl d
+            = (FileBuildParameters.DescriptorImpl)jenkins.getDescriptorOrDie(FileBuildParameters.class);
+        
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding(null).kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("  ").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("UTF-8").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("Shift_JIS").kind);
+        assertEquals(FormValidation.Kind.OK, d.doCheckEncoding(" UTF-8 ").kind);
+        assertEquals(FormValidation.Kind.ERROR, d.doCheckEncoding("NoSuchEncoding").kind);
+    }
+    
+    public void testNullifyEncoding() throws Exception {
+        // to use default encoding, encoding must be null.
+        {
+            FileBuildParameters target
+                = new FileBuildParameters("*.properties", null, false);
+            assertNull(target.getEncoding());
+        }
+        {
+            FileBuildParameters target
+                = new FileBuildParameters("*.properties", "", false);
+            assertNull(target.getEncoding());
+        }
+        {
+            FileBuildParameters target
+                = new FileBuildParameters("*.properties", "  ", false);
+            assertNull(target.getEncoding());
+        }
+    }
 }
