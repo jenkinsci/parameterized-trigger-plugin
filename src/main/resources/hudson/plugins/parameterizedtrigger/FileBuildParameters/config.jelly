@@ -6,6 +6,17 @@
   <f:entry field="failTriggerOnMissing" title="${%Don't trigger if any files are missing}">
     <f:checkbox default="false" />
   </f:entry>
+  <j:if test="${descriptor.isMatrixProject(it)}">
+    <!-- Here is displayed only for matrix project-->
+    <f:optionalBlock field="useMatrixChild" title="${%Use files in matrix child builds}">
+      <f:entry field="combinationFilter" title="combinationFilter">
+        <f:textbox />
+      </f:entry>
+      <f:entry field="onlyExactRuns" title="">
+        <f:checkbox title="${%Use child builds exactly triggered from this parent build}" />
+      </f:entry>
+    </f:optionalBlock>
+  </j:if>
   <f:advanced>
     <f:entry field="encoding" title="${%File Encoding}">
       <f:textbox />

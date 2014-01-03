@@ -12,31 +12,63 @@ import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+import hudson.matrix.AxisList;
+import hudson.matrix.Combination;
+import hudson.matrix.MatrixBuild;
+import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixRun;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.annotation.Nullable;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+
 public class FileBuildParameters extends AbstractBuildParameters {
+	private static final Logger LOGGER = Logger.getLogger(FileBuildParameters.class.getName());
 
 	private final String propertiesFile;
 	private final String encoding;
 	private final boolean failTriggerOnMissing;
+	
+	/*properties used for a matrix project*/
+	private final boolean useMatrixChild;
+	private final String combinatioFilter;
+	private final boolean onlyExactRuns;
 
 	@DataBoundConstructor
-	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing) {
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixBuild, String combinationFilter, boolean onlyExactRuns) {
 		this.propertiesFile = propertiesFile;
 		this.encoding = Util.fixEmptyAndTrim(encoding);
 		this.failTriggerOnMissing = failTriggerOnMissing;
+		this.useMatrixChild = useMatrixBuild;
+		if (this.useMatrixChild) {
+			this.combinatioFilter = combinationFilter;
+			this.onlyExactRuns = onlyExactRuns;
+		} else {
+			this.combinatioFilter = null;
+			this.onlyExactRuns = false;
+		}
+	}
+
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing) {
+		this(propertiesFile, encoding, failTriggerOnMissing, false, null, false);
 	}
 
 	public FileBuildParameters(String propertiesFile, boolean failTriggerOnMissing) {
@@ -63,6 +95,24 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		String[] allFiles = Util.tokenize(resolvedPropertiesFile, ",");
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 
+		// builds to scan.
+		Collection<? extends AbstractBuild<?,?>> targetBuilds = getTargetBuilds(build);
+		
+		for (AbstractBuild<?,?> targetBuild: targetBuilds) {
+			if (!targetBuild.getWorkspace().exists()) {
+				// This is a case that the workspace is already removed.
+				LOGGER.log(Level.WARNING, "workspace for {0} is already removed. skip.", targetBuild.getDisplayName());
+				continue;
+			}
+			values.addAll(extractAllValues(targetBuild, listener, allFiles));
+		}
+		//Values might be empty, in that case don't return anything.
+		return values.size() == 0 ? null :new ParametersAction(values);
+	}
+	
+	private List<ParameterValue> extractAllValues(AbstractBuild<?,?> build, TaskListener listener, String[] allFiles) throws IOException, InterruptedException, DontTriggerException {
+		List<ParameterValue> values = new ArrayList<ParameterValue>();
+		EnvVars env = getEnvironment(build, listener);
 		for(String file:allFiles) {
 			FilePath f = build.getWorkspace().child(file);
 			if (!f.exists()) {
@@ -85,9 +135,32 @@ public class FileBuildParameters extends AbstractBuildParameters {
 						entry.getValue().toString()));
 			}
 		}
-		//Values might be empty, in that case don't return anything.
-		return values.size() == 0 ? null :new ParametersAction(values);
+		return values;
+	}
 
+	private Collection<? extends AbstractBuild<?, ?>> getTargetBuilds(AbstractBuild<?, ?> build) {
+		if ((build instanceof MatrixBuild) && isUseMatrixChild()) {
+			return Collections2.filter(
+				isOnlyExactRuns()?((MatrixBuild)build).getExactRuns():((MatrixBuild)build).getRuns(),
+				new Predicate<MatrixRun>() {
+					public boolean apply(@Nullable MatrixRun run) {
+						if (run == null) {
+							return false;
+						}
+						if (StringUtils.isBlank(getCombinatioFilter())) {
+							// no combination filter stands for all children.
+							return true;
+						}
+						Combination c = run.getParent().getCombination();
+						AxisList axes = run.getParent().getParent().getAxes();
+						
+						return c.evalGroovyExpression(axes, getCombinatioFilter());
+					}
+				}
+			);
+		} else {
+			return Arrays.<AbstractBuild<?,?>>asList(build);
+		}
 	}
 
 	public String getPropertiesFile() {
@@ -102,6 +175,18 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		return failTriggerOnMissing;
 	}
 
+	public boolean isUseMatrixChild() {
+		return useMatrixChild;
+	}
+	
+	public String getCombinatioFilter() {
+		return combinatioFilter;
+	}
+	
+	public boolean isOnlyExactRuns() {
+		return onlyExactRuns;
+	}
+	
 	@Extension
 	public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
 		@Override
@@ -123,6 +208,20 @@ public class FileBuildParameters extends AbstractBuildParameters {
 				}
 			}
 			return FormValidation.ok();
+		}
+
+		/**
+		 * Check whether the configuring model is {@link MatrixProject}. Called from jelly.
+		 * 
+		 * Note: Caller should pass it for the model is not bound to
+		 * {@link StaplerRequest#findAncestorObject(Class)}
+		 * when called via hetelo-list.
+		 * 
+		 * @param it
+		 * @return true if the target model is {@link MatrixProject}
+		 */
+		public boolean isMatrixProject(Object it) {
+			return (it != null) && (it instanceof MatrixProject);
 		}
 	}
 
