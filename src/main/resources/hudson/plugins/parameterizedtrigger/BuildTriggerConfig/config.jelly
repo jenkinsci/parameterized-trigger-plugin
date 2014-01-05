@@ -18,6 +18,7 @@
                    oneEach="true"
                    items="${instance.configs}"
                    addCaption="${%Add Parameters}"
+                   capture="configFor"
     />
 
   </f:block>
