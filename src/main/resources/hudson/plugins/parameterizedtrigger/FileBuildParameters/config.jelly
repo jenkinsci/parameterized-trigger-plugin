@@ -9,11 +9,11 @@
   <j:if test="${descriptor.isMatrixProject(it)}">
     <!-- Here is displayed only for matrix project-->
     <f:optionalBlock field="useMatrixChild" title="${%Use files in matrix child builds}">
-      <f:entry field="combinationFilter" title="combinationFilter">
+      <f:entry field="combinationFilter" title="Combination Filter">
         <f:textbox />
       </f:entry>
-      <f:entry field="onlyExactRuns" title="">
-        <f:checkbox title="${%Use child builds exactly triggered from this parent build}" />
+      <f:entry field="onlyExactRuns" title="Only files in exact child builds">
+        <f:checkbox />
       </f:entry>
     </f:optionalBlock>
   </j:if>
