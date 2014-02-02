@@ -2,6 +2,7 @@
   <f:entry title="${%Build Triggers}" field="configs">
     <f:repeatable field="configs" noAddButton="true" minimum="1">
       <j:set var="instance" value="${instance.descriptor!=descriptor?null:instance}"/><!-- work around until 1.382 -->
+      <j:set var="configFor" value="publisher" /> <!-- used for views of AbstractBuildParameters to determine called for builder or publisher -->
       <table width="100%">
         <st:include class="${descriptor.clazz}" page="config.jelly" />
 
