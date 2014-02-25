@@ -25,11 +25,14 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.FilePath;
+import hudson.model.ParametersAction;
+import hudson.model.ParameterValue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
@@ -88,6 +91,15 @@ public class ParameterizedTriggerUtils {
             return false;
         }
         return true;
+    }
+
+    public static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
+        LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
+        for (ParameterValue param : base.getParameters())
+            params.put(param.getName(), param);
+        for (ParameterValue param : overlay.getParameters())
+            params.put(param.getName(), param);
+        return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
     }
 
 }
