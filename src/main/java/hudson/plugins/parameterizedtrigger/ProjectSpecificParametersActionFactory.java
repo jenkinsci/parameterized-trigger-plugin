@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ProjectSpecificParametersActionFactory extends AbstractProjectSpecificBuildActionsFactory {
+public class ProjectSpecificParametersActionFactory {
 
     List<ITransformProjectParametersAction> transforms;
 
