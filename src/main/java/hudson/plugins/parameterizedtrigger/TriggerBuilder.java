@@ -56,7 +56,7 @@ public class TriggerBuilder extends Builder {
 
     @DataBoundConstructor
     public TriggerBuilder(List<BlockableBuildTriggerConfig> configs) {
-        this.configs = new ArrayList<BlockableBuildTriggerConfig>(hudson.Util.fixNull(configs));
+        this.configs = new ArrayList<BlockableBuildTriggerConfig>(Util.fixNull(configs));
     }
 
     public TriggerBuilder(BlockableBuildTriggerConfig... configs) {
