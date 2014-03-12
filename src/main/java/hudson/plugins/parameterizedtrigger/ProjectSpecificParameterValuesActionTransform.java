@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import java.lang.RuntimeException;
 
 /**
  * Convert Generic ParameterValues to the type indicated by the Project's ParameterDefinitions
@@ -59,7 +63,19 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
             ParameterDefinition def = defs.get(name);
 
             if(canConvert(def, pv)) {
-                return ((SimpleParameterDefinition)def).createValue(((StringParameterValue)pv).value);
+                try {
+                    return ((SimpleParameterDefinition)def).createValue(((StringParameterValue)pv).value);
+                } catch (RuntimeException e) {
+                    if (System.getProperty("hudson.plugins.parameterizedtrigger.ProjectSpecificParametersActionFactory.compatibility_mode","false").equals("true")) {
+                        Logger.getLogger(ProjectSpecificParameterValuesActionTransform.class.getName())
+                            .log(Level.WARNING,
+                                 "Ignoring RuntimeException thrown while converting StringParameterValue. Falling back to original value.",
+                                 e);
+                        return pv;
+                    } else {
+                        throw e;
+                    }
+                }
             }
         }
 
