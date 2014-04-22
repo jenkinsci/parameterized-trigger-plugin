@@ -54,6 +54,7 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.SingleFileSCM;
 import org.jvnet.hudson.test.ExtractResourceSCM;
@@ -707,5 +708,43 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             assertEquals("true", getStringParameterValue(build, "triggered_child3"));
             build.delete();
         }
+    }
+    
+    @Bug(22705)
+    public void testMatrixBuildsConfiguration() throws Exception {
+        FreeStyleProject downstream = createFreeStyleProject();
+        
+        MatrixProject upstream = createMatrixProject();
+        upstream.setAxes(new AxisList(new TextAxis("axis1", "value1", "value2")));
+        upstream.getPublishersList().add(new BuildTrigger(
+                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                        new FileBuildParameters("properties.txt", "UTF-8", true, true, "axis1=value1", true)
+                ))
+        ));
+        upstream.save();
+        
+        String upstreamName = upstream.getFullName();
+        
+        WebClient wc = createWebClient();
+        submit(wc.getPage(upstream, "configure").getFormByName("config"));
+        
+        upstream = jenkins.getItemByFullName(upstreamName, MatrixProject.class);
+        assertNotNull(upstream);
+        
+        BuildTrigger trigger = upstream.getPublishersList().get(BuildTrigger.class);
+        assertNotNull(trigger);
+        
+        assertEquals(1, trigger.getConfigs().size());
+        
+        BuildTriggerConfig config = trigger.getConfigs().get(0);
+        
+        assertEquals(1, config.getConfigs().size());
+        FileBuildParameters p = (FileBuildParameters)config.getConfigs().get(0);
+        assertEquals("properties.txt", p.getPropertiesFile());
+        assertEquals("UTF-8", p.getEncoding());
+        assertTrue(p.getFailTriggerOnMissing());
+        assertTrue(p.isUseMatrixChild());
+        assertEquals("axis1=value1", p.getCombinatioFilter());
+        assertTrue(p.isOnlyExactRuns());
     }
 }
