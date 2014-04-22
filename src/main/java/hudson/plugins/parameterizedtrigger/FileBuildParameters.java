@@ -49,20 +49,20 @@ public class FileBuildParameters extends AbstractBuildParameters {
 	
 	/*properties used for a matrix project*/
 	private final boolean useMatrixChild;
-	private final String combinatioFilter;
+	private final String combinationFilter;
 	private final boolean onlyExactRuns;
 
 	@DataBoundConstructor
-	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixBuild, String combinationFilter, boolean onlyExactRuns) {
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns) {
 		this.propertiesFile = propertiesFile;
 		this.encoding = Util.fixEmptyAndTrim(encoding);
 		this.failTriggerOnMissing = failTriggerOnMissing;
-		this.useMatrixChild = useMatrixBuild;
+		this.useMatrixChild = useMatrixChild;
 		if (this.useMatrixChild) {
-			this.combinatioFilter = combinationFilter;
+			this.combinationFilter = combinationFilter;
 			this.onlyExactRuns = onlyExactRuns;
 		} else {
-			this.combinatioFilter = null;
+			this.combinationFilter = null;
 			this.onlyExactRuns = false;
 		}
 	}
@@ -147,14 +147,14 @@ public class FileBuildParameters extends AbstractBuildParameters {
 						if (run == null) {
 							return false;
 						}
-						if (StringUtils.isBlank(getCombinatioFilter())) {
+						if (StringUtils.isBlank(getCombinationFilter())) {
 							// no combination filter stands for all children.
 							return true;
 						}
 						Combination c = run.getParent().getCombination();
 						AxisList axes = run.getParent().getParent().getAxes();
 						
-						return c.evalGroovyExpression(axes, getCombinatioFilter());
+						return c.evalGroovyExpression(axes, getCombinationFilter());
 					}
 				}
 			);
@@ -179,8 +179,8 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		return useMatrixChild;
 	}
 	
-	public String getCombinatioFilter() {
-		return combinatioFilter;
+	public String getCombinationFilter() {
+		return combinationFilter;
 	}
 	
 	public boolean isOnlyExactRuns() {

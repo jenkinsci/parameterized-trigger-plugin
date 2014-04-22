@@ -744,7 +744,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         assertEquals("UTF-8", p.getEncoding());
         assertTrue(p.getFailTriggerOnMissing());
         assertTrue(p.isUseMatrixChild());
-        assertEquals("axis1=value1", p.getCombinatioFilter());
+        assertEquals("axis1=value1", p.getCombinationFilter());
         assertTrue(p.isOnlyExactRuns());
     }
 }
