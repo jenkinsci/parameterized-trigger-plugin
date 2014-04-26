@@ -9,7 +9,7 @@
   <!-- When rendered via Ajax, configFor is available only when Jenkins >= 1.495 -->
   <j:if test="${(configFor == null or configFor == 'publisher') and descriptor.isMatrixProject(it)}">
     <!-- Here is displayed only for matrix project-->
-    <f:optionalBlock field="useMatrixChild" title="${%Use files in matrix child builds}">
+    <f:optionalBlock field="useMatrixChild" title="${%Use files in matrix child builds}" inline="true">
       <f:entry field="combinationFilter" title="Combination Filter">
         <f:textbox />
       </f:entry>
