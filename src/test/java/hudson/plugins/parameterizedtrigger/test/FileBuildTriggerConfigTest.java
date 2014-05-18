@@ -23,6 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -53,6 +54,7 @@ import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 
+import org.apache.commons.io.FileUtils;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.HudsonTestCase;
@@ -746,5 +748,48 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         assertTrue(p.isUseMatrixChild());
         assertEquals("axis1=value1", p.getCombinationFilter());
         assertTrue(p.isOnlyExactRuns());
+    }
+    
+    public void testAbsolutePath() throws Exception {
+        FreeStyleProject downstream = createFreeStyleProject();
+        
+        FreeStyleProject upstream = createFreeStyleProject();
+        
+        File absoluteFile = new File(jenkins.getRootDir(), "properties.txt");
+        FileUtils.writeStringToFile(absoluteFile, "absolute_param=value1");
+        
+        File relativeFile = new File(new File(jenkins.getWorkspaceFor(upstream).getRemote()), "../properties.txt");
+        FileUtils.writeStringToFile(relativeFile, "relative_param1=value2");
+        
+        upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "relative_param2=value3"));
+        upstream.getPublishersList().add(new BuildTrigger(
+                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                        new FileBuildParameters(String.format("%s,../properties.txt,properties.txt", absoluteFile.getAbsolutePath()))
+                ))
+        ));
+        
+        jenkins.rebuildDependencyGraph();
+        
+        assertBuildStatusSuccess(upstream.scheduleBuild2(0));
+        waitUntilNoActivity();
+        
+        FreeStyleBuild build = downstream.getLastBuild();
+        assertNotNull(build);
+        assertEquals("value1", getStringParameterValue(build, "absolute_param"));
+        assertEquals("value2", getStringParameterValue(build, "relative_param1"));
+        assertEquals("value3", getStringParameterValue(build, "relative_param2"));
+    }
+    
+    /**
+     * Builder that removes a workspace.
+     */
+    private static class WorkspaceRemoveBuilder extends Builder {
+        @Override
+        public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+                throws InterruptedException, IOException
+        {
+            build.getWorkspace().deleteRecursive();
+            return true;
+        }
     }
 }
