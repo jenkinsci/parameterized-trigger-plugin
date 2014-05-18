@@ -761,10 +761,13 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         }
         FileUtils.writeStringToFile(absoluteFile, "absolute_param=value1");
         
-        File relativeFile = new File(new File(jenkins.getWorkspaceFor(upstream).getRemote()), "../properties.txt");
-        if(!relativeFile.getParentFile().exists()) {
-            FileUtils.forceMkdir(relativeFile.getParentFile());
+        File workspace = new File(jenkins.getWorkspaceFor(upstream).getRemote());
+        File relativeDir = workspace.getParentFile();
+        
+        if(!relativeDir.exists()) {
+            FileUtils.forceMkdir(relativeDir);
         }
+        File relativeFile = new File(relativeDir, "properties.txt");
         FileUtils.writeStringToFile(relativeFile, "relative_param1=value2");
         
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "relative_param2=value3"));
