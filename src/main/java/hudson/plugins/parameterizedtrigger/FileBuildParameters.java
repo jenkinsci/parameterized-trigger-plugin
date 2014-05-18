@@ -99,11 +99,6 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		Collection<? extends AbstractBuild<?,?>> targetBuilds = getTargetBuilds(build);
 		
 		for (AbstractBuild<?,?> targetBuild: targetBuilds) {
-			if (!targetBuild.getWorkspace().exists()) {
-				// This is a case that the workspace is already removed.
-				LOGGER.log(Level.WARNING, "workspace for {0} is already removed. skip.", targetBuild.getDisplayName());
-				continue;
-			}
 			values.addAll(extractAllValues(targetBuild, listener, allFiles));
 		}
 		//Values might be empty, in that case don't return anything.

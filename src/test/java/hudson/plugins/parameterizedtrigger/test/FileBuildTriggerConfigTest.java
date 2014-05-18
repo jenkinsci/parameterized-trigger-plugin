@@ -792,4 +792,32 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             return true;
         }
     }
+    
+    @Bug(22229)
+    public void testAbsolutePathWithoutWorkspace() throws Exception {
+        // Though it is rather a problem with ws-cleanup-plugin, 
+        // there's a case a workspace is removed.
+        FreeStyleProject downstream = createFreeStyleProject();
+        
+        FreeStyleProject upstream = createFreeStyleProject();
+        
+        File absoluteFile = new File(jenkins.getRootDir(), "properties.txt");
+        FileUtils.writeStringToFile(absoluteFile, "absolute_param=value1");
+        
+        upstream.getBuildersList().add(new WorkspaceRemoveBuilder());
+        upstream.getPublishersList().add(new BuildTrigger(
+                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                        new FileBuildParameters(absoluteFile.getAbsolutePath())
+                ))
+        ));
+        
+        jenkins.rebuildDependencyGraph();
+        
+        assertBuildStatusSuccess(upstream.scheduleBuild2(0));
+        waitUntilNoActivity();
+        
+        FreeStyleBuild build = downstream.getLastBuild();
+        assertNotNull(build);
+        assertEquals("value1", getStringParameterValue(build, "absolute_param"));
+    }
 }
