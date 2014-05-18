@@ -756,9 +756,15 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         FreeStyleProject upstream = createFreeStyleProject();
         
         File absoluteFile = new File(jenkins.getRootDir(), "properties.txt");
+        if(!absoluteFile.getParentFile().exists()) {
+            FileUtils.forceMkdir(absoluteFile.getParentFile());
+        }
         FileUtils.writeStringToFile(absoluteFile, "absolute_param=value1");
         
         File relativeFile = new File(new File(jenkins.getWorkspaceFor(upstream).getRemote()), "../properties.txt");
+        if(!relativeFile.getParentFile().exists()) {
+            FileUtils.forceMkdir(relativeFile.getParentFile());
+        }
         FileUtils.writeStringToFile(relativeFile, "relative_param1=value2");
         
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "relative_param2=value3"));
@@ -802,6 +808,9 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         FreeStyleProject upstream = createFreeStyleProject();
         
         File absoluteFile = new File(jenkins.getRootDir(), "properties.txt");
+        if(!absoluteFile.getParentFile().exists()) {
+            FileUtils.forceMkdir(absoluteFile.getParentFile());
+        }
         FileUtils.writeStringToFile(absoluteFile, "absolute_param=value1");
         
         upstream.getBuildersList().add(new WorkspaceRemoveBuilder());
