@@ -530,7 +530,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
          *
          * Copied from hudson.tasks.BuildTrigger.doCheck(Item project, String value)
          */
-        public FormValidation doCheckProjects(@AncestorInPath Item project, @QueryParameter String value ) {
+        public FormValidation doCheckProjects(@AncestorInPath AbstractProject<?,?> project, @QueryParameter String value ) {
             // Require CONFIGURE permission on this project
             if(!project.hasPermission(Item.CONFIGURE)){
             	return FormValidation.ok();
