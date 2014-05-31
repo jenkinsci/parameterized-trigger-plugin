@@ -1,10 +1,13 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Executor;
 import hudson.model.Action;
 import hudson.model.ParametersAction;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Queue;
 import hudson.model.ParameterValue;
 import hudson.model.SimpleParameterDefinition;
 import hudson.model.StringParameterDefinition;
@@ -16,7 +19,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-
 import java.lang.RuntimeException;
 
 /**
@@ -56,6 +58,20 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
             v.getClass().equals(StringParameterValue.class);
     }
 
+    private static String getCurrentBuildName() {
+        Executor e = Executor.currentExecutor();
+        if(e == null) {
+            return null;
+        }
+        
+        Queue.Executable task = e.getCurrentExecutable();
+        if(task == null || !(task instanceof AbstractBuild)) {
+            return null;
+        }
+        
+        return ((AbstractBuild<?,?>)task).getFullDisplayName();
+    }
+
     private static ParameterValue convertToDefinedType(Map<String, ParameterDefinition> defs, ParameterValue pv) {
         String name = pv.getName();
 
@@ -67,9 +83,14 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
                     return ((SimpleParameterDefinition)def).createValue(((StringParameterValue)pv).value);
                 } catch (RuntimeException e) {
                     if (System.getProperty("hudson.plugins.parameterizedtrigger.ProjectSpecificParametersActionFactory.compatibility_mode","false").equals("true")) {
+                        String buildName = getCurrentBuildName();
                         Logger.getLogger(ProjectSpecificParameterValuesActionTransform.class.getName())
                             .log(Level.WARNING,
-                                 "Ignoring RuntimeException thrown while converting StringParameterValue. Falling back to original value.",
+                                 String.format(
+                                         "Ignoring RuntimeException thrown while converting StringParameterValue %s on %s. Falling back to original value.",
+                                         pv.getName(),
+                                         (buildName != null)?buildName:"PROJECT_CANNOT_RESOLVED"
+                                 ),
                                  e);
                         return pv;
                     } else {
