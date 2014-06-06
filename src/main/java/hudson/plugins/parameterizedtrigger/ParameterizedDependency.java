@@ -51,10 +51,10 @@ public class ParameterizedDependency extends Dependency {
 
 	@Override
 	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
-		if (!config.getCondition().isMet(build.getResult())){
-			return false;
-		}
 		try {
+			if (!config.getCondition().isMet(build, listener, getDownstreamProject())){
+				return false;
+			}
 			List<Action> actionList = config.getBaseActions(build, listener);
 			if (!actionList.isEmpty()) {
 				actions.addAll(config.getBuildActions(actionList, getDownstreamProject()));
