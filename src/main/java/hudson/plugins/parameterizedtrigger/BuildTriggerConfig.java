@@ -300,7 +300,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         env.overrideAll(build.getBuildVariables());
 
         try {
-			if (condition.isMet(build.getResult())) {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
@@ -308,14 +307,15 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
                     for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                      if (condition.isMet(build, listener, project)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.add(schedule(build, project, list));
+                      }
                     }
                 }
 
                 return futures;
-			}
 		} catch (DontTriggerException e) {
 			// don't trigger on this configuration
 		}
@@ -327,19 +327,19 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         env.overrideAll(build.getBuildVariables());
 
         try {
-            if (getCondition().isMet(build.getResult())) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
                     for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                      if (condition.isMet(build, listener, project)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.put(project, schedule(build, project, list));
+                      }
                     }
                 }
                 return futures;
-            }
         } catch (DontTriggerException e) {
             // don't trigger on this configuration
         }

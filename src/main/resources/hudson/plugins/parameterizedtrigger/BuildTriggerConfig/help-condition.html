@@ -1,2 +1,12 @@
-<div>Determines for which results of the current build, the new build(s) will be triggered.</div>
+<div>
+<p>Determines for which results of the current build, the new build(s) will be triggered.</p>
+<p>
+The <b>Explicit</b> option is used for conditionally triggering downstream jobs.<br>
+There are two ways to select downstream jobs to trigger:
+<ul>
+  <li>through a build variable with the same name as the triggered downstream job (value must be <i>true</i>).</li>
+  <li>through the <i>TRIGGER_JOB_NAMES</i> environment variable (contains comma separated downstream job names).</li>
+</ul>
+</p>
+</div>
  
