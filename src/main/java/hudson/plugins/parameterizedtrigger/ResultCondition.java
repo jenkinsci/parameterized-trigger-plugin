@@ -75,5 +75,4 @@ public enum ResultCondition {
 	}
 
 	abstract boolean isMet(AbstractBuild<?, ?> build, TaskListener listener, AbstractProject<?, ?> downstream) throws IOException, InterruptedException;
-
 }
