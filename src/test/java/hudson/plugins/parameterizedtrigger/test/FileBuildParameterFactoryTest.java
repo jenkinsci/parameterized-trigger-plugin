@@ -23,10 +23,14 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -36,10 +40,6 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.model.Result;
-import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.FileBuildParameters;
-import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -48,15 +48,9 @@ import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.util.FormValidation;
-
-import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.junit.Test;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.TestBuilder;
-import org.junit.Test;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.io.IOException;
 
 
 public class FileBuildParameterFactoryTest extends HudsonTestCase {
@@ -69,7 +63,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
 
         TriggerBuilder tBuilder = new TriggerBuilder(
                                 new BlockableBuildTriggerConfig(project.getName(),
-                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 0, null),
                                 ImmutableList.<AbstractBuildParameterFactory>of(
                                     new FileBuildParameterFactory("*.txt", encoding, action)),
                                 Collections.<AbstractBuildParameters>emptyList()));

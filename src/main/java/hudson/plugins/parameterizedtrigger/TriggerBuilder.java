@@ -25,25 +25,46 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
-import hudson.*;
+import hudson.AbortException;
+import hudson.EnvVars;
+import hudson.Extension;
+import hudson.Launcher;
+import hudson.Util;
 import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.CauseAction;
+import hudson.model.ParametersAction;
+import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.util.IOException2;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 /**
  * {@link Builder} that triggers other projects and optionally waits for their completion.
@@ -129,21 +150,39 @@ public class TriggerBuilder extends Builder {
                             listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
                             continue;
                         }
-                        for (Future<AbstractBuild> future : futures.get(p)) {
-                            try {
-                                listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                AbstractBuild b = future.get();
-                                listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getProject().getFullName(), b.getNumber(), b.getResult());
+                        List<Future<AbstractBuild>> projectFutures = futures.get(p);
+                        int retryCount = 0;
+                        while (retryCount <= config.getBlock().retryCount) {
+                            retryCount++;
+                            List<Future<AbstractBuild>> newFutures = new ArrayList<Future<AbstractBuild>>();
+                            for (Future<AbstractBuild> future : projectFutures) {
+                                try {
+                                    listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/' + p.getUrl(), p.getFullDisplayName()));
+                                    AbstractBuild b = future.get();
+                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
+                                    BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getProject().getFullName(), b.getNumber(), b.getResult());
 
-                                if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
-                                    build.setResult(config.getBlock().mapBuildResult(b.getResult()));
-                                } else {
-                                    buildStepResult = false;
+                                    if (b.getResult().isWorseThan(Result.UNSTABLE)
+                                            && config.getBlock().retryCount > 0
+                                            && parseLog(b.getLogFile(), config.getBlock().retryPattern)) {
+                                        List<Action> actions = copyBuildCausesAndAddUserCause(b);
+                                        ParametersAction action = b.getAction(ParametersAction.class);
+                                        actions.add(action);
+
+                                        listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " had result " + b.getResult()
+                                                + ", log matched retry pattern " + config.getBlock().retryPattern + " and " + (config.getBlock().retryCount - retryCount)
+                                                + " retries remain, so rebuilding.");
+                                        newFutures.add(config.schedule(build, p, actions));
+                                    } else if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
+                                        build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                                    } else {
+                                        buildStepResult = false;
+                                    }
+                                } catch (CancellationException x) {
+                                    throw new AbortException(p.getFullDisplayName() + " aborted.");
                                 }
-                            } catch (CancellationException x) {
-                                throw new AbortException(p.getFullDisplayName() +" aborted.");
                             }
+                            projectFutures = new ArrayList<Future<AbstractBuild>>(newFutures);
                         }
                     }
                 }
@@ -154,6 +193,54 @@ public class TriggerBuilder extends Builder {
 
         return buildStepResult;
     }
+
+    private boolean parseLog(File logFile, String regexp) throws IOException {
+        if (regexp == null || regexp.equals("")) {
+            return false;
+        }
+
+        // Assume default encoding and text files
+        String line;
+        Pattern pattern = Pattern.compile(regexp);
+        BufferedReader reader = new BufferedReader(new FileReader(logFile));
+        while ((line = reader.readLine()) != null) {
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Extracts the build causes and adds or replaces the {@link hudson.model.Cause.UserIdCause}. The result is a
+     * list of all build causes from the original build (might be an empty list), plus a
+     * {@link hudson.model.Cause.UserIdCause} for the user who started the rebuild.
+     *
+     * @param fromBuild the build to copy the causes from.
+     * @return list with all original causes and a {@link hudson.model.Cause.UserIdCause}.
+     */
+    private List<Action> copyBuildCausesAndAddUserCause(AbstractBuild<?, ?> fromBuild) {
+        List currentBuildCauses = fromBuild.getCauses();
+
+        List<Action> actions = new ArrayList<Action>(currentBuildCauses.size());
+        boolean hasUserCause = false;
+        for (Object buildCause : currentBuildCauses) {
+            if (buildCause instanceof Cause.UserIdCause) {
+                hasUserCause = true;
+                actions.add(new CauseAction(new Cause.UserIdCause()));
+            } else {
+                actions.add(new CauseAction((Cause)buildCause));
+            }
+        }
+        if (!hasUserCause) {
+            actions.add(new CauseAction(new Cause.UserIdCause()));
+        }
+
+        return actions;
+    }
+
+
 
     private String getProjectListAsString(List<AbstractProject> projectList){
         StringBuilder projectListString = new StringBuilder();
@@ -186,4 +273,7 @@ public class TriggerBuilder extends Builder {
             return true;
         }
     }
+
+    private static final Logger LOGGER = Logger.getLogger(TriggerBuilder.class.getName());
+
 }

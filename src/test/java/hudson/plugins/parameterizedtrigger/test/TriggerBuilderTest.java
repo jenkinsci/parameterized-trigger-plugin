@@ -23,8 +23,32 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.model.*;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.google.common.collect.ImmutableList;
+import hudson.Launcher;
+import hudson.matrix.AxisList;
+import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixRun;
+import hudson.matrix.TextAxis;
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.FreeStyleBuild;
+import hudson.model.FreeStyleProject;
+import hudson.model.ParametersAction;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Project;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.StringParameterDefinition;
+import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -33,32 +57,15 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.plugins.promoted_builds.PromotionProcess;
 import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
-import org.jvnet.hudson.test.Bug;
-
-import hudson.matrix.TextAxis;
-import hudson.matrix.MatrixProject;
-import hudson.matrix.MatrixRun;
-import hudson.matrix.AxisList;
-
-
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.io.IOException;
-
-import org.jvnet.hudson.test.HudsonTestCase;
-import com.google.common.collect.ImmutableList;
-
-import java.lang.System;
-
 import jenkins.model.Jenkins;
+import org.jvnet.hudson.test.Bug;
+import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.TestBuilder;
 
 public class TriggerBuilderTest extends HudsonTestCase {
 
     private BlockableBuildTriggerConfig createTriggerConfig(String projects) {
-        return new BlockableBuildTriggerConfig(projects, new BlockingBehaviour("never", "never", "never"), null);
+        return new BlockableBuildTriggerConfig(projects, new BlockingBehaviour("never", "never", "never", 0, null), null);
     }
 
     public void testOrderOfLogEntries() throws Exception {
@@ -143,6 +150,80 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "Waiting for the completion of project3");
     }
 
+    public void testShouldNotRetry() throws Exception {
+        FreeStyleProject project = createFreeStyleProject("project1");
+        project.getBuildersList().add(getFailingBuilder());
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        triggerProject.scheduleBuild2(0).get();
+
+        assertEquals(project.getBuilds().size(), 1);
+        assertLines(triggerProject.getLastBuild(),
+                "Waiting for the completion of project1");
+    }
+
+    public void testShouldRetryOnceThenNotMatch() throws Exception {
+        FreeStyleProject project = createFreeStyleProject("project1");
+        project.getBuildersList().add(getFailingBuilder());
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("project1",
+                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 2, "Build number 1 failing"), null);
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        triggerProject.scheduleBuild2(0).get();
+
+        assertEquals(2, project.getBuilds().size());
+        assertLinesRegex(triggerProject.getLastBuild(),
+                ".*Waiting for the completion of project1.*",
+                ".*log matched retry pattern.*",
+                ".*Waiting for the completion of project1.*");
+    }
+
+    public void testShouldRetryThreeTimesThenStop() throws Exception {
+        FreeStyleProject project = createFreeStyleProject("project1");
+        project.getBuildersList().add(getFailingBuilder());
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("project1",
+                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 3, "failing"), null);
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        triggerProject.scheduleBuild2(0).get();
+
+        assertEquals(4, project.getBuilds().size());
+        assertLinesRegex(triggerProject.getLastBuild(),
+                ".*Waiting for the completion of project1.*",
+                ".*log matched retry pattern.*",
+                ".*Waiting for the completion of project1.*",
+                ".*log matched retry pattern.*",
+                ".*Waiting for the completion of project1.*",
+                ".*log matched retry pattern.*",
+                ".*Waiting for the completion of project1.*");
+    }
+
+    private TestBuilder getFailingBuilder() {
+        return new TestBuilder() {
+            @Override
+            public boolean perform(AbstractBuild<?, ?> abstractBuild, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+                listener.getLogger().println("Build number " + abstractBuild.getNumber() + " failing");
+                abstractBuild.setResult(Result.FAILURE);
+                return true;
+            }
+        };
+    }
+
     public void testNonBlockingTrigger() throws Exception {
         createFreeStyleProject("project1");
         createFreeStyleProject("project2");
@@ -168,7 +249,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         Project<?,?> triggerProject = createFreeStyleProject();
 
-        BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
+        BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 0, null);
         ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0","2","1", "TEST=COUNT$COUNT"));
         List<AbstractBuildParameters> emptyList = Collections.<AbstractBuildParameters>emptyList();
 

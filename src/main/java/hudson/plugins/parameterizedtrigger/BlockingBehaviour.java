@@ -25,19 +25,19 @@
 
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractDescribableImpl;
-import org.apache.commons.lang.StringUtils;
-import hudson.Extension;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.Hudson;
-import hudson.model.Result;
-import org.kohsuke.stapler.DataBoundConstructor;
+import static hudson.model.Result.FAILURE;
+import static hudson.model.Result.SUCCESS;
+import static hudson.model.Result.UNSTABLE;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static hudson.model.Result.*;
+import hudson.Extension;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
+import hudson.model.Result;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * Determines how to handle the status of the triggered builds in {@link TriggerBuilder}.
@@ -48,12 +48,17 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
     public final Result buildStepFailureThreshold;
     public final Result unstableThreshold;
     public final Result failureThreshold;
+    public final Integer retryCount;
+    public final String retryPattern;
 
     @DataBoundConstructor
-    public BlockingBehaviour(String buildStepFailureThreshold, String unstableThreshold, String failureThreshold) {
+    public BlockingBehaviour(String buildStepFailureThreshold, String unstableThreshold, String failureThreshold,
+                             Integer retryCount, String retryPattern) {
         this.buildStepFailureThreshold = parse(buildStepFailureThreshold);
         this.unstableThreshold = parse(unstableThreshold);
         this.failureThreshold = parse(failureThreshold);
+        this.retryCount = (retryCount != null ? retryCount : 0);
+        this.retryPattern = retryPattern;
     }
 
     private Result parse(String t) {
@@ -63,12 +68,23 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
         return Result.fromString(t);
     }
 
-    public BlockingBehaviour(Result buildStepFailureThreshold, Result unstableThreshold, Result failureThreshold) {
+    public BlockingBehaviour(Result buildStepFailureThreshold, Result unstableThreshold, Result failureThreshold,
+                             Integer retryCount, String retryPattern) {
         this.buildStepFailureThreshold = buildStepFailureThreshold;
         this.unstableThreshold = unstableThreshold;
         this.failureThreshold = failureThreshold;
+        this.retryCount = (retryCount != null ? retryCount : 0);
+        this.retryPattern = retryPattern;
     }
-    
+
+    public BlockingBehaviour(String buildStepFailureThreshold, String unstableThreshold, String failureThreshold) {
+        this(buildStepFailureThreshold, unstableThreshold, failureThreshold, 0, null);
+    }
+
+    public BlockingBehaviour(Result buildStepFailureThreshold, Result unstableThreshold, Result failureThreshold) {
+        this(buildStepFailureThreshold, unstableThreshold, failureThreshold, 0, null);
+    }
+
     /**
      * Maps the result of a triggered build to the result of the triggering build step.
      * 

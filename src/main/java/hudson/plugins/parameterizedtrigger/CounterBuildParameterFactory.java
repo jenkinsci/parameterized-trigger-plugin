@@ -1,5 +1,9 @@
 package hudson.plugins.parameterizedtrigger;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import hudson.EnvVars;
@@ -12,10 +16,6 @@ import hudson.util.VariableResolver;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A BuildParameterFactory generating Predefined Parameters for a counter
@@ -35,13 +35,13 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
         SKIP("Don't trigger these projects"){
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
-                listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateSkipping());
+                listener.getLogger().println(hudson.plugins.parameterizedtrigger.Messages.CounterBuildParameterFactory_CountingWillNotTerminateSkipping());
                 throw new AbstractBuildParameters.DontTriggerException();
         }},
         NOPARMS("Skip these parameters"){
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
-                listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateIgnore());
+                listener.getLogger().println(hudson.plugins.parameterizedtrigger.Messages.CounterBuildParameterFactory_CountingWillNotTerminateIgnore());
         }};
 
         private String description;
@@ -54,7 +54,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
         }
 
         public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
-            throw new RuntimeException(Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
+            throw new RuntimeException(hudson.plugins.parameterizedtrigger.Messages.CounterBuildParameterFactory_CountingWillNotTerminate());
         }
     }
 
@@ -116,7 +116,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
         @Override
         public String getDisplayName() {
-            return Messages.CounterBuildParameterFactory_CounterBuildParameterFactory();
+            return hudson.plugins.parameterizedtrigger.Messages.CounterBuildParameterFactory_CounterBuildParameterFactory();
         }
 
         public FormValidation doCheckFrom(@QueryParameter String value) { return validateNumberField(value);

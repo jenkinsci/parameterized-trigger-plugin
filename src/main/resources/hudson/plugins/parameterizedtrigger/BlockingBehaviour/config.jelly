@@ -61,4 +61,13 @@ THE SOFTWARE.
     </select>
   </f:entry>
 
+    <f:advanced>
+        <f:entry title="${%Retry count for failed builds matching pattern}" field="retryCount">
+            <f:textbox/>
+        </f:entry>
+        <f:entry title="${%Pattern to retry failed builds if seen}" field="retryPattern">
+            <f:textbox/>
+        </f:entry>
+    </f:advanced>
+
 </j:jelly>
