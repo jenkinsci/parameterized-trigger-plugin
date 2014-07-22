@@ -25,6 +25,8 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import static org.apache.commons.lang.exception.ExceptionUtils.getFullStackTrace;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -43,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
@@ -143,6 +146,18 @@ public class TriggerBuilder extends Builder {
                         }
                         continue;
                     }
+                    Pattern compiledRegex = null;
+                    if (config.getBlock().retryCount > 0
+                            && config.getBlock().retryPattern != null
+                            && !config.getBlock().retryPattern.equals("")) {
+                        try {
+                            compiledRegex = Pattern.compile(config.getBlock().retryPattern);
+                        } catch (PatternSyntaxException e) {
+                            listener.getLogger().println("ERROR: Unable to compile retry pattern '" + config.getBlock().retryPattern
+                                    + ": " + getFullStackTrace(e));
+                        }
+                    }
+
                     //handle blocking configs
                     for (AbstractProject p : projectList) {
                         //handle non-buildable projects
@@ -164,7 +179,7 @@ public class TriggerBuilder extends Builder {
 
                                     if (b.getResult().isWorseThan(Result.UNSTABLE)
                                             && config.getBlock().retryCount > 0
-                                            && parseLog(b.getLogFile(), config.getBlock().retryPattern)) {
+                                            && parseLog(b.getLogFile(), compiledRegex)) {
                                         List<Action> actions = copyBuildCausesAndAddUserCause(b);
                                         ParametersAction action = b.getAction(ParametersAction.class);
                                         actions.add(action);
@@ -194,14 +209,13 @@ public class TriggerBuilder extends Builder {
         return buildStepResult;
     }
 
-    private boolean parseLog(File logFile, String regexp) throws IOException {
-        if (regexp == null || regexp.equals("")) {
+    private boolean parseLog(File logFile, Pattern pattern) throws IOException {
+        if (pattern == null) {
             return false;
         }
 
         // Assume default encoding and text files
         String line;
-        Pattern pattern = Pattern.compile(regexp);
         BufferedReader reader = new BufferedReader(new FileReader(logFile));
         while ((line = reader.readLine()) != null) {
             Matcher matcher = pattern.matcher(line);

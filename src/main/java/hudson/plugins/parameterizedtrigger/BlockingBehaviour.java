@@ -48,7 +48,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
     public final Result buildStepFailureThreshold;
     public final Result unstableThreshold;
     public final Result failureThreshold;
-    public final Integer retryCount;
+    public final int retryCount;
     public final String retryPattern;
 
     @DataBoundConstructor
