@@ -93,13 +93,17 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		String resolvedPropertiesFile = env.expand(propertiesFile);
 
 		String[] allFiles = Util.tokenize(resolvedPropertiesFile, ",");
+		String[] trimmedFiles = new String[allFiles.length];
+		for (int i = 0; i < allFiles.length; i++)
+			trimmedFiles[i] = allFiles[i].trim();
+
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 
 		// builds to scan.
 		Collection<? extends AbstractBuild<?,?>> targetBuilds = getTargetBuilds(build);
 		
 		for (AbstractBuild<?,?> targetBuild: targetBuilds) {
-			values.addAll(extractAllValues(targetBuild, listener, allFiles));
+			values.addAll(extractAllValues(targetBuild, listener, trimmedFiles));
 		}
 		//Values might be empty, in that case don't return anything.
 		return values.size() == 0 ? null :new ParametersAction(values);
