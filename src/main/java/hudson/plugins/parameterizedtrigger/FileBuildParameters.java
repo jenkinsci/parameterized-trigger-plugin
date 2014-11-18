@@ -81,9 +81,9 @@ public class FileBuildParameters extends AbstractBuildParameters {
 
 	/**
 	 * This function returns the Action that should be passed to the triggered build
-	 * to not trigger the build it can throw the DontTriggerException
+	 * to not trigger the build it can throw the {@link DontTriggerException}
 	 *
-	 * @returns Action to be passed to the triggered build, can be Null if no parameters.
+	 * @return Action to be passed to the triggered build, can be Null if no parameters.
 	 */
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
 			throws IOException, InterruptedException, DontTriggerException{
@@ -117,7 +117,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			if (!f.exists()) {
 				listener.getLogger().println("[parameterizedtrigger] Properties file "
 					+ file + " did not exist.");
-				if(getFailTriggerOnMissing() == true) {
+				if(getFailTriggerOnMissing()) {
 					listener.getLogger().println("Not triggering due to missing file");
 					throw new DontTriggerException();
 				}
@@ -214,9 +214,9 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		 * 
 		 * Note: Caller should pass it for the model is not bound to
 		 * {@link StaplerRequest#findAncestorObject(Class)}
-		 * when called via hetelo-list.
+		 * when called via hetero-list.
 		 * 
-		 * @param it
+		 * @param it Object to check
 		 * @return true if the target model is {@link MatrixProject}
 		 */
 		public boolean isMatrixProject(Object it) {
