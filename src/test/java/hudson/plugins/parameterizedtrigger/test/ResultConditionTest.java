@@ -58,6 +58,9 @@ public class ResultConditionTest extends HudsonTestCase {
         
         schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(2, projectB.getLastBuild().getNumber());
+
+        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        assertEquals(3, projectB.getLastBuild().getNumber());
     }
 
     public void testTriggerByUnstableBuild() throws Exception {
@@ -80,6 +83,9 @@ public class ResultConditionTest extends HudsonTestCase {
         
         schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(3, projectB.getLastBuild().getNumber());
+
+        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        assertEquals(4, projectB.getLastBuild().getNumber());
     }
 
     private void schedule(Project projectA, Project projectB, ResultCondition condition)
@@ -111,5 +117,37 @@ public class ResultConditionTest extends HudsonTestCase {
         
         schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(2, projectB.getLastBuild().getNumber());
+
+        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        assertEquals(3, projectB.getLastBuild().getNumber());
     }
+
+    public void testTriggerByAbortedBuild() throws Exception {
+        Project projectA = createFreeStyleProject("projectA");
+        projectA.getBuildersList().add(new AbortedBuilder());
+        Project projectB = createFreeStyleProject("projectB");
+        projectB.setQuietPeriod(1);
+
+        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        assertNull(projectB.getLastBuild());
+
+        schedule(projectA, projectB, ResultCondition.FAILED);
+        assertNull(projectB.getLastBuild());
+
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        assertNull(projectB.getLastBuild());
+
+        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        assertNull(projectB.getLastBuild());
+
+        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        assertEquals(1, projectB.getLastBuild().getNumber());
+
+        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        assertEquals(1, projectB.getLastBuild().getNumber());
+
+        schedule(projectA, projectB, ResultCondition.ALWAYS);
+        assertEquals(2, projectB.getLastBuild().getNumber());
+    }
+
 }
