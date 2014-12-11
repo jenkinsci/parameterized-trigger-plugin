@@ -23,6 +23,9 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import hudson.model.Build;
+import hudson.model.Result;
+import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.model.Queue;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
@@ -35,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.jvnet.hudson.test.FailureBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.SleepBuilder;
 import org.jvnet.hudson.test.UnstableBuilder;
 
 public class ResultConditionTest extends HudsonTestCase {
@@ -97,6 +101,30 @@ public class ResultConditionTest extends HudsonTestCase {
         if (q != null) q.getFuture().get();
     }
 
+    private Build<?,?> waitForBuildStarts(Project<?,?> project, long timeoutMillis) throws Exception {
+        long current = System.currentTimeMillis();
+        while(project.getLastBuild() == null || !project.getLastBuild().isBuilding()) {
+            assertTrue(System.currentTimeMillis() - current < timeoutMillis);
+            Thread.sleep(100);
+        }
+        Build<?,?> build = project.getLastBuild();
+        assertTrue(build.isBuilding());
+        assertNotNull(build.getExecutor());
+        
+        return build;
+    }
+    
+    private void scheduleAndAbort(Project<?,?> projectA, Project<?,?> projectB, ResultCondition condition)
+            throws Exception {
+        projectA.getPublishersList().replace(new BuildTrigger(new BuildTriggerConfig(projectB.getFullName(), condition, new PredefinedBuildParameters(""))));
+        hudson.rebuildDependencyGraph();
+        projectA.scheduleBuild2(0);
+        Build<?,?> build = waitForBuildStarts(projectA, 5000);
+        build.getExecutor().interrupt();
+        waitUntilNoActivity();
+        assertBuildStatus(Result.ABORTED, build);
+    }
+
     public void testTriggerByFailedBuild() throws Exception {
         Project projectA = createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new FailureBuilder());
@@ -147,6 +175,34 @@ public class ResultConditionTest extends HudsonTestCase {
         assertEquals(1, projectB.getLastBuild().getNumber());
 
         schedule(projectA, projectB, ResultCondition.ALWAYS);
+        assertEquals(2, projectB.getLastBuild().getNumber());
+    }
+
+    public void testTriggerByAbortedByInturrupted() throws Exception {
+        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        projectA.getBuildersList().add(new SleepBuilder(10000));
+        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        projectB.setQuietPeriod(1);
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.SUCCESS);
+        assertNull(projectB.getLastBuild());
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.FAILED);
+        assertNull(projectB.getLastBuild());
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        assertNull(projectB.getLastBuild());
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.UNSTABLE);
+        assertNull(projectB.getLastBuild());
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        assertEquals(1, projectB.getLastBuild().getNumber());
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        assertEquals(1, projectB.getLastBuild().getNumber());
+        
+        scheduleAndAbort(projectA, projectB, ResultCondition.ALWAYS);
         assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
