@@ -24,6 +24,9 @@
 
 package hudson.plugins.parameterizedtrigger.test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import hudson.model.Cause;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -36,23 +39,12 @@ import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
-
 public class BuildTriggerConfigTest extends HudsonTestCase {
 
     private BlockableBuildTriggerConfig createConfig(String projectToTrigger){
         List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
         buildParameters.add(new CurrentBuildParameters());
-        BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
+        BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never", 0, null);
         return new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
     }
 

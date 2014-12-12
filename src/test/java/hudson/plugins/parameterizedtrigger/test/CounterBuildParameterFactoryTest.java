@@ -1,5 +1,9 @@
 package hudson.plugins.parameterizedtrigger.test;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -16,10 +20,6 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 public class CounterBuildParameterFactoryTest extends HudsonTestCase {
 
     public void testWithOneParameter() throws Exception {
@@ -28,7 +28,7 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
         projectA.getBuildersList().add(
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
-                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 0, null),
                                 ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT")),
                                 Collections.<AbstractBuildParameters>emptyList())));
 
@@ -56,7 +56,7 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
         projectA.getBuildersList().add(
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
-                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+                                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 0, null),
                                 ImmutableList.<AbstractBuildParameterFactory>of(
                                         new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT"),
                                         new CounterBuildParameterFactory("0","2","1", "NEWTEST=COUNT$COUNT")

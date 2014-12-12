@@ -23,6 +23,18 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import hudson.EnvVars;
@@ -42,17 +54,9 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.recipes.LocalData;
 import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.recipes.LocalData;
 
 public class BuildInfoExporterTest extends HudsonTestCase {
 
@@ -60,7 +64,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     Project<?, ?> projectA = createFreeStyleProject("projectA");
     List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
     buildParameters.add(new CurrentBuildParameters());
-    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
+    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never", 0, null);
     BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("projectB", neverFail, buildParameters);
     projectA.getBuildersList().add(new TriggerBuilder(config));
 
@@ -111,7 +115,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     Project<?, ?> projectA = createFreeStyleProject("projectA");
     List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
     buildParameters.add(new CurrentBuildParameters());
-    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
+    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never", 0, null);
 
     String testName = "odd£()+}{-=~chars-10";
     String testNameResult = "odd_chars_10";
@@ -161,7 +165,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     projectA.getBuildersList().add(
             new TriggerBuilder(
             new BlockableBuildTriggerConfig(testNameResult + "," + testNameResult2,
-            new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+            new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE, 0, null),
             ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
             Collections.<AbstractBuildParameters>emptyList())));
 
@@ -222,7 +226,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     Project<?, ?> projectA = createFreeStyleProject("projectA");
     List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
     buildParameters.add(new CurrentBuildParameters());
-    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
+    BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never", 0, null);
     BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("projectB", neverFail, buildParameters);
 
     BlockableBuildTriggerConfig nonBlockingConfig = new BlockableBuildTriggerConfig("projectC", null, buildParameters);
@@ -274,7 +278,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
               new BlockingBehaviour(
                       Result.FAILURE,
                       Result.UNSTABLE,
-                      Result.FAILURE
+                      Result.FAILURE,
+                      0,
+                      null
               ),
               Arrays.<AbstractBuildParameters>asList(
                       new PredefinedBuildParameters("test=test")
