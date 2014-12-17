@@ -1,20 +1,12 @@
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.BuildListener;
-import hudson.model.Cause.UpstreamCause;
-import hudson.model.Hudson;
-import hudson.model.Node;
-import hudson.model.Run;
+import hudson.model.*;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -31,13 +23,13 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     public boolean buildAllNodesWithLabel;
 
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
-        super(projects, ResultCondition.ALWAYS, false, configs);
+        super(projects, ResultCondition.ALWAYS, false, false, configs);
         this.block = block;
     }
 
     @DataBoundConstructor
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameterFactory> configFactories,List<AbstractBuildParameters> configs) {
-        super(projects, ResultCondition.ALWAYS, false, configFactories, configs);
+        super(projects, ResultCondition.ALWAYS, false, false, configFactories, configs);
         this.block = block;
     }
 

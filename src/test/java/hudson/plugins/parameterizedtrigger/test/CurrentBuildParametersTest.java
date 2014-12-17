@@ -27,19 +27,12 @@ import hudson.model.Cause.UserCause;
 import hudson.model.ParametersAction;
 import hudson.model.Project;
 import hudson.model.StringParameterValue;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
-import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
-import hudson.plugins.parameterizedtrigger.ResultCondition;
-import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.plugins.parameterizedtrigger.*;
+import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.jvnet.hudson.test.HudsonTestCase;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jvnet.hudson.test.HudsonTestCase;
-import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 
 public class CurrentBuildParametersTest extends HudsonTestCase {
 
@@ -102,7 +95,7 @@ public class CurrentBuildParametersTest extends HudsonTestCase {
 		Project<?,?> projectA = createFreeStyleProject("projectA");
 		List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
 		buildParameters.add(new CurrentBuildParameters());
-		projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, pWithoutParameters, buildParameters)));
+		projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, pWithoutParameters, false, buildParameters)));
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 
 		Project<?,?> projectB = createFreeStyleProject("projectB");

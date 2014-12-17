@@ -56,31 +56,35 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	private String projects;
 	private final ResultCondition condition;
 	private boolean triggerWithNoParameters;
+  private boolean skipWhenInvokedManually;
 
     public BuildTriggerConfig(String projects, ResultCondition condition,
-            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+            boolean triggerWithNoParameters, boolean skipWhenInvokedManually, List<AbstractBuildParameterFactory> configFactories,
+            List<AbstractBuildParameters> configs) {
         this.projects = projects;
         this.condition = condition;
         this.triggerWithNoParameters = triggerWithNoParameters;
+        this.skipWhenInvokedManually = skipWhenInvokedManually;
         this.configFactories = configFactories;
         this.configs = Util.fixNull(configs);
     }
 
     @DataBoundConstructor
     public BuildTriggerConfig(String projects, ResultCondition condition,
-            boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
-        this(projects, condition, triggerWithNoParameters, null, configs);
+            boolean triggerWithNoParameters, boolean skipWhenInvokedManually,
+            List<AbstractBuildParameters> configs) {
+        this(projects, condition, triggerWithNoParameters, skipWhenInvokedManually, null, configs);
     }
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
+		this(projects, condition, false, false, null, Arrays.asList(configs));
 	}
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
             List<AbstractBuildParameterFactory> configFactories,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
+		this(projects, condition, false, false, configFactories, Arrays.asList(configs));
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
@@ -106,6 +110,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	public boolean getTriggerWithNoParameters() {
         return triggerWithNoParameters;
     }
+
+  public boolean getSkipWhenInvokedManually() {
+      return skipWhenInvokedManually;
+  }
 
     /**
      * @deprecated

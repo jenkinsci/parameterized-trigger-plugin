@@ -23,43 +23,24 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.matrix.AxisList;
 import hudson.matrix.LabelAxis;
 import hudson.matrix.MatrixProject;
 import hudson.matrix.TextAxis;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.model.Cause;
-import hudson.model.FreeStyleBuild;
-import hudson.model.ParameterValue;
-import hudson.model.FreeStyleProject;
-import hudson.model.ParametersAction;
-import hudson.model.Project;
-import hudson.model.StringParameterValue;
+import hudson.model.*;
 import hudson.model.labels.LabelExpression;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
-import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.FileBuildParameters;
-import hudson.plugins.parameterizedtrigger.ResultCondition;
-import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-
 import org.apache.commons.io.FileUtils;
-import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.Bug;
-import org.jvnet.hudson.test.HudsonTestCase;
-import org.jvnet.hudson.test.SingleFileSCM;
-import org.jvnet.hudson.test.ExtractResourceSCM;
+import org.jvnet.hudson.test.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 
 public class FileBuildTriggerConfigTest extends HudsonTestCase {
 
@@ -306,7 +287,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, false, null, false)
                     ))
             ));
@@ -333,7 +314,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, true, null, false)
                     ))
             ));
@@ -461,7 +442,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, false, null, false)
                     ))
             ));
@@ -488,7 +469,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, true, null, false)
                     ))
             ));
@@ -604,7 +585,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         {
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, true, null, false)
                     ))
             ));
@@ -628,7 +609,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         {
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, true, "childname!='child2'", false)
                     ))
             ));
@@ -667,7 +648,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         {
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, true, null, false)
                     ))
             ));
@@ -691,7 +672,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         {
             upstream.getPublishersList().clear();
             upstream.getPublishersList().add(new BuildTrigger(
-                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                    new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                             new FileBuildParameters("properties.txt", null, false, true, null, true)
                     ))
             ));
@@ -719,7 +700,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         MatrixProject upstream = createMatrixProject();
         upstream.setAxes(new AxisList(new TextAxis("axis1", "value1", "value2")));
         upstream.getPublishersList().add(new BuildTrigger(
-                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                         new FileBuildParameters("properties.txt", "UTF-8", true, true, "axis1=value1", true)
                 ))
         ));
@@ -772,7 +753,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "relative_param2=value3"));
         upstream.getPublishersList().add(new BuildTrigger(
-                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                         new FileBuildParameters(String.format("%s,../properties.txt,properties.txt", absoluteFile.getAbsolutePath()))
                 ))
         ));
@@ -818,7 +799,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         
         upstream.getBuildersList().add(new WorkspaceRemoveBuilder());
         upstream.getPublishersList().add(new BuildTrigger(
-                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
+                new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, false, Arrays.<AbstractBuildParameters>asList(
                         new FileBuildParameters(absoluteFile.getAbsolutePath())
                 ))
         ));
