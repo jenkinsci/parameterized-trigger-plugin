@@ -4,13 +4,7 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Util;
-import hudson.model.AbstractBuild;
-import hudson.model.Action;
-import hudson.model.Descriptor;
-import hudson.model.ParameterValue;
-import hudson.model.ParametersAction;
-import hudson.model.StringParameterValue;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.util.FormValidation;
 import hudson.matrix.AxisList;
 import hudson.matrix.Combination;
@@ -113,12 +107,22 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		EnvVars env = getEnvironment(build, listener);
 		for(String file:allFiles) {
-			FilePath f = build.getWorkspace().child(file);
+			FilePath f = null;
+			// First try to retrieve as a build artifact, so we don't need build workspace to be online
+			for (Run.Artifact artifact : build.getArtifacts()) {
+				if (artifact.relativePath.equals(file)) {
+					f = new FilePath(artifact.getFile());
+					break;
+				}
+			}
+			if (f == null) {
+				f = build.getWorkspace().child(file);
+			}
 			if (!f.exists()) {
 				listener.getLogger().println("[parameterizedtrigger] Properties file "
-					+ file + " did not exist.");
-				if(getFailTriggerOnMissing()) {
-					listener.getLogger().println("Not triggering due to missing file");
+						+ file + " did not exist.");
+				if (getFailTriggerOnMissing()) {
+					listener.getLogger().println("Not triggering due to missing file - did you archive it as a build artifact ?");
 					throw new DontTriggerException();
 				}
 				// goto next file.
