@@ -365,13 +365,25 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
+
+                    // look for project name restriction in params
+                    String onlyProjectName = null;
+                    for (AbstractBuildParameters params : addConfigs) {
+                        if (params instanceof PredefinedBuildParameters) {
+                            onlyProjectName = ((PredefinedBuildParameters) params).getProjectName();
+                            break;
+                        }
+                    }
+
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
-                        List<Action> list = getBuildActions(actions, project);
-
-                        futures.add(schedule(build, project, list));
+                        // only trigger builds on matching projects if specified
+                        if (onlyProjectName == null || project.getName().equals(onlyProjectName)) {
+                            List<Action> list = getBuildActions(actions, project);
+                            futures.add(schedule(build, project, list));
+                        }
                     }
                 }
 
@@ -414,11 +426,23 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 ListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
+
+                    // look for project name restriction in params
+                    String onlyProjectName = null;
+                    for (AbstractBuildParameters params : addConfigs) {
+                        if (params instanceof PredefinedBuildParameters) {
+                            onlyProjectName = ((PredefinedBuildParameters) params).getProjectName();
+                            break;
+                        }
+                    }
+
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
-                        List<Action> list = getBuildActions(actions, project);
-
-                        futures.put(project, schedule(build, project, list));
+                        // only trigger builds on matching projects if specified
+                        if (onlyProjectName == null || project.getName().equals(onlyProjectName)) {
+                            List<Action> list = getBuildActions(actions, project);
+                            futures.put(project, schedule(build, project, list));
+                        }
                     }
                 }
                 return futures;

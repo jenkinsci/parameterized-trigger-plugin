@@ -69,14 +69,21 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
     }
 
     private final String filePattern;
+    private final String projectNameProperty;
     private final String encoding;
     private final NoFilesFoundEnum noFilesFoundAction;
 
     @DataBoundConstructor
-    public FileBuildParameterFactory(String filePattern, String encoding, NoFilesFoundEnum noFilesFoundAction) {
+    public FileBuildParameterFactory(String filePattern, String projectNameProperty,
+                                     String encoding, NoFilesFoundEnum noFilesFoundAction) {
         this.filePattern = filePattern;
+        this.projectNameProperty = Util.fixEmptyAndTrim(projectNameProperty);
         this.encoding = Util.fixEmptyAndTrim(encoding);
         this.noFilesFoundAction = noFilesFoundAction;
+    }
+
+    public FileBuildParameterFactory(String filePattern, String encoding, NoFilesFoundEnum noFilesFoundAction) {
+        this(filePattern, null, encoding, noFilesFoundAction);
     }
 
     public FileBuildParameterFactory(String filePattern, NoFilesFoundEnum noFilesFoundAction) {
@@ -89,6 +96,10 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
 
     public String getFilePattern() {
         return filePattern;
+    }
+
+    public String getProjectNameProperty() {
+        return projectNameProperty;
     }
 
     public String getEncoding() {
@@ -113,7 +124,7 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
                 for(FilePath f: files) {
                     String parametersStr = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
                     Logger.getLogger(FileBuildParameterFactory.class.getName()).log(Level.INFO, null, "Triggering build with " + f.getName());
-                    result.add(new PredefinedBuildParameters(parametersStr));
+                    result.add(new PredefinedBuildParameters(parametersStr, projectNameProperty));
                 }
             }
         } catch (IOException ex) {

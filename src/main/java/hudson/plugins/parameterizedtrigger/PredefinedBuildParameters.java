@@ -21,10 +21,16 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 	private final String properties;
+	private final String projectNameProperty;
 
 	@DataBoundConstructor
-	public PredefinedBuildParameters(String properties) {
+	public PredefinedBuildParameters(String properties, String projectNameProperty) {
 		this.properties = properties;
+		this.projectNameProperty = projectNameProperty;
+	}
+
+	public PredefinedBuildParameters(String properties) {
+		this(properties, null);
 	}
 
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
@@ -36,6 +42,11 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
+			//exclude projectNameProperty key=value from returned Action
+			if (projectNameProperty != null &&
+					projectNameProperty.equals(entry.getKey().toString())) {
+				continue;
+			}
 			values.add(new StringParameterValue(entry.getKey().toString(),
 					env.expand(entry.getValue().toString())));
 		}
@@ -45,6 +56,19 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 	public String getProperties() {
 		return properties;
+	}
+
+	public String getProjectNameProperty() {
+		return projectNameProperty;
+	}
+
+	public String getProjectName() throws IOException, InterruptedException {
+		if (projectNameProperty != null) {
+			Properties p = ParameterizedTriggerUtils.loadProperties(getProperties());
+			return p.getProperty(projectNameProperty, null);
+		} else {
+			return null;
+		}
 	}
 
 	@Extension

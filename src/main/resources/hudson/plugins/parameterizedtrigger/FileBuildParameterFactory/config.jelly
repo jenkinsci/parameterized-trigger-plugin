@@ -8,6 +8,9 @@
     <f:enum>${it.getDescription()}</f:enum>
   </f:entry>
   <f:advanced>
+    <f:entry field="projectNameProperty" title="${%Project Name Property}">
+      <f:textbox />
+    </f:entry>
     <f:entry field="encoding" title="${%File Encoding}">
       <f:textbox />
     </f:entry>
