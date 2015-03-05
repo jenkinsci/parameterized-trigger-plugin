@@ -7,35 +7,21 @@ package hudson.plugins.parameterizedtrigger;
 import com.google.common.collect.Lists;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.FilePath.FileCallable;
 import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
-import hudson.remoting.VirtualChannel;
 import hudson.util.FormValidation;
-import hudson.util.LogTaskListener;
-import hudson.util.StreamTaskListener;
-import hudson.util.VariableResolver;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
-import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.types.FileSet;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -160,9 +146,6 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
                     return FormValidation.error("Unsupported Encoding");
                 } catch(IllegalCharsetNameException e) {
                     return FormValidation.error("Bad Encoding Name");
-                }
-                if(!ParameterizedTriggerUtils.isSupportNonAsciiPropertiesFile()) {
-                    return FormValidation.warning("Non-ascii properties files are supported only since Java 1.6.");
                 }
             }
             return FormValidation.ok();

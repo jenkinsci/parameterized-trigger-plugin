@@ -25,19 +25,15 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.FilePath;
-import hudson.model.ParametersAction;
 import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.LinkedHashMap;
 import java.util.Properties;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.tools.ant.filters.StringInputStream;
-import org.jvnet.animal_sniffer.IgnoreJRERequirement;
 
 /**
  * Common utility methods.
@@ -45,24 +41,12 @@ import org.jvnet.animal_sniffer.IgnoreJRERequirement;
 public class ParameterizedTriggerUtils {
     /**
      * Load properties from string.
-     * Extracted for sanitize JRE dependency.
-     * 
-     * @param properties
-     * @return
+     *
      * @throws IOException
      */
-    @IgnoreJRERequirement
     public static Properties loadProperties(String properties) throws IOException {
         Properties p = new Properties();
-        try {
-            p.load(new StringReader(properties));
-        } catch(NoSuchMethodError _) {
-            // {@link Properties#load(java.io.Reader)} is supported since Java 1.6
-            // When used with Java1.5, fall back to
-            // {@link Properties#load(java.io.InputStream)}, which does not support
-            // Non-ascii strings.
-            p.load(new StringInputStream(properties));
-        }
+        p.load(new StringReader(properties));
         return p;
     }
     
@@ -74,7 +58,7 @@ public class ParameterizedTriggerUtils {
      * @return read string
      * @throws IOException
      */
-    public static String readFileToString(FilePath f, String encoding) throws IOException {
+    public static String readFileToString(FilePath f, String encoding) throws IOException, InterruptedException {
         InputStream in = f.read();
         try {
             return IOUtils.toString(in, encoding);
@@ -83,16 +67,6 @@ public class ParameterizedTriggerUtils {
         }
     }
     
-    public static boolean isSupportNonAsciiPropertiesFile() {
-        try {
-            // Is {@link Properties#load(java.io.Reader)} supported?
-            Properties.class.getMethod("load", Reader.class);
-        } catch(NoSuchMethodException _) {
-            return false;
-        }
-        return true;
-    }
-
     public static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
         LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
         for (ParameterValue param : base.getParameters())
