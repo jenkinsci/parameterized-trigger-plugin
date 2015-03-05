@@ -36,7 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jenkins.model.Jenkins;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
 
+@ExportedBean
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
@@ -197,6 +200,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    *
    * @return a list of builds that are triggered by this build. May contains null if a project or a build is deleted.
    */
+  @Exported(visibility = 1)
   public List<AbstractBuild<?, ?>> getTriggeredBuilds() {
 
     List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
@@ -218,6 +222,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    *
    * @return List of Projects that are triggered by this build. May contains null if a project is deleted.
    */
+  @Exported(visibility = 1)
   public List<AbstractProject<?, ?>> getTriggeredProjects() {
     List<AbstractProject<?, ?>> projects = new ArrayList<AbstractProject<?, ?>>();
 
