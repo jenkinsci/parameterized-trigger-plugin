@@ -1,17 +1,30 @@
 package hudson.plugins.parameterizedtrigger;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Util;
-import hudson.model.*;
-import hudson.util.FormValidation;
 import hudson.matrix.AxisList;
 import hudson.matrix.Combination;
 import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixProject;
 import hudson.matrix.MatrixRun;
+import hudson.model.AbstractBuild;
+import hudson.model.Action;
+import hudson.model.Descriptor;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersAction;
+import hudson.model.Run;
+import hudson.model.StringParameterValue;
+import hudson.model.TaskListener;
+import hudson.util.FormValidation;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -22,17 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.annotation.Nullable;
-
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 
 public class FileBuildParameters extends AbstractBuildParameters {
 	private static final Logger LOGGER = Logger.getLogger(FileBuildParameters.class.getName());
@@ -206,9 +209,6 @@ public class FileBuildParameters extends AbstractBuildParameters {
 				} catch(IllegalCharsetNameException e) {
 					return FormValidation.error("Bad Encoding Name");
 				}
-				if(!ParameterizedTriggerUtils.isSupportNonAsciiPropertiesFile()) {
-					return FormValidation.warning("Non-ascii properties files are supported only since Java 1.6.");
-				}
 			}
 			return FormValidation.ok();
 		}
@@ -217,7 +217,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		 * Check whether the configuring model is {@link MatrixProject}. Called from jelly.
 		 * 
 		 * Note: Caller should pass it for the model is not bound to
-		 * {@link StaplerRequest#findAncestorObject(Class)}
+		 * {@link org.kohsuke.stapler.StaplerRequest#findAncestorObject(Class)}
 		 * when called via hetero-list.
 		 * 
 		 * @param it Object to check
