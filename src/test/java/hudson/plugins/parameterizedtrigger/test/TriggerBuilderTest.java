@@ -93,7 +93,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
     public void testSubParameterBuilds() throws Exception {
         hudson.setNumExecutors(10); // makes sure there are enough executors so that there are no deadlocks
-        hudson.setNodes(hudson.getNodes()); // update nodes configuration
+        hudson.setNodes(hudson.getNodes()); // update nodes configuration (TODO https://github.com/jenkinsci/jenkins/pull/1596 renders this workaround unnecessary)
 
         FreeStyleProject p1 = createFreeStyleProject("project1");
         createFreeStyleProject("project2");
