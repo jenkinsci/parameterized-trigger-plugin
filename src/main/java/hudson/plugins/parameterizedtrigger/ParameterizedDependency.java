@@ -4,6 +4,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.DependencyGraph;
+import hudson.model.Result;
 import hudson.model.DependencyGraph.Dependency;
 import hudson.model.TaskListener;
 
@@ -51,7 +52,8 @@ public class ParameterizedDependency extends Dependency {
 
 	@Override
 	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
-		if (!config.getCondition().isMet(build.getResult())){
+    	Result previousResult = build.getPreviousBuild() != null ? build.getPreviousBuild().getResult() : build.getResult();
+		if (!config.getCondition().isMet(build.getResult(), previousResult)){
 			return false;
 		}
 		try {

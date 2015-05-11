@@ -12,6 +12,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
+import hudson.model.Result;
 import hudson.model.Cause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
@@ -300,7 +301,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         env.overrideAll(build.getBuildVariables());
 
         try {
-			if (condition.isMet(build.getResult())) {
+        	Result previousResult = build.getPreviousBuild() != null ? build.getPreviousBuild().getResult() : build.getResult();
+			if (condition.isMet(build.getResult(), previousResult)) {
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
@@ -327,7 +329,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         env.overrideAll(build.getBuildVariables());
 
         try {
-            if (getCondition().isMet(build.getResult())) {
+        	Result previousResult = build.getPreviousBuild() != null ? build.getPreviousBuild().getResult() : build.getResult();
+            if (getCondition().isMet(build.getResult(), previousResult)) {
                 ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
