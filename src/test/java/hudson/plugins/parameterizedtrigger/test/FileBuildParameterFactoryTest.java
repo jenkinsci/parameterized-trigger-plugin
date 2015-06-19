@@ -47,12 +47,14 @@ import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.tasks.ArtifactArchiver;
 import hudson.util.FormValidation;
 
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.TestBuilder;
 import org.junit.Test;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -133,7 +135,6 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
             return true;
             }
         });
-
         // add Trigger builder, with file paramter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP));
 

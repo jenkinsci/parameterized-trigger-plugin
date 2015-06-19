@@ -52,6 +52,7 @@ import hudson.plugins.parameterizedtrigger.FileBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.tasks.Builder;
+import hudson.tasks.ArtifactArchiver;
 import hudson.util.FormValidation;
 
 import org.apache.commons.io.FileUtils;
@@ -94,6 +95,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 				new BuildTrigger(
 				new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
 						new FileBuildParameters("a_properties.txt,z_properties.txt"))));
+		projectA.getPublishersList().add(new ArtifactArchiver("a_properties.txt"));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 		Project projectB = createFreeStyleProject("projectB");
