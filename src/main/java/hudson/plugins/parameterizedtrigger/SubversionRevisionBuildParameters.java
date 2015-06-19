@@ -40,7 +40,7 @@ public class SubversionRevisionBuildParameters extends AbstractBuildParameters {
 
 		if (tagAction == null ) {
 			listener.getLogger().println(
-				"[parameterizedtrigger] no SubversionTagAction found -- is this project an SVN project ?");
+				Plugin.LOG_TAG + " no SubversionTagAction found -- is this project an SVN project ?");
 		} else {
 			infos.addAll(tagAction.getTags().keySet());
 		}
@@ -48,7 +48,7 @@ public class SubversionRevisionBuildParameters extends AbstractBuildParameters {
 		if(includeUpstreamParameters == true) {
 			if (revisionAction == null ) {
 				listener.getLogger().println(
-					"[parameterizedtrigger] no RevisionParameterAction found -- project did not have SVN parameters passed to it?");
+				        Plugin.LOG_TAG + " no RevisionParameterAction found -- project did not have SVN parameters passed to it?");
 			} else {
 				infos.addAll(revisionAction.getRevisions());
 			}

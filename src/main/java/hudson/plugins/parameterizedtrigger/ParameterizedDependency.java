@@ -64,7 +64,7 @@ public class ParameterizedDependency extends Dependency {
             if (config.getTriggerWithNoParameters()) {
                 return true;
             }
-            listener.getLogger().println("[parameterized-trigger] Downstream builds will not be triggered as no parameter is set.");
+            listener.getLogger().println(Plugin.LOG_TAG + " Downstream builds will not be triggered as no parameter is set.");
             return false;
 		} catch (AbstractBuildParameters.DontTriggerException ex) {
 			// don't trigger on this configuration

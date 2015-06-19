@@ -2,8 +2,6 @@ package hudson.plugins.parameterizedtrigger;
 
 import hudson.Extension;
 import hudson.model.Item;
-import hudson.model.Hudson;
-import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Project;
 import hudson.model.listeners.ItemListener;
@@ -23,6 +21,7 @@ import org.kohsuke.stapler.Stapler;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 public class Plugin extends hudson.Plugin {
+    public static final String LOG_TAG = "[parameterized-trigger]";
 
 	@Override
 	public void start() throws Exception {

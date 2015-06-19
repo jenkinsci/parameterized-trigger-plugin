@@ -122,7 +122,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 				f = build.getWorkspace().child(file);
 			}
 			if (!f.exists()) {
-				listener.getLogger().println("[parameterizedtrigger] Properties file "
+				listener.getLogger().println(Plugin.LOG_TAG + " Properties file "
 						+ file + " did not exist.");
 				if (getFailTriggerOnMissing()) {
 					listener.getLogger().println("Not triggering due to missing file - did you archive it as a build artifact ?");
