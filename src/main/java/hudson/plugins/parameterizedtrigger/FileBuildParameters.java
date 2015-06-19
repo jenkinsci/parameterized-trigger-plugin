@@ -2,6 +2,7 @@ package hudson.plugins.parameterizedtrigger;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -16,15 +17,17 @@ import hudson.model.Action;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -36,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import jenkins.util.VirtualFile;
 
 public class FileBuildParameters extends AbstractBuildParameters {
 	private static final Logger LOGGER = Logger.getLogger(FileBuildParameters.class.getName());
@@ -110,18 +115,20 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		EnvVars env = getEnvironment(build, listener);
 		for(String file:allFiles) {
-			FilePath f = null;
-			// First try to retrieve as a build artifact, so we don't need build workspace to be online
-			for (Run.Artifact artifact : build.getArtifacts()) {
-				if (artifact.relativePath.equals(file)) {
-					f = new FilePath(artifact.getFile());
-					break;
-				}
+			String s = null;
+			VirtualFile artifact = build.getArtifactManager().root().child(file);
+			if (artifact.isFile()) {
+			    s = IOUtils.toString(artifact.open());
 			}
-			if (f == null) {
-				f = build.getWorkspace().child(file);
+
+			if (s == null) {
+			    FilePath f = build.getWorkspace().child(file);
+			    if (f.exists()) {
+			        s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
+			    }
 			}
-			if (!f.exists()) {
+
+			if (s == null) {
 				listener.getLogger().println(Plugin.LOG_TAG + " Properties file "
 						+ file + " did not exist.");
 				if (getFailTriggerOnMissing()) {
@@ -132,7 +139,6 @@ public class FileBuildParameters extends AbstractBuildParameters {
 				continue;
 			}
 
-			String s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
 			s = env.expand(s);
 			Properties p = ParameterizedTriggerUtils.loadProperties(s);
 
