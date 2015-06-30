@@ -29,6 +29,6 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
     	if (propertiesFile != null) {
     		configs.add(new FileBuildParameters(propertiesFile));
     	}
-		return new BuildTriggerConfig(projectsValue, condition, triggerWithNoParameters, configs);
+		return new BuildTriggerConfig(projectsValue, condition, triggerWithNoParameters, false, configs);
     }
 }

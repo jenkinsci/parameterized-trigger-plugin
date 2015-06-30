@@ -29,6 +29,6 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
     	if (properties != null) {
     		configs.add(new PredefinedBuildParameters(properties));
     	}
-		return new BuildTriggerConfig(projectsValue, condition, triggerWithNoParameters, configs);
+		return new BuildTriggerConfig(projectsValue, condition, triggerWithNoParameters, false, configs);
     }
 }

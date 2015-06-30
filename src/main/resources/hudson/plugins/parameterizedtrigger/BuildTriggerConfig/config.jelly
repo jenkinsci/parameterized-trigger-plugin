@@ -11,6 +11,9 @@
   <f:entry title="${%Trigger build without parameters}" field="triggerWithNoParameters" >
 	<f:checkbox checked="${instance.triggerWithNoParameters}"/>
   </f:entry>
+  <f:entry title="${%Skip trigger when invoked manually}" field="skipWhenInvokedManually" >
+  	<f:checkbox checked="${instance.skipWhenInvokedManually}"/>
+  </f:entry>
 
   <f:block>
     <f:hetero-list name="configs" hasHeader="true"

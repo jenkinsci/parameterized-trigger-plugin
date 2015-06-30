@@ -24,29 +24,22 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.FreeStyleBuild;
-import hudson.model.TopLevelItemDescriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
-import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
-import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
-import hudson.plugins.parameterizedtrigger.ResultCondition;
-import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.model.TopLevelItemDescriptor;
+import hudson.plugins.parameterizedtrigger.*;
 import hudson.tasks.BuildStep;
+import org.jenkins_ci.plugins.run_condition.BuildStepRunner;
+import org.jenkins_ci.plugins.run_condition.core.AlwaysRun;
+import org.jenkinsci.plugins.conditionalbuildstep.ConditionalBuilder;
+import org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder;
+import org.jvnet.hudson.test.HudsonTestCase;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import org.jenkins_ci.plugins.run_condition.BuildStepRunner;
-import org.jenkins_ci.plugins.run_condition.core.AlwaysRun;
-import org.jenkinsci.plugins.conditionalbuildstep.ConditionalBuilder;
-import org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
 
 public class RenameJobTest extends HudsonTestCase {
 
@@ -168,6 +161,7 @@ public class RenameJobTest extends HudsonTestCase {
                 p2.getName(),   // This should not be getFullName().
                 ResultCondition.ALWAYS,
                 true,
+                false,
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
@@ -240,6 +234,7 @@ public class RenameJobTest extends HudsonTestCase {
                     // This should not be getFullName().
                 ResultCondition.ALWAYS,
                 true,
+                false,
                 null,
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
@@ -313,6 +308,7 @@ public class RenameJobTest extends HudsonTestCase {
                     // This should not be getFullName().
                 ResultCondition.ALWAYS,
                 true,
+                false,
                 null,
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
@@ -376,6 +372,7 @@ public class RenameJobTest extends HudsonTestCase {
                 String.format("%s,%s", projectB.getName(), projectB2.getName()),
                 ResultCondition.ALWAYS,
                 true,
+                false,
                 null,
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));

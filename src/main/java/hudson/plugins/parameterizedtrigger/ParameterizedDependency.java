@@ -1,11 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.DependencyGraph;
+import hudson.model.*;
 import hudson.model.DependencyGraph.Dependency;
-import hudson.model.TaskListener;
 
 import java.util.List;
 
@@ -52,6 +48,10 @@ public class ParameterizedDependency extends Dependency {
 	@Override
 	public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
 		if (!config.getCondition().isMet(build.getResult())){
+			return false;
+		}
+		Cause cause = build.getCause(Cause.UserIdCause.class);
+		if(config.getSkipWhenInvokedManually() && null != cause) {
 			return false;
 		}
 		try {
