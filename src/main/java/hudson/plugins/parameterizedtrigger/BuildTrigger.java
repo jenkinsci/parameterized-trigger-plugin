@@ -4,11 +4,7 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.DependecyDeclarer;
-import hudson.model.DependencyGraph;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -50,17 +46,31 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	@Override @SuppressWarnings("deprecation")
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
+
+		// FIXME check for non-abstract project downstream and fire directly from perform method
+		// If not canDeclare, fire for all of them
+
+		/*for (BuildTriggerConfig config : configs) {
+			List<Job> jobs = config.getProjectList(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
+			for (Job j : jobs) {
+				if (!(j instanceof AbstractProject)) {
+					config.perform(build, launcher, listener); 
+					// FIXME fire directly not via perform!
+				}
+			}
+		}*/
+
         if (canDeclare(build.getProject())) {
             // job will get triggered by dependency graph, so we have to capture buildEnvironment NOW before
             // hudson.model.AbstractBuild.AbstractBuildExecution#cleanUp is called and reset
             EnvVars env = build.getEnvironment(listener);
             build.addAction(new CapturedEnvironmentAction(env));
-        } else {
+        } else {  // Not using dependency graph
             for (BuildTriggerConfig config : configs) {
-                config.perform(build, launcher, listener);
+				//FIXME don't fire if fired above?
+				config.perform(build, launcher, listener);
             }
         }
-
 
 		return true;
 	}
@@ -70,9 +80,11 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 		// Can only add dependencies in Hudson 1.341 or higher
 		if (!canDeclare(owner)) return;
 
-		for (BuildTriggerConfig config : configs)
-			for (AbstractProject project : config.getProjectList(owner.getParent(),null))
+		for (BuildTriggerConfig config : configs) {
+			List<AbstractProject> projectList = Util.filter(config.getProjectList(owner.getParent(), null), AbstractProject.class);
+			for (AbstractProject project : projectList)
 				ParameterizedDependency.add(owner, project, config, graph);
+		}
 	}
 
 	private boolean canDeclare(AbstractProject owner) {

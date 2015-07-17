@@ -7,23 +7,8 @@ import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.AutoCompletionCandidates;
-import hudson.model.BuildListener;
-import hudson.model.Cause;
+import hudson.model.*;
 import hudson.model.Cause.UpstreamCause;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.Hudson;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
-import hudson.model.Items;
-import hudson.model.Job;
-import hudson.model.ParametersAction;
-import hudson.model.Run;
-import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.plugins.promoted_builds.Promotion;
 import hudson.tasks.Messages;
@@ -32,6 +17,7 @@ import hudson.util.FormValidation;
 import hudson.util.VersionNumber;
 
 import jenkins.model.Jenkins;
+import jenkins.model.ParameterizedJobMixIn;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -111,7 +97,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @deprecated
      *      Use {@link #getProjectList(ItemGroup, EnvVars)}
      */
-    public List<AbstractProject> getProjectList(EnvVars env) {
+    public List<Job> getProjectList(EnvVars env) {
         return getProjectList(null,env);
     }
 
@@ -120,9 +106,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param context
      *      The container with which to resolve relative project names.
      */
-	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
-        List<AbstractProject> projectList = new ArrayList<AbstractProject>();
-        projectList.addAll(Items.fromNameList(context, getProjects(env), AbstractProject.class));
+	public List<Job> getProjectList(ItemGroup context, EnvVars env) {
+        List<Job> projectList = new ArrayList<Job>();
+        projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
 		return projectList;
 	}
 
@@ -279,7 +265,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return actions;
 	}
 
-    List<Action> getBuildActions(List<Action> baseActions, AbstractProject<?,?> project) {
+    List<Action> getBuildActions(List<Action> baseActions, Job<?,?> project) {
             List<Action> actions = new ArrayList<Action>(baseActions);
 
             ProjectSpecificParametersActionFactory transformer = new ProjectSpecificParametersActionFactory(
@@ -307,9 +293,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-                    for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+					for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
 
+                        // FIXME Need some convenience method???
                         futures.add(schedule(build, project, list));
                     }
                 }
@@ -322,19 +309,18 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
 	}
 
-    public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    public ListMultimap<Job, Future<Run>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
         try {
             if (getCondition().isMet(build.getResult())) {
-                ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
+                ListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
-                    for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                    for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
-
                         futures.put(project, schedule(build, project, list));
                     }
                 }
@@ -388,7 +374,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param build an upstream build
      * @return UpstreamCause
      */
-    protected Cause createUpstreamCause(AbstractBuild<?, ?> build) {
+    protected Cause createUpstreamCause(Run<?, ?> build) {
         if(Jenkins.getInstance().getPlugin("promoted-builds") != null) {
             // Test only when promoted-builds is installed.
             if(build instanceof Promotion) {
@@ -403,15 +389,45 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return new UpstreamCause((Run) build);
     }
 
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
+    protected Future schedule(AbstractBuild<?, ?> build, final Job project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
         Cause cause = createUpstreamCause(build);
-        return project.scheduleBuild2(quietPeriod,
+		return ((AbstractProject)project).scheduleBuild2(quietPeriod,
                 cause,
                 list.toArray(new Action[list.size()]));
+		/*
+		//FIXME this does not correctly handle passing cause into the scheduler, need to replace the ParameteriedJobMixin method
+
+        List<Action> queueActions = new ArrayList<Action>(list);
+        if (cause != null) {
+            queueActions.add(new CauseAction(cause));
+        }
+
+        if (project instanceof AbstractProject) {
+            ((AbstractProject)project).scheduleBuild2(quietPeriod, cause, list.toArray(new Action[list.size()]));
+        }
+
+        if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
+            final ParameterizedJobMixIn<?, ?> parameterizedJobMixIn = new ParameterizedJobMixIn() {
+                @Override
+                protected Job<?, ?> asJob() {
+                    return project;
+                }
+            };
+            return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[queueActions.size()]));
+        }
+
+        //
+        return null;
+		*/
     }
 
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
-        return schedule(build, project, project.getQuietPeriod(), list);
+    protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list) throws InterruptedException, IOException {
+        if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
+            return schedule(build, project, ((ParameterizedJobMixIn.ParameterizedJob) project).getQuietPeriod(), list);
+        } else {
+            return schedule(build, project, 0, list);
+        }
+
     }
 
     /**

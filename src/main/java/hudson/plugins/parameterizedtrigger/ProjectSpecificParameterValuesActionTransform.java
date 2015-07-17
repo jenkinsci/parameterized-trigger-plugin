@@ -1,17 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Executor;
-import hudson.model.Action;
-import hudson.model.ParametersAction;
-import hudson.model.ParameterDefinition;
-import hudson.model.ParametersDefinitionProperty;
-import hudson.model.Queue;
-import hudson.model.ParameterValue;
-import hudson.model.SimpleParameterDefinition;
-import hudson.model.StringParameterDefinition;
-import hudson.model.StringParameterValue;
+import hudson.model.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -25,7 +14,7 @@ import java.lang.RuntimeException;
  * Convert Generic ParameterValues to the type indicated by the Project's ParameterDefinitions
  */
 public class ProjectSpecificParameterValuesActionTransform implements ITransformProjectParametersAction {
-    public ParametersAction transformParametersAction(ParametersAction a, AbstractProject<?,?> project) {
+    public ParametersAction transformParametersAction(ParametersAction a, Job<?,?> project) {
         Map<String, ParameterDefinition> parameterDefinitions = 
             getParameterDefinitionsMap(project);
 
@@ -38,7 +27,7 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
         return new ParametersAction(params);
     }
 
-    private static Map<String, ParameterDefinition> getParameterDefinitionsMap(AbstractProject<?,?> project) {
+    private static Map<String, ParameterDefinition> getParameterDefinitionsMap(Job<?,?> project) {
         HashMap<String, ParameterDefinition> m = new HashMap<String, ParameterDefinition>();
 
         ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
