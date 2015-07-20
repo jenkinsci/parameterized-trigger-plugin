@@ -3,8 +3,15 @@ package hudson.plugins.parameterizedtrigger;
 import com.google.common.collect.ImmutableList;
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.BuildListener;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.Hudson;
+import hudson.model.Job;
+import hudson.model.Node;
+import hudson.model.Run;
 import jenkins.model.ParameterizedJobMixIn;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -65,8 +72,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
                 // if we fail to add the item to the queue, wait and retry.
                 // it also means we have to force quiet period = 0, or else it'll never leave the queue
                 Future f = schedule(build, project, 0, list);
-
-                //when a project is disabled or the configuration is not yet saved f will always be null and we're caught in a loop, therefore we need to check for it
+                // When a project is disabled or the configuration is not yet saved f will always be null and we're caught in a loop, therefore we need to check for it
                 if (f!=null || (f==null && !project.isBuildable())){
                     return f;
                 }

@@ -1,7 +1,9 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.ExtensionPoint;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.TaskListener;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,10 +24,10 @@ public abstract class AbstractBuildParameterFactory extends AbstractDescribableI
      *      The build which the parameterized trigger is configured and executing.
      * @param listener
      *      Connected to the build output.
-     *
+     *      
      * @return can be empty but never null.
      */
-    public abstract List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener)
+    public abstract List<AbstractBuildParameters> getParameters(AbstractBuild<?,?> build, TaskListener listener)
             throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException;
 
     @Override

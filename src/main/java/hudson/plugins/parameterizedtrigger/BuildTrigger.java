@@ -4,9 +4,14 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.Util;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
+import hudson.model.DependecyDeclarer;
+import hudson.model.DependencyGraph;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
+import hudson.model.Job;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -58,6 +63,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 			for (Job j : jobs) {
 				if (!(j instanceof AbstractProject)) {
 					hasNonAbstractProject = true;
+					break;
 				}
 			}
 			// Fire this config's projects if not already fired

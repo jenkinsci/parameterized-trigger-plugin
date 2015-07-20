@@ -7,8 +7,24 @@ import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.AutoCompletionCandidates;
+import hudson.model.BuildListener;
+import hudson.model.Cause;
+import hudson.model.CauseAction;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.Describable;
+import hudson.model.Descriptor;
+import hudson.model.Hudson;
+import hudson.model.Item;
+import hudson.model.ItemGroup;
+import hudson.model.Items;
+import hudson.model.Job;
+import hudson.model.ParametersAction;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.plugins.promoted_builds.Promotion;
 import hudson.tasks.Messages;
@@ -107,8 +123,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      *      The container with which to resolve relative project names.
      */
 	public List<Job> getProjectList(ItemGroup context, EnvVars env) {
-        List<Job> projectList = new ArrayList<Job>();
-        projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
+		List<Job> projectList = new ArrayList<Job>();
+		projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
 		return projectList;
 	}
 
