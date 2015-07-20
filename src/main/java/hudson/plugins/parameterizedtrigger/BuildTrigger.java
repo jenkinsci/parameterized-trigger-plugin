@@ -50,28 +50,27 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	}
 
 	@Override @SuppressWarnings("deprecation")
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
+	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
 
-		HashSet<BuildTriggerConfig> alreadyFired = new HashSet<BuildTriggerConfig>();
+        HashSet<BuildTriggerConfig> alreadyFired = new HashSet<BuildTriggerConfig>();
 
-		// If this project has non-abstract projects, we need to fire them
-		for (BuildTriggerConfig config : configs) {
-			boolean hasNonAbstractProject = false;
+        // If this project has non-abstract projects, we need to fire them
+        for (BuildTriggerConfig config : configs) {
+            boolean hasNonAbstractProject = false;
 
-			List<Job> jobs = config.getProjectList(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
-			for (Job j : jobs) {
-				if (!(j instanceof AbstractProject)) {
-					hasNonAbstractProject = true;
-					break;
-				}
-			}
-			// Fire this config's projects if not already fired
-			if (hasNonAbstractProject) {
-				config.perform(build, launcher, listener);
-				alreadyFired.add(config);
-			}
-		}
+            List<Job> jobs = config.getProjectList(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
+            for (Job j : jobs) {
+                if (!(j instanceof AbstractProject)) {
+                    hasNonAbstractProject = true;
+                    break;
+                }
+            }
+            // Fire this config's projects if not already fired
+            if (hasNonAbstractProject) {
+                config.perform(build, launcher, listener);
+                alreadyFired.add(config);
+            }
+        }
 
         if (canDeclare(build.getProject())) {
             // job will get triggered by dependency graph, so we have to capture buildEnvironment NOW before
@@ -80,9 +79,9 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
             build.addAction(new CapturedEnvironmentAction(env));
         } else {  // Not using dependency graph
             for (BuildTriggerConfig config : configs) {
-				if (!alreadyFired.contains(config)) {
-					config.perform(build, launcher, listener);
-				}
+                if (!alreadyFired.contains(config)) {
+                     config.perform(build, launcher, listener);
+                }
             }
         }
 

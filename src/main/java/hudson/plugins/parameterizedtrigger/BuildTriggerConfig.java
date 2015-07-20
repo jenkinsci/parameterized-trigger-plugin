@@ -123,9 +123,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      *      The container with which to resolve relative project names.
      */
 	public List<Job> getProjectList(ItemGroup context, EnvVars env) {
-		List<Job> projectList = new ArrayList<Job>();
-		projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
-		return projectList;
+        List<Job> projectList = new ArrayList<Job>();
+        projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
+        return projectList;
 	}
 
     /**
@@ -309,8 +309,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-					for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                    for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
+
                         futures.add(schedule(build, project, list));
                     }
                 }
@@ -335,6 +336,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
                     for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
+
                         futures.put(project, schedule(build, project, list));
                     }
                 }
