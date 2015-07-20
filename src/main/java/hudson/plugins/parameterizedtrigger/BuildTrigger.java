@@ -14,6 +14,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class BuildTrigger extends Notifier implements DependecyDeclarer {
@@ -47,18 +48,24 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 
-		// FIXME check for non-abstract project downstream and fire directly from perform method
-		// If not canDeclare, fire for all of them
+		HashSet<BuildTriggerConfig> alreadyFired = new HashSet<BuildTriggerConfig>();
 
-		/*for (BuildTriggerConfig config : configs) {
+		// If this project has non-abstract projects, we need to fire them
+		for (BuildTriggerConfig config : configs) {
+			boolean hasNonAbstractProject = false;
+
 			List<Job> jobs = config.getProjectList(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
 			for (Job j : jobs) {
 				if (!(j instanceof AbstractProject)) {
-					config.perform(build, launcher, listener); 
-					// FIXME fire directly not via perform!
+					hasNonAbstractProject = true;
 				}
 			}
-		}*/
+			// Fire this config's projects if not already fired
+			if (hasNonAbstractProject) {
+				config.perform(build, launcher, listener);
+				alreadyFired.add(config);
+			}
+		}
 
         if (canDeclare(build.getProject())) {
             // job will get triggered by dependency graph, so we have to capture buildEnvironment NOW before
@@ -67,8 +74,9 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
             build.addAction(new CapturedEnvironmentAction(env));
         } else {  // Not using dependency graph
             for (BuildTriggerConfig config : configs) {
-				//FIXME don't fire if fired above?
-				config.perform(build, launcher, listener);
+				if (!alreadyFired.contains(config)) {
+					config.perform(build, launcher, listener);
+				}
             }
         }
 

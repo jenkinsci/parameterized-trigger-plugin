@@ -295,8 +295,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                             build, listener);
 					for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
                         List<Action> list = getBuildActions(actions, project);
-
-                        // FIXME Need some convenience method???
                         futures.add(schedule(build, project, list));
                     }
                 }
@@ -391,21 +389,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     protected Future schedule(AbstractBuild<?, ?> build, final Job project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
         Cause cause = createUpstreamCause(build);
-		return ((AbstractProject)project).scheduleBuild2(quietPeriod,
-                cause,
-                list.toArray(new Action[list.size()]));
-		/*
-		//FIXME this does not correctly handle passing cause into the scheduler, need to replace the ParameteriedJobMixin method
-
         List<Action> queueActions = new ArrayList<Action>(list);
         if (cause != null) {
             queueActions.add(new CauseAction(cause));
         }
 
-        if (project instanceof AbstractProject) {
-            ((AbstractProject)project).scheduleBuild2(quietPeriod, cause, list.toArray(new Action[list.size()]));
-        }
-
+        // Includes both traditional projects via AbstractProject and Workflow Job
         if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
             final ParameterizedJobMixIn<?, ?> parameterizedJobMixIn = new ParameterizedJobMixIn() {
                 @Override
@@ -416,9 +405,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[queueActions.size()]));
         }
 
-        //
+        // Trigger is not compatible with un-parameterized jobs
         return null;
-		*/
     }
 
     protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list) throws InterruptedException, IOException {
