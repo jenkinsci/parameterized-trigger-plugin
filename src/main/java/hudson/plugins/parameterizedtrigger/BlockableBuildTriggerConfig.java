@@ -55,8 +55,15 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     @Override
-    public ListMultimap<Job, Future<Run>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        ListMultimap<Job, Future<Run>> futures = super.perform2(build, launcher, listener);
+    public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<AbstractProject, Future<AbstractBuild>> futures = super.perform2(build, launcher, listener);
+        if(block==null) return ArrayListMultimap.create();
+        return futures;
+    }
+
+    @Override
+    public ListMultimap<Job, Future<Run>> perform3(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<Job, Future<Run>> futures = super.perform3(build, launcher, listener);
         if(block==null) return ArrayListMultimap.create();
         return futures;
     }

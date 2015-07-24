@@ -58,7 +58,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
         for (BuildTriggerConfig config : configs) {
             boolean hasNonAbstractProject = false;
 
-            List<Job> jobs = config.getProjectList(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
+            List<Job> jobs = config.getProjectListGeneral(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
             for (Job j : jobs) {
                 if (!(j instanceof AbstractProject)) {
                     hasNonAbstractProject = true;
@@ -94,7 +94,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 		if (!canDeclare(owner)) return;
 
 		for (BuildTriggerConfig config : configs) {
-			List<AbstractProject> projectList = Util.filter(config.getProjectList(owner.getParent(), null), AbstractProject.class);
+			List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
 			for (AbstractProject project : projectList)
 				ParameterizedDependency.add(owner, project, config, graph);
 		}

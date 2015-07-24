@@ -4,6 +4,8 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -46,6 +48,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
@@ -111,22 +114,34 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     /**
      * @deprecated
-     *      Use {@link #getProjectList(ItemGroup, EnvVars)}
+     *      Use {@link #getProjectListGeneral(ItemGroup, EnvVars)}
      */
-    public List<Job> getProjectList(EnvVars env) {
-        return getProjectList(null,env);
+    public List<AbstractProject> getProjectList(EnvVars env) {
+        return getProjectList(null, env);
     }
 
     /**
+     * Deprecated: get all projects that are AbstractProject instances
      * @param env Environment variables from which to expand project names; Might be {@code null}.
      * @param context
      *      The container with which to resolve relative project names.
      */
-	public List<Job> getProjectList(ItemGroup context, EnvVars env) {
+    @Deprecated // Prefer getProjectListGeneral since it can return implementations of the more general Job class
+	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
+        return Util.filter(getProjectListGeneral(context,env), AbstractProject.class);
+	}
+
+    /**
+     * Get list of all projects, including workflow job types
+     * @param env Environment variables from which to expand project names; Might be {@code null}.
+     * @param context
+     *      The container with which to resolve relative project names.
+     */
+    public List<Job> getProjectListGeneral(ItemGroup context, EnvVars env) {
         List<Job> projectList = new ArrayList<Job>();
         projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
         return projectList;
-	}
+    }
 
     /**
      * Provides a SubProjectData object containing four set, each containing projects to be displayed on the project
@@ -309,7 +324,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-                    for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                    for (Job project : getProjectListGeneral(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.add(schedule(build, project, list));
@@ -324,7 +339,25 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
 	}
 
-    public ListMultimap<Job, Future<Run>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    @Deprecated
+    //Prefer perform3 use
+    public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<Job, Future<Run>> initialResult = perform3(build, launcher, listener);
+        ListMultimap<AbstractProject, Future<AbstractBuild>> output = ArrayListMultimap.create();
+
+        for (Map.Entry<Job, Future<Run>> entry : initialResult.entries()) {
+            if (entry.getKey() instanceof AbstractProject) {
+                // Due to type erasure we can't check if the Future<Run> is a Future<AbstractBuild>
+                // Plugins extending the method and dependent on the perform2 method will break if we trigger on a WorkflowJob
+                output.put((AbstractProject)entry.getKey(), (Future)entry.getValue());
+            }
+        }
+
+        return output;
+    }
+
+    //Replaces perform2 with more general form
+    public ListMultimap<Job, Future<Run>> perform3(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
@@ -334,7 +367,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
-                    for (Job project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                    for (Job project : getProjectListGeneral(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.put(project, schedule(build, project, list));
@@ -402,7 +435,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 return new UpstreamCause((Run<?,?>)promotion.getTarget());
             }
         }
-        return new UpstreamCause((Run) build);
+        return new UpstreamCause(build);
     }
 
     protected Future schedule(AbstractBuild<?, ?> build, final Job project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {

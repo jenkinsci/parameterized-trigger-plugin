@@ -84,9 +84,9 @@ public class TriggerBuilder extends Builder {
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
-                ListMultimap<Job, Future<Run>> futures = config.perform2(build, launcher, listener);
+                ListMultimap<Job, Future<Run>> futures = config.perform3(build, launcher, listener);
                 // Only contains resolved projects
-                List<Job> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(),env);
+                List<Job> projectList = config.getProjectListGeneral(build.getRootBuild().getProject().getParent(),env);
 
                 // Get the actual defined projects
                 StringTokenizer tokenizer = new StringTokenizer(config.getProjects(env), ",");
