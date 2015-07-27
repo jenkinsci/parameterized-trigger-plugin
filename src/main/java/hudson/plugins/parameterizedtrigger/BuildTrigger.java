@@ -9,6 +9,11 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.DependecyDeclarer;
 import hudson.model.DependencyGraph;
+import hudson.model.JobProperty;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParameterValue;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.StringParameterValue;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -64,14 +69,32 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 
 		return true;
 	}
-
+    private EnvVars GetDefaultParameterValuesAsEnvVars(AbstractProject owner){
+    	EnvVars envVars = null;
+		ParametersDefinitionProperty parametersDefinitionProperty = (ParametersDefinitionProperty)owner.getProperty(ParametersDefinitionProperty.class);
+		if (parametersDefinitionProperty!=null){
+			envVars = new EnvVars();
+			for (ParameterDefinition parameterDefinition: parametersDefinitionProperty.getParameterDefinitions()){
+				ParameterValue defaultParameterValue = parameterDefinition.getDefaultParameterValue();
+				if (defaultParameterValue!=null){
+					if (defaultParameterValue instanceof StringParameterValue){
+						envVars.put(parameterDefinition.getName(), ((StringParameterValue)defaultParameterValue).value);
+					}
+				}
+			}
+		}
+		return envVars;
+    }
 	@Override
 	public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
 		// Can only add dependencies in Hudson 1.341 or higher
 		if (!canDeclare(owner)) return;
 
+		//get default parameter values as environment. 
+		EnvVars envVars = GetDefaultParameterValuesAsEnvVars(owner);
+		
 		for (BuildTriggerConfig config : configs)
-			for (AbstractProject project : config.getProjectList(owner.getParent(),null))
+			for (AbstractProject project : config.getProjectList(owner.getParent(),envVars))
 				ParameterizedDependency.add(owner, project, config, graph);
 	}
 
