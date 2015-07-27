@@ -125,6 +125,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param env Environment variables from which to expand project names; Might be {@code null}.
      * @param context
      *      The container with which to resolve relative project names.
+     * @deprecated
+     *      Use {@link #getProjectListGeneral(ItemGroup, EnvVars)}
      */
     @Deprecated // Prefer getProjectListGeneral since it can return implementations of the more general Job class
 	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
@@ -339,8 +341,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
 	}
 
+
+    /**
+    *  @deprecated
+    *      Use {@link #perform3(AbstractBuild, Launcher, BuildListener)}
+    */
     @Deprecated
-    //Prefer perform3 use
     public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         ListMultimap<Job, Future<Run>> initialResult = perform3(build, launcher, listener);
         ListMultimap<AbstractProject, Future<AbstractBuild>> output = ArrayListMultimap.create();
