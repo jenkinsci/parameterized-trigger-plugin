@@ -41,6 +41,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -444,8 +445,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return new UpstreamCause(build);
     }
 
+    @CheckForNull
     protected Future schedule(AbstractBuild<?, ?> build, final Job project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
-        // TODO Once it's in core and LTS is out, switch to use new ParameterizedJobMixIn convenience method
+        // TODO Once it's in core (since 1.621) and LTS is out, switch to use new ParameterizedJobMixIn convenience method
         // From https://github.com/jenkinsci/jenkins/pull/1771
         Cause cause = createUpstreamCause(build);
         List<Action> queueActions = new ArrayList<Action>(list);

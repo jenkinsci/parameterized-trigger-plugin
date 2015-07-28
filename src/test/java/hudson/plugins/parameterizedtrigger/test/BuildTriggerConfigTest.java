@@ -134,7 +134,7 @@ public class BuildTriggerConfigTest extends HudsonTestCase {
 
     public void testGetProjectListWithWorkflow() throws Exception {
         Project<?, ?> masterProject = createFreeStyleProject("project");
-        WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "workflowproject");
+        WorkflowJob p = jenkins.createProject(WorkflowJob.class, "workflowproject");
         p.setDefinition(new CpsFlowDefinition("println('hello')"));
 
         // Trigger a normal and workflow project
@@ -158,7 +158,7 @@ public class BuildTriggerConfigTest extends HudsonTestCase {
 
     public void testBuildWithWorkflowProjects() throws Exception {
         Project<?, ?> masterProject = createFreeStyleProject("project");
-        WorkflowJob workflowProject = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "workflowproject");
+        WorkflowJob workflowProject = Jenkins.getInstance().createProject(WorkflowJob.class, "workflowproject");
         workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }"));
 
         // Trigger a normal and workflow project
@@ -168,7 +168,6 @@ public class BuildTriggerConfigTest extends HudsonTestCase {
 
         PredefinedBuildParameters customParams = new PredefinedBuildParameters("myParam=GOOBER");
         buildParameters.add(customParams);
-
 
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         BlockableBuildTriggerConfig masterConfig = new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
@@ -186,8 +185,8 @@ public class BuildTriggerConfigTest extends HudsonTestCase {
 
         // Verify workflow job completed successfully and that it was able to use the parameter set in trigger
         WorkflowRun workflowRun = workflowProject.getBuilds().get(0);
-        assertEquals(Result.SUCCESS.ordinal, workflowRun.getResult().ordinal);
-        assertTrue("Parameter was not passed correctly to workflow job!", workflowRun.getLog(100).contains("GOOBER"));
+        assertBuildStatusSuccess(workflowRun);
+        assertLogContains("GOOBER", workflowRun);
     }
 
 
