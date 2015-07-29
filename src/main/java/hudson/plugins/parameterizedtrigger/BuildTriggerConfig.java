@@ -4,8 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -115,7 +113,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     /**
      * @deprecated
-     *      Use {@link #getProjectListGeneral(ItemGroup, EnvVars)}
+     *      Use {@link #getJobs(ItemGroup, EnvVars)}
      */
     public List<AbstractProject> getProjectList(EnvVars env) {
         return getProjectList(null, env);
@@ -127,11 +125,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param context
      *      The container with which to resolve relative project names.
      * @deprecated
-     *      Use {@link #getProjectListGeneral(ItemGroup, EnvVars)}
+     *      Use {@link #getJobs(ItemGroup, EnvVars)}
      */
-    @Deprecated // Prefer getProjectListGeneral since it can return implementations of the more general Job class
+    @Deprecated
 	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
-        return Util.filter(getProjectListGeneral(context,env), AbstractProject.class);
+        return Util.filter(getJobs(context, env), AbstractProject.class);
 	}
 
     /**
@@ -140,7 +138,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param context
      *      The container with which to resolve relative project names.
      */
-    public List<Job> getProjectListGeneral(ItemGroup context, EnvVars env) {
+    public List<Job> getJobs(ItemGroup context, EnvVars env) {
         List<Job> projectList = new ArrayList<Job>();
         projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
         return projectList;
@@ -327,7 +325,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-                    for (Job project : getProjectListGeneral(build.getRootBuild().getProject().getParent(), env)) {
+                    for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.add(schedule(build, project, list));
@@ -374,7 +372,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
-                    for (Job project : getProjectListGeneral(build.getRootBuild().getProject().getParent(), env)) {
+                    for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
                         futures.put(project, schedule(build, project, list));
