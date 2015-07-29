@@ -27,11 +27,7 @@ package hudson.plugins.parameterizedtrigger.test;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
 import hudson.model.Job;
-import hudson.model.ParametersAction;
-import hudson.model.Result;
-import hudson.model.Run;
 import hudson.model.Project;
-import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
@@ -49,8 +45,6 @@ import org.jvnet.hudson.test.HudsonTestCase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -145,7 +139,7 @@ public class BuildTriggerConfigTest extends HudsonTestCase {
         Project subProject1 = createFreeStyleProject("subproject1");
         subProject1.setQuietPeriod(0);
 
-        List<Job> jobs = masterConfig.getProjectListGeneral(masterProject.getParent(), null);
+        List<Job> jobs = masterConfig.getJobs(masterProject.getParent(), null);
         assertEquals(2, jobs.size());
         assertTrue("Job should include workflow job", jobs.contains(p));
         assertTrue("Job should include non-workflow job", jobs.contains(subProject1));
