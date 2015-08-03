@@ -24,6 +24,8 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.FreeStyleBuild;
+import hudson.model.ItemGroup;
+import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
@@ -41,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import jenkins.model.ModifiableTopLevelItemGroup;
 
 import org.jenkins_ci.plugins.run_condition.BuildStepRunner;
 import org.jenkins_ci.plugins.run_condition.core.AlwaysRun;
@@ -112,11 +116,9 @@ public class RenameJobTest extends HudsonTestCase {
         final List<SingleConditionalBuilder> allSingleAfterDelete = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
         final TriggerBuilder singleCondTriggerAfterDel0 = (TriggerBuilder)allSingleAfterDelete.get(0).getBuildStep();
         assertEquals("build step trigger project within first singleconditionalbuildstep should be removed", "projectC", singleCondTriggerAfterDel0.getConfigs().get(0).getProjects());
-
 	}
 
 	private Project<?, ?> createParentProject(String parentJobName, String... childJobNames) throws IOException {
-		//create ProjectA
 		Project<?,?> project = createFreeStyleProject(parentJobName);
 
 		List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
@@ -147,23 +149,15 @@ public class RenameJobTest extends HudsonTestCase {
 		return project;
 	}
 
+	private <T extends TopLevelItem> T createProject(Class<T> type, ModifiableTopLevelItemGroup owner, String name) throws IOException {
+	    return (T) owner.createProject((TopLevelItemDescriptor) jenkins.getDescriptorOrDie(type), name, true);
+	}
+
     public void testRenameAndDeleteJobInSameFolder() throws Exception {
-        MockFolder folder1 = (MockFolder)jenkins.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder1",
-                true
-        );
-        FreeStyleProject p1 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectA", 
-                true
-        );
-        FreeStyleProject p2 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectB", 
-                true
-        );
-        
+        MockFolder folder1 = createProject(MockFolder.class, jenkins, "Folder1");
+        FreeStyleProject p1 = createProject(FreeStyleProject.class, folder1, "ProjectA");
+        FreeStyleProject p2 = createProject(FreeStyleProject.class, folder1, "ProjectB");
+
         p1.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 p2.getName(),   // This should not be getFullName().
                 ResultCondition.ALWAYS,
@@ -214,26 +208,10 @@ public class RenameJobTest extends HudsonTestCase {
     }
 
     public void testRenameAndDeleteJobInSubFolder() throws Exception {
-        MockFolder folder1 = (MockFolder)jenkins.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder1",
-                true
-        );
-        MockFolder folder2 = (MockFolder)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder2",
-                true
-        );
-        FreeStyleProject p1 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectA", 
-                true
-        );
-        FreeStyleProject p2 = (FreeStyleProject)folder2.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectB", 
-                true
-        );
+        MockFolder folder1 = createProject(MockFolder.class, jenkins, "Folder1");
+        MockFolder folder2 = createProject(MockFolder.class, folder1, "Folder2");
+        FreeStyleProject p1 = createProject(FreeStyleProject.class, folder1, "ProjectA");
+        FreeStyleProject p2 = createProject(FreeStyleProject.class, folder2, "ProjectB");
         
         p1.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 String.format("%s/%s", folder2.getName(), p2.getName()),
@@ -285,29 +263,13 @@ public class RenameJobTest extends HudsonTestCase {
         p2.delete();
         assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
-    
+
     public void testRenameAndDeleteJobInParentFolder() throws Exception {
-        MockFolder folder1 = (MockFolder)jenkins.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder1",
-                true
-        );
-        MockFolder folder2 = (MockFolder)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder2",
-                true
-        );
-        FreeStyleProject p1 = (FreeStyleProject)folder2.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectA", 
-                true
-        );
-        FreeStyleProject p2 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectB", 
-                true
-        );
-        
+        MockFolder folder1 = createProject(MockFolder.class, jenkins, "Folder1");
+        MockFolder folder2 = createProject(MockFolder.class, folder1, "Folder2");
+        FreeStyleProject p1 = createProject(FreeStyleProject.class, folder2, "ProjectA");
+        FreeStyleProject p2 = createProject(FreeStyleProject.class, folder1, "ProjectB");
+
         p1.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 String.format("../%s", p2.getName()),
                     // This should not be getFullName().
