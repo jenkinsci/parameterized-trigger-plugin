@@ -25,8 +25,10 @@ package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.FreeStyleBuild;
 import hudson.model.ItemGroup;
+import hudson.model.Items;
 import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
+import hudson.model.AbstractProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -56,18 +58,14 @@ import org.jvnet.hudson.test.MockFolder;
 public class RenameJobTest extends HudsonTestCase {
 
 	public void testRenameAndDeleteJobSingleProject() throws Exception {
-		//create projectA
-		Project<?,?> projectA = createParentProject("projectA", "projectB");
+		FreeStyleProject projectA = createFreeStyleProject("projectA");
+		configureTriggeringOf(projectA, "projectB");
 		Project<?,?> projectB = createFreeStyleProject("projectB");
 		hudson.rebuildDependencyGraph();
 
 		projectB.renameTo("projectB-renamed");
 
-		//confirm projectA's build step trigger is updated automatically
-		assertEquals("build step trigger project should be renamed", "projectB-renamed", projectA.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects());
-
-		//confirm projectA's post build trigger is updated automatically
-		assertEquals("post build trigger project should be renamed", "projectB-renamed", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
+		assertTriggering(projectA, "projectB-renamed");
 		
 		projectB.delete();
 
@@ -79,49 +77,27 @@ public class RenameJobTest extends HudsonTestCase {
 	}
 
 	public void testRenameAndDeleteJobMultipleProjects() throws Exception {
-		Project<?,?> projectA = createParentProject("projectA", "projectB", "projectC");
+		Project<?,?> projectA = createFreeStyleProject("projectA");
+		configureTriggeringOf(projectA, "projectB", "projectC");
 		Project<?,?> projectB = createFreeStyleProject("projectB");
 		createFreeStyleProject("projectC");
 		hudson.rebuildDependencyGraph();
 
 		projectB.renameTo("projectB-renamed");
 		
-		//confirm projectA's build step trigger is updated automatically
-		assertEquals("build step trigger project should be renamed", "projectB-renamed,projectC", projectA.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects());
-		
-	    final List<ConditionalBuilder> all = projectA.getBuildersList().getAll(ConditionalBuilder.class);
-	    final TriggerBuilder wrappedBuilder0 = (TriggerBuilder)all.get(0).getConditionalbuilders().get(0);
-	    assertEquals("build step trigger project within first conditionalbuildstep should be renamed", "projectB-renamed,projectC", wrappedBuilder0.getConfigs().get(0).getProjects());
-
-	    final List<SingleConditionalBuilder> allSingleConditions = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
-	    final TriggerBuilder singleCondTrigger0 = (TriggerBuilder)allSingleConditions.get(0).getBuildStep();
-        assertEquals("build step trigger project within first singleconditionalbuildstep should be renamed", "projectB-renamed,projectC", singleCondTrigger0.getConfigs().get(0).getProjects());
-
-		//confirm projectA's post build trigger is updated automatically
-		assertEquals("post build trigger project should be renamed", "projectB-renamed,projectC", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
+		assertTriggering(projectA, "projectB-renamed,projectC");
 		
 		projectB.delete();
-
-		//confirm projectA's build step trigger is updated automatically:
-		assertEquals("build step trigger project should be removed", "projectC", projectA.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects());
-
-		//confirm projectA's post build trigger is updated automatically:
-		assertEquals("post build trigger project should be removed", "projectC", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
 		
-	    //confirm deletes are reflected within conditional buildsteps too
-        final List<ConditionalBuilder> allAfterDelete = projectA.getBuildersList().getAll(ConditionalBuilder.class);
-        final TriggerBuilder wrappedBuilderAfterDel0 = (TriggerBuilder)allAfterDelete.get(0).getConditionalbuilders().get(0);
-        assertEquals("build step trigger project within first conditionalbuildstep should be removed", "projectC", wrappedBuilderAfterDel0.getConfigs().get(0).getProjects());
-        
-
-        final List<SingleConditionalBuilder> allSingleAfterDelete = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
-        final TriggerBuilder singleCondTriggerAfterDel0 = (TriggerBuilder)allSingleAfterDelete.get(0).getBuildStep();
-        assertEquals("build step trigger project within first singleconditionalbuildstep should be removed", "projectC", singleCondTriggerAfterDel0.getConfigs().get(0).getProjects());
+		assertTriggering(projectA, "projectC");
 	}
 
-	private Project<?, ?> createParentProject(String parentJobName, String... childJobNames) throws IOException {
-		Project<?,?> project = createFreeStyleProject(parentJobName);
-
+	/**
+	 * Configure all the triggers to point to a set of child jobs.
+	 *
+	 * @see {@link #assertTriggering(Project, String)}
+	 */
+	private Project<?, ?> configureTriggeringOf(Project<?,?> project, String... childJobNames) throws IOException {
 		List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
 		buildParameters.add(new CurrentBuildParameters());
 		
@@ -149,6 +125,25 @@ public class RenameJobTest extends HudsonTestCase {
 		project.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(childJobNamesString.toString(), ResultCondition.SUCCESS, new CurrentBuildParameters())));
 		return project;
 	}
+
+	/**
+     * Assert that all the triggers refers to expected jobs.
+     */
+    private void assertTriggering(Project<?, ?> p, String expected) {
+        String actual = p.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects();
+        assertEquals("build step trigger", expected, actual);
+
+        final TriggerBuilder triggerBuilder = (TriggerBuilder) p.getBuildersList().getAll(ConditionalBuilder.class).get(0).getConditionalbuilders().get(0);
+        actual = triggerBuilder.getConfigs().get(0).getProjects();
+        assertEquals("build step trigger project within first conditionalbuildstep", expected, actual);
+
+        final TriggerBuilder singleCondTrigger0 = (TriggerBuilder)p.getBuildersList().getAll(SingleConditionalBuilder.class).get(0).getBuildStep();
+        actual = singleCondTrigger0.getConfigs().get(0).getProjects();
+        assertEquals("build step trigger project within first singleconditionalbuildstep", expected, actual);
+
+        actual = p.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects();
+        assertEquals("post build step trigger", expected, actual);
+    }
 
 	private <T extends TopLevelItem> T createProject(Class<T> type, ModifiableTopLevelItemGroup owner, String name) throws IOException {
 	    return (T) owner.createProject((TopLevelItemDescriptor) jenkins.getDescriptorOrDie(type), name, true);
