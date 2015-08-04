@@ -25,8 +25,10 @@ import hudson.model.Job;
 import hudson.model.ParametersAction;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.model.queue.Tasks;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.plugins.promoted_builds.Promotion;
+import hudson.security.ACL;
 import hudson.tasks.Messages;
 import hudson.Util;
 import hudson.util.FormValidation;
@@ -34,6 +36,8 @@ import hudson.util.VersionNumber;
 
 import jenkins.model.Jenkins;
 import jenkins.model.ParameterizedJobMixIn;
+import jenkins.security.QueueItemAuthenticatorConfiguration;
+import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -421,10 +425,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     /**
      * Create UpstreamCause that triggers a downstream build.
-     * 
+     *
      * If the upstream build is a promotion, return the UpstreamCause
      * as triggered by the target of the promotion.
-     * 
+     *
      * @param build an upstream build
      * @return UpstreamCause
      */
@@ -433,10 +437,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             // Test only when promoted-builds is installed.
             if(build instanceof Promotion) {
                 Promotion promotion = (Promotion)build;
-                
+
                 // This cannot be done for PromotionCause#PromotionCause is in a package scope.
                 // return new PromotionCause(build, promotion.getTarget());
-                
+
                 return new UpstreamCause((Run<?,?>)promotion.getTarget());
             }
         }
@@ -479,11 +483,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     /**
      * A backport of {@link Items#computeRelativeNamesAfterRenaming(String, String, String, ItemGroup)} in Jenkins 1.530.
-     * 
+     *
      * computeRelativeNamesAfterRenaming contains a bug in Jenkins < 1.530.
      * Replace this to {@link Items#computeRelativeNamesAfterRenaming(String, String, String, ItemGroup)}
      * when updated the target version to >= 1.530.
-     * 
+     *
      * @param oldFullName
      * @param newFullName
      * @param relativeNames
@@ -593,7 +597,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
          *
          * Copied from hudson.tasks.BuildTrigger.doCheck(Item project, String value)
          */
-        public FormValidation doCheckProjects(@AncestorInPath AbstractProject<?,?> project, @QueryParameter String value ) {
+        public FormValidation doCheckProjects(@AncestorInPath Job<?,?> project, @QueryParameter String value ) {
             // Require CONFIGURE permission on this project
             if(!project.hasPermission(Item.CONFIGURE)){
             	return FormValidation.ok();
@@ -605,17 +609,29 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 if (StringUtils.isNotBlank(projectName)) {
                 	Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
                     if(item==null){
-                        return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName,AbstractProject.findNearest(projectName).getName()));
+                        Item nearest = Items.findNearest(Job.class, projectName, Jenkins.getInstance());
+                        String alternative = nearest != null ? nearest.getRelativeNameFrom(project) : "?";
+                        return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName, alternative));
                     }
-                    if(!(item instanceof AbstractProject)){
+                    if(!(item instanceof Job)){
                         return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
+                    }
+
+                    // check whether the supposed user is expected to be able to build
+                    if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
+                        Authentication auth = Tasks.getAuthenticationOf((ParameterizedJobMixIn.ParameterizedJob)project);
+                        if (auth.equals(ACL.SYSTEM) && !QueueItemAuthenticatorConfiguration.get().getAuthenticators().isEmpty()) {
+                            auth = Jenkins.ANONYMOUS; // compare behavior in execute, above
+                        }
+                        if (!item.getACL().hasPermission(auth, Item.BUILD)) {
+                            return FormValidation.error(Messages.BuildTrigger_you_have_no_permission_to_build_(projectName));
+                        }
                     }
                     hasProjects = true;
                 }
             }
             if (!hasProjects) {
-//            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
-            	return FormValidation.error("No project specified");
+            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified());
             }
 
             return FormValidation.ok();
