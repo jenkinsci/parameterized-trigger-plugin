@@ -1,6 +1,16 @@
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.Executor;
+import hudson.model.Job;
+import hudson.model.ParametersAction;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Queue;
+import hudson.model.ParameterValue;
+import hudson.model.SimpleParameterDefinition;
+import hudson.model.StringParameterDefinition;
+import hudson.model.StringParameterValue;
 
 import java.util.List;
 import java.util.ArrayList;
