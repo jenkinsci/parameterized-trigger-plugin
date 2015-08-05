@@ -613,20 +613,19 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                         String alternative = nearest != null ? nearest.getRelativeNameFrom(project) : "?";
                         return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName, alternative));
                     }
-                    if(!(item instanceof Job)){
+                    if(!(item instanceof Job) || !(item instanceof ParameterizedJobMixIn.ParameterizedJob)) {
                         return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
                     }
 
                     // check whether the supposed user is expected to be able to build
-                    if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
-                        Authentication auth = Tasks.getAuthenticationOf((ParameterizedJobMixIn.ParameterizedJob)project);
-                        if (auth.equals(ACL.SYSTEM) && !QueueItemAuthenticatorConfiguration.get().getAuthenticators().isEmpty()) {
-                            auth = Jenkins.ANONYMOUS; // compare behavior in execute, above
-                        }
-                        if (!item.getACL().hasPermission(auth, Item.BUILD)) {
-                            return FormValidation.error(Messages.BuildTrigger_you_have_no_permission_to_build_(projectName));
-                        }
+                    Authentication auth = Tasks.getAuthenticationOf((ParameterizedJobMixIn.ParameterizedJob)project);
+                    if (auth.equals(ACL.SYSTEM) && !QueueItemAuthenticatorConfiguration.get().getAuthenticators().isEmpty()) {
+                        auth = Jenkins.ANONYMOUS;
                     }
+                    if (!item.getACL().hasPermission(auth, Item.BUILD)) {
+                        return FormValidation.error(Messages.BuildTrigger_you_have_no_permission_to_build_(projectName));
+                    }
+
                     hasProjects = true;
                 }
             }
