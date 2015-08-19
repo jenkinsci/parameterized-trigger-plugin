@@ -25,6 +25,7 @@ package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.*;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.queue.MappingWorksheet;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -33,6 +34,9 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.plugins.promoted_builds.PromotionProcess;
 import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jvnet.hudson.test.Bug;
 
 import hudson.matrix.TextAxis;
@@ -54,6 +58,11 @@ import com.google.common.collect.ImmutableList;
 import java.lang.System;
 
 import jenkins.model.Jenkins;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class TriggerBuilderTest extends HudsonTestCase {
 
@@ -169,7 +178,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
         Project<?,?> triggerProject = createFreeStyleProject();
 
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
-        ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0","2","1", "TEST=COUNT$COUNT"));
+        ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
         List<AbstractBuildParameters> emptyList = Collections.<AbstractBuildParameters>emptyList();
 
         BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig("project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
@@ -211,6 +220,36 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "Waiting for the completion of project3");
     }
 
+    /** Verify that workflow build can be triggered */
+    public void testTriggerWithWorkflow() throws Exception {
+        WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "project1");
+        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
+        triggerProject.getBuildersList().add(triggerBuilder);
+        triggerProject.scheduleBuild2(0).get();
+
+        assertNotNull(triggerProject.getLastBuild());
+        assertEquals(1, p.getBuilds().size());
+        assertNotNull(p.getLastBuild());
+    }
+
+    /** Verify that workflow build can be triggered with normal project too */
+    public void testTriggerWithWorkflowMixedTypes() throws Exception {
+        createFreeStyleProject("project1");
+        WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "project2");
+        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1, project2"));
+        triggerProject.getBuildersList().add(triggerBuilder);
+        triggerProject.scheduleBuild2(0).get();
+
+        assertNotNull(triggerProject.getLastBuild());
+        assertEquals(1, p.getBuilds().size());
+        assertNotNull(p.getLastBuild());
+    }
 
     @Bug(14278)
     public void testBlockingTriggerWithMatrixProject() throws Exception {
