@@ -159,8 +159,8 @@ public class TriggerBuilder extends Builder {
 
     private String getProjectListAsString(List<Job> projectList){
         StringBuilder projectListString = new StringBuilder();
-        for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
-            AbstractProject project = (AbstractProject) iterator.next();
+        for (Iterator<Job> iterator = projectList.iterator(); iterator.hasNext();) {
+            Job project = iterator.next();
             projectListString.append(HyperlinkNote.encodeTo('/'+ project.getUrl(), project.getFullDisplayName()));
             if(iterator.hasNext()){
                 projectListString.append(", ");
