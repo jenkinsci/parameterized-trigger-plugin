@@ -96,7 +96,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
             }
         });
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP));
 
         projectA.scheduleBuild2(0).get();
@@ -135,7 +135,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
             return true;
             }
         });
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP));
 
         projectA.scheduleBuild2(0).get();
@@ -166,7 +166,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         //create triggering build
         FreeStyleProject projectA = createFreeStyleProject();
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP));
 
         projectA.scheduleBuild2(0).get();
@@ -188,7 +188,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         //create triggering build
         FreeStyleProject projectA = createFreeStyleProject();
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.NOPARMS));
 
         projectA.scheduleBuild2(0).get();
@@ -210,7 +210,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         //create triggering build
         FreeStyleProject projectA = createFreeStyleProject();
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.FAIL));
 
         projectA.scheduleBuild2(0).get();
@@ -242,7 +242,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
             }
         });
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "UTF-8"));
 
         projectA.scheduleBuild2(0).get();
@@ -285,7 +285,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
             }
         });
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "Shift_JIS"));
 
         projectA.scheduleBuild2(0).get();
@@ -323,7 +323,7 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
             }
         });
 
-        // add Trigger builder, with file paramter factory
+        // add Trigger builder, with file parameter factory
         projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, ""));
 
         projectA.scheduleBuild2(0).get();
