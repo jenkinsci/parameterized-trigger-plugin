@@ -55,6 +55,7 @@ import org.jvnet.hudson.test.HudsonTestCase;
 import org.jvnet.hudson.test.TestBuilder;
 import org.junit.Test;
 
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -333,11 +334,15 @@ public class FileBuildParameterFactoryTest extends HudsonTestCase {
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(1, builds.size());
 
-        for (FreeStyleBuild build : builds) {
-            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-            assertEquals("ｈｅｌｌｏ＿ａｂｃ", buildEnvVar.get("ＴＥＳＴ"));
+        // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be windows-1250
+        // or windows-1252. With these single-byte encodings we cannot expect multi-byte strings to be encoded correctly.
+        final boolean isMultiByteDefaultCharset = Charset.defaultCharset().newEncoder().maxBytesPerChar() > 1.0f;
+        if (isMultiByteDefaultCharset) {
+            for (FreeStyleBuild build : builds) {
+                EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+                assertEquals("ｈｅｌｌｏ＿ａｂｃ", buildEnvVar.get("ＴＥＳＴ"));
+            }
         }
-
     }
     
     public void testDoCheckEncoding() throws Exception {

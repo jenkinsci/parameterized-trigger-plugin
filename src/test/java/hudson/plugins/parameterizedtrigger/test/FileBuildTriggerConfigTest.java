@@ -214,8 +214,14 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         hudson.getQueue().getItem(projectB).getFuture().get();
 
         assertNotNull("builder should record environment", builder.getEnvVars());
-        assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
-        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+
+        // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be windows-1250
+        // or windows-1252. With these single-byte encodings we cannot expect multi-byte strings to be encoded correctly.
+        final boolean isMultiByteDefaultCharset = Charset.defaultCharset().newEncoder().maxBytesPerChar() > 1.0f;
+        if (isMultiByteDefaultCharset) {
+            assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+            assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+        }
     }
 
     public void testDoCheckEncoding() throws Exception {
