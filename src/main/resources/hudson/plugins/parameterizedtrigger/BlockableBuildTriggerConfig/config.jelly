@@ -25,13 +25,7 @@ THE SOFTWARE.
   <f:entry title="${%Projects to build}" field="projects">
     <f:textbox />
   </f:entry>
-  <!-- TODO: replace with <f:optionalProperty> -->
-  <f:optionalBlock field="block" title="${%Block until the triggered projects finish their builds}" checked="${instance.block!=null}">
-    <j:set var="descriptor" value="${app.getDescriptorOrDie(descriptor.getPropertyType(field).clazz)}" />
-    <j:set var="instance" value="${instance[field]}"/>
-    <st:include from="${descriptor}" page="${descriptor.configPage}" />
-  </f:optionalBlock>
-
+  <f:optionalProperty field="block" title="${%Block until the triggered projects finish their builds}" />
   <f:block>
     <f:hetero-list name="configs" hasHeader="true"
                    descriptors="${descriptor.getBuilderConfigDescriptors()}"
