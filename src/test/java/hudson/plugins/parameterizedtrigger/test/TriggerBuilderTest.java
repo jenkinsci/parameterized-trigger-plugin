@@ -45,6 +45,7 @@ import hudson.matrix.MatrixRun;
 import hudson.matrix.AxisList;
 
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
@@ -58,6 +59,7 @@ import com.google.common.collect.ImmutableList;
 import java.lang.System;
 
 import jenkins.model.Jenkins;
+import org.jvnet.hudson.test.Issue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -233,6 +235,25 @@ public class TriggerBuilderTest extends HudsonTestCase {
         assertNotNull(triggerProject.getLastBuild());
         assertEquals(1, p.getBuilds().size());
         assertNotNull(p.getLastBuild());
+    }
+
+    /** Verify that getProjectsList works with workflow and normal projects */
+    @Issue("JENKINS-30040")
+    public void testGetProjectsList() throws Exception {
+        WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "project1");
+        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        Project<?, ?> p2 = createFreeStyleProject("project2");
+
+        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        List<Job> jobs = new ArrayList<Job>();
+        jobs.add(p);
+        jobs.add(p2);
+        String projectListAsString = triggerBuilder.getProjectListAsString(jobs);
+        assertStringContains(projectListAsString, "project1");
+        assertStringContains(projectListAsString, "project2");
     }
 
     /** Verify that workflow build can be triggered with normal project too */

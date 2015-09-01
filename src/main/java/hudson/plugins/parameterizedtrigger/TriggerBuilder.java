@@ -39,6 +39,7 @@ import hudson.tasks.Builder;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.util.IOException2;
+import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -157,7 +158,9 @@ public class TriggerBuilder extends Builder {
         return buildStepResult;
     }
 
-    private String getProjectListAsString(List<Job> projectList){
+    // Public but restricted so we can add tests without completely changing the tests package
+    @Restricted(value=org.kohsuke.accmod.restrictions.NoExternalUse.class)
+    public String getProjectListAsString(List<Job> projectList){
         StringBuilder projectListString = new StringBuilder();
         for (Iterator<Job> iterator = projectList.iterator(); iterator.hasNext();) {
             Job project = iterator.next();
