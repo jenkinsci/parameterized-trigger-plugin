@@ -80,7 +80,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
                 // it also means we have to force quiet period = 0, or else it'll never leave the queue
                 Future f = schedule(build, project, 0, list);
                 // When a project is disabled or the configuration is not yet saved f will always be null and we're caught in a loop, therefore we need to check for it
-                if (f!=null || (f==null && !project.isBuildable())){
+                if (f!=null || (f==null && !canBeScheduled(project))){
                     return f;
                 }
                 Thread.sleep(1000);

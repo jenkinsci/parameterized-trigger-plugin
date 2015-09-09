@@ -38,6 +38,7 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.model.Job;
 import hudson.model.Run;
+import hudson.model.User;
 import hudson.util.IOException2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -127,8 +128,11 @@ public class TriggerBuilder extends Builder {
                     //handle blocking configs
                     for (Job p : projectList) {
                         //handle non-buildable projects
-                        if(!p.isBuildable()){
-                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
+                        if(!config.canBeScheduled(p)){
+                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + 
+                                    ". The project is either disabled,"
+                                    + " or the authenticated user " + User.current() + " has no Item.BUILD permissions,"
+                                    + " or the configuration has not been saved yet.");
                             continue;
                         }
                         for (Future<Run> future : futures.get(p)) {

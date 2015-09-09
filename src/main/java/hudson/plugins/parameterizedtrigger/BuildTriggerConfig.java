@@ -31,6 +31,7 @@ import hudson.plugins.promoted_builds.Promotion;
 import hudson.security.ACL;
 import hudson.tasks.Messages;
 import hudson.Util;
+import hudson.model.User;
 import hudson.util.FormValidation;
 import hudson.util.VersionNumber;
 
@@ -55,8 +56,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.annotation.Nonnull;
+import jenkins.security.QueueItemAuthenticator;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
+    
+    private static final Logger LOGGER = Logger.getLogger(BuildTriggerConfig.class.getName());
 
 	private final List<AbstractBuildParameters> configs;
     private final List<AbstractBuildParameterFactory> configFactories;
@@ -465,11 +472,42 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     return project;
                 }
             };
+            
+            // We check the user permissions.
+            // QueueItemAuthenticator should provide the user if it is set correctly.
+            if (!project.hasPermission(Item.BUILD)) {
+                //TODO: It would be also great to print it to the build log, but there is no TaskListener
+                if (LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.log(Level.WARNING, "Cannot schedule the build of {0} from {1}. "
+                                + "The authenticated build user {2} has no Item.BUILD permission",
+                            new Object[] {project, build, User.current()});
+                }
+                return null;
+            }
+                   
             return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[queueActions.size()]));
         }
 
         // Trigger is not compatible with un-parameterized jobs
         return null;
+    }
+    
+    /**
+     * Checks if the project is buildable.
+     * The method also takes the security implications from {@link QueueItemAuthenticator} into account.
+     * @param job Job to be checked
+     * @return true if the job can be scheduled from the 
+     */
+    protected boolean canBeScheduled(@Nonnull Job<?, ?> job) {
+        if (!job.isBuildable()) {
+            return false;
+        }
+        
+        //TODO: should be a part of the Jenkins core
+        if (!job.hasPermission(Item.BUILD)) {
+            return false;
+        }
+        return true;
     }
 
     protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list) throws InterruptedException, IOException {
