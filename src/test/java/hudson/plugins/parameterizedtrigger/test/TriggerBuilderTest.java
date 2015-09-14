@@ -216,7 +216,8 @@ public class TriggerBuilderTest extends HudsonTestCase {
 
         assertLines(triggerProject.getLastBuild(),
                 "Waiting for the completion of project1",
-                "Skipping project2. The project is either disabled or the configuration has not been saved yet.",
+                "Skipping project2. The project is either disabled, or the authenticated user " + User.current() + 
+                        " has no Item.BUILD permissions, or the configuration has not been saved yet.",
                 "Waiting for the completion of project3");
     }
 
