@@ -474,7 +474,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             };
             
             // We check the user permissions.
-            // QueueItemAuthenticator should provide the user if it is set correctly.
+            // QueueItemAuthenticator should provide the user if it is configured correctly.
             if (!project.hasPermission(Item.BUILD)) {
                 //TODO: It would be also great to print it to the build log, but there is no TaskListener
                 if (LOGGER.isLoggable(Level.WARNING)) {
