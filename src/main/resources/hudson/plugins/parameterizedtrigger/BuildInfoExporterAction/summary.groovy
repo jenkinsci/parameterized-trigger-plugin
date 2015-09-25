@@ -20,6 +20,9 @@ if(builds.size() > 0) {
 								alt:"${item.iconColor.description}", height:"16", width:"16")
 						text(item.displayName)
 					}
+					if (item.description != null && item.description != '') {
+						text(' ' + item.description)
+					}
 				}
 			}
 		}
