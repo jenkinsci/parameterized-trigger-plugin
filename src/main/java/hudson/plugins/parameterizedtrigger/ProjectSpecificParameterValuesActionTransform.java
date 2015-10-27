@@ -53,7 +53,7 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
 
     private static boolean canConvert(ParameterDefinition def, ParameterValue v) {
         return def instanceof SimpleParameterDefinition &&
-            !(def instanceof StringParameterDefinition) &&
+            !(def.getClass().equals(StringParameterDefinition.class)) &&
             v.getClass().equals(StringParameterValue.class);
     }
 
