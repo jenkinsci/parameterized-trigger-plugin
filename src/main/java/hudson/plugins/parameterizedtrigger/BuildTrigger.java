@@ -82,7 +82,9 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 					}
 				}
 			}
+			EnvVars.resolve(envVars);
 		}
+		
 		return envVars;
     }
 	@Override
@@ -92,6 +94,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 
 		//get default parameter values as environment. 
 		EnvVars envVars = GetDefaultParameterValuesAsEnvVars(owner);
+		 
 		
 		for (BuildTriggerConfig config : configs)
 			for (AbstractProject project : config.getProjectList(owner.getParent(),envVars))
