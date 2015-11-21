@@ -16,6 +16,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.StringParameterValue;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
+import hudson.model.Job;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -23,6 +24,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class BuildTrigger extends Notifier implements DependecyDeclarer {
@@ -53,19 +55,40 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 	}
 
 	@Override @SuppressWarnings("deprecation")
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
+	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+
+        HashSet<BuildTriggerConfig> alreadyFired = new HashSet<BuildTriggerConfig>();
+
+        // If this project has non-abstract projects, we need to fire them
+        for (BuildTriggerConfig config : configs) {
+            boolean hasNonAbstractProject = false;
+
+            List<Job> jobs = config.getJobs(build.getRootBuild().getProject().getParent(), build.getEnvironment(listener));
+            for (Job j : jobs) {
+                if (!(j instanceof AbstractProject)) {
+                    hasNonAbstractProject = true;
+                    break;
+                }
+            }
+            // Fire this config's projects if not already fired
+            if (hasNonAbstractProject) {
+                config.perform(build, launcher, listener);
+                alreadyFired.add(config);
+            }
+        }
+
         if (canDeclare(build.getProject())) {
             // job will get triggered by dependency graph, so we have to capture buildEnvironment NOW before
             // hudson.model.AbstractBuild.AbstractBuildExecution#cleanUp is called and reset
             EnvVars env = build.getEnvironment(listener);
             build.addAction(new CapturedEnvironmentAction(env));
-        } else {
+        } else {  // Not using dependency graph
             for (BuildTriggerConfig config : configs) {
-                config.perform(build, launcher, listener);
+                if (!alreadyFired.contains(config)) {
+                     config.perform(build, launcher, listener);
+                }
             }
         }
-
 
 		return true;
 	}
@@ -92,13 +115,14 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 		// Can only add dependencies in Hudson 1.341 or higher
 		if (!canDeclare(owner)) return;
 
-		//get default parameter values as environment. 
+        //get default parameter values as environment. 
 		EnvVars envVars = GetDefaultParameterValuesAsEnvVars(owner);
-		 
-		
-		for (BuildTriggerConfig config : configs)
-			for (AbstractProject project : config.getProjectList(owner.getParent(),envVars))
+		for (BuildTriggerConfig config : configs) {
+			List<AbstractProject> projectList = config.getProjectList(owner.getParent(),envVars);
+			for (AbstractProject project : projectList) {
 				ParameterizedDependency.add(owner, project, config, graph);
+			}
+		}
 	}
 
 	private boolean canDeclare(AbstractProject owner) {

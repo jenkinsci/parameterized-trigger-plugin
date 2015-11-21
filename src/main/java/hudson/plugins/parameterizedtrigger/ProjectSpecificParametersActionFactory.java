@@ -2,6 +2,7 @@ package hudson.plugins.parameterizedtrigger;
 
 import hudson.model.AbstractProject;
 import hudson.model.Action;
+import hudson.model.Job;
 import hudson.model.ParametersAction;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public class ProjectSpecificParametersActionFactory {
         this.transforms = new ArrayList<ITransformProjectParametersAction>(Arrays.asList(transforms));
     }
 
-    public final List<Action> getProjectSpecificBuildActions(List<Action> baseActions, AbstractProject<?,?> project) {
+    public final List<Action> getProjectSpecificBuildActions(List<Action> baseActions, Job<?,?> project) {
         List<Action> actions = new ArrayList<Action>();
         ParametersAction pa = getParametersAction(baseActions);
 

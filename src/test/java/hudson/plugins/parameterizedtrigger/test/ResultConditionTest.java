@@ -178,7 +178,7 @@ public class ResultConditionTest extends HudsonTestCase {
         assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
-    public void testTriggerByAbortedByInturrupted() throws Exception {
+    public void testTriggerByAbortedByInterrupted() throws Exception {
         FreeStyleProject projectA = createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new SleepBuilder(10000));
         FreeStyleProject projectB = createFreeStyleProject("projectB");

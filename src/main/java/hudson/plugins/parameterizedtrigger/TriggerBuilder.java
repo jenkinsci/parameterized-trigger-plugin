@@ -36,7 +36,10 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
+import hudson.model.Job;
+import hudson.model.Run;
 import hudson.util.IOException2;
+import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -82,9 +85,9 @@ public class TriggerBuilder extends Builder {
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
-                ListMultimap<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
+                ListMultimap<Job, Future<Run>> futures = config.perform3(build, launcher, listener);
                 // Only contains resolved projects
-                List<AbstractProject> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(),env);
+                List<Job> projectList = config.getJobs(build.getRootBuild().getProject().getParent(), env);
 
                 // Get the actual defined projects
                 StringTokenizer tokenizer = new StringTokenizer(config.getProjects(env), ",");
@@ -100,7 +103,7 @@ public class TriggerBuilder extends Builder {
                     while (tokenizer.hasMoreTokens()) {
                         unsolvedProjectNames.add(tokenizer.nextToken().trim());
                     }
-                    for (AbstractProject project : projectList) {
+                    for (Job project : projectList) {
                         unsolvedProjectNames.remove(project.getFullName());
                     }
 
@@ -117,24 +120,24 @@ public class TriggerBuilder extends Builder {
                     //handle non-blocking configs
                     if(futures.isEmpty()){
                         listener.getLogger().println("Triggering projects: " + getProjectListAsString(projectList));
-                        for(AbstractProject p : projectList) {
+                        for(Job p : projectList) {
                             BuildInfoExporterAction.addBuildInfoExporterAction(build, p.getFullName());
                         }
                         continue;
                     }
                     //handle blocking configs
-                    for (AbstractProject p : projectList) {
+                    for (Job p : projectList) {
                         //handle non-buildable projects
                         if(!p.isBuildable()){
                             listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
                             continue;
                         }
-                        for (Future<AbstractBuild> future : futures.get(p)) {
+                        for (Future<Run> future : futures.get(p)) {
                             try {
                                 listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                AbstractBuild b = future.get();
+                                Run b = future.get();
                                 listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getProject().getFullName(), b.getNumber(), b.getResult());
+                                BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getParent().getFullName(), b.getNumber(), b.getResult());
 
                                 if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
                                     build.setResult(config.getBlock().mapBuildResult(b.getResult()));
@@ -155,10 +158,12 @@ public class TriggerBuilder extends Builder {
         return buildStepResult;
     }
 
-    private String getProjectListAsString(List<AbstractProject> projectList){
+    // Public but restricted so we can add tests without completely changing the tests package
+    @Restricted(value=org.kohsuke.accmod.restrictions.NoExternalUse.class)
+    public String getProjectListAsString(List<Job> projectList){
         StringBuilder projectListString = new StringBuilder();
-        for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
-            AbstractProject project = (AbstractProject) iterator.next();
+        for (Iterator<Job> iterator = projectList.iterator(); iterator.hasNext();) {
+            Job project = iterator.next();
             projectListString.append(HyperlinkNote.encodeTo('/'+ project.getUrl(), project.getFullDisplayName()));
             if(iterator.hasNext()){
                 projectListString.append(", ");
