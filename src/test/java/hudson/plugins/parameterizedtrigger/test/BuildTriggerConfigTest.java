@@ -26,8 +26,11 @@ package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
+import hudson.model.FreeStyleProject;
+import hudson.model.Item;
 import hudson.model.Job;
 import hudson.model.Project;
+import hudson.model.User;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
@@ -36,6 +39,10 @@ import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.SubProjectData;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+import hudson.security.ACL;
+import hudson.security.AuthorizationMatrixProperty;
+import hudson.security.Permission;
+import hudson.security.ProjectMatrixAuthorizationStrategy;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -44,13 +51,19 @@ import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.HudsonTestCase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import org.jvnet.hudson.test.Bug;
 
 public class BuildTriggerConfigTest extends HudsonTestCase {
 
@@ -182,8 +195,52 @@ public class BuildTriggerConfigTest extends HudsonTestCase {
         assertBuildStatusSuccess(workflowRun);
         assertLogContains("GOOBER", workflowRun);
     }
-
-
+    
+    @Bug(31727)
+    public void testShouldNotFailOnDiscoverWithoutReadPermission() throws Exception {
+        // Setup global security
+        jenkins.setSecurityRealm(createDummySecurityRealm());
+        User user = User.get("testUser");
+        ProjectMatrixAuthorizationStrategy strategy = new ProjectMatrixAuthorizationStrategy();
+        strategy.add(Item.DISCOVER, "anonymous");
+        strategy.add(Jenkins.READ, "anonymous");
+        jenkins.setAuthorizationStrategy(strategy);
+        
+        // Create project with downstream trigger
+        final FreeStyleProject downstreamProject = createFreeStyleProject("downstreamProject");
+        final FreeStyleProject upstreamProject = createFreeStyleProject("upstreamProject");
+        final BlockableBuildTriggerConfig triggerConfg = createConfig("downstreamProject");
+        addParameterizedTrigger(upstreamProject, triggerConfg);
+        
+        // Setup upstream project security
+        Map<Permission,Set<String>> permissions = new HashMap<Permission,Set<String>>();
+        Set<String> userIds = new HashSet<String>(Arrays.asList("testUser"));
+        permissions.put(Item.READ, userIds);
+        AuthorizationMatrixProperty projectPermissions = new AuthorizationMatrixProperty(permissions);
+        upstreamProject.addProperty(projectPermissions);
+        
+        // Ensure that we can get the info about the downstream project, but it is unresolved
+        ACL.impersonate(user.impersonate(), new Runnable() {
+            @Override
+            public void run() {   
+                SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
+                assertTrue("Downstream project should be unresolved, because testUser has no READ permission", 
+                        projectInfo.getUnresolved().contains(downstreamProject.getName()));
+            }
+        });
+        
+        // Now invoke the build and check again (other logic handlers)
+        buildAndAssertSuccess(upstreamProject);
+        ACL.impersonate(user.impersonate(), new Runnable() {
+            @Override
+            public void run() {   
+                SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
+                assertTrue("Downstream project should be unresolved, because testUser has no READ permission", 
+                        projectInfo.getUnresolved().contains(downstreamProject.getName()));
+            }
+        });
+    }
+   
     /**
      * Testing statically and dynamically defined projects
      *
