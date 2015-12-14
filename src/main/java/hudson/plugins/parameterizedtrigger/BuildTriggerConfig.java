@@ -55,6 +55,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
+import javax.annotation.Nonnull;
+import org.acegisecurity.AccessDeniedException;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
@@ -141,10 +143,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param env Environment variables from which to expand project names; Might be {@code null}.
      * @param context
      *      The container with which to resolve relative project names.
+     *      If the user has no {@link Item#READ} permission, the job won't be added to the list.
      */
     public List<Job> getJobs(ItemGroup context, EnvVars env) {
         List<Job> projectList = new ArrayList<Job>();
-        projectList.addAll(Items.fromNameList(context, getProjects(env), Job.class));
+        projectList.addAll(readableItemsFromNameList(context, getProjects(env), Job.class));
         return projectList;
     }
 
@@ -207,7 +210,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
                 // But we can still get statically defined project
-                subProjectData.getFixed().addAll(Items.fromNameList(context.getParent(), projects, AbstractProject.class));
+                subProjectData.getFixed().addAll(readableItemsFromNameList(context.getParent(), projects, AbstractProject.class));
+                
                 // Remove them from unsolved
                 for (AbstractProject staticProject : subProjectData.getFixed()) {
                     subProjectData.getUnresolved().remove(staticProject.getFullName());
@@ -232,6 +236,34 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), subProjectData);
             }
         }
+    }
+    
+    /**
+     * Retrieves readable items from the list.
+     * @param <T> Type of the item
+     * @param context Current item
+     * @param list String list of items
+     * @param type Type of items to be retrieved
+     * @return List of readable items, others will be skipped if {@link AccessDeniedException} happens
+     */
+    private static <T extends Item> List<T> readableItemsFromNameList(
+            ItemGroup context, @Nonnull String list, @Nonnull Class<T> type) {
+        Jenkins hudson = Jenkins.getInstance();
+
+        List<T> r = new ArrayList<T>();
+        StringTokenizer tokens = new StringTokenizer(list,",");
+        while(tokens.hasMoreTokens()) {
+            String fullName = tokens.nextToken().trim();
+            T item = null;
+            try {
+                item = hudson.getItem(fullName, context, type);
+            } catch (AccessDeniedException ex) {
+                // Ignore, item won't be added to the resulting list
+            }
+            if(item!=null)
+                r.add(item);
+        }
+        return r;
     }
 
     /**
@@ -265,7 +297,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 destinationSet = subProjectData.getDynamic();
             }
 
-            AbstractProject resolvedProject = Jenkins.getInstance().getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
+            final Jenkins jenkins = Jenkins.getInstance();
+            AbstractProject resolvedProject = null;
+            try {
+                resolvedProject = jenkins == null ? null :
+                        jenkins.getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
+            } catch (AccessDeniedException ex) {
+                // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
+            }
             if (resolvedProject != null) {
                 destinationSet.add(resolvedProject);
                 unsolvedProjectIterator.remove();
@@ -274,7 +313,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         if (build != null && build.getAction(BuildInfoExporterAction.class) != null) {
             String triggeredProjects = build.getAction(BuildInfoExporterAction.class).getProjectListString(",");
-            subProjectData.getTriggered().addAll(Items.fromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
+            subProjectData.getTriggered().addAll(readableItemsFromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
         }
     }
 
