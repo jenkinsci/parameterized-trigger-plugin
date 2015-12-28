@@ -22,10 +22,17 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 	private final String properties;
+	private final boolean textParamValueOnNewLine;
+
 
 	@DataBoundConstructor
-	public PredefinedBuildParameters(String properties) {
+	public PredefinedBuildParameters(String properties, boolean textParamValueOnNewLine) {
 		this.properties = properties;
+		this.textParamValueOnNewLine = textParamValueOnNewLine;
+	}
+
+	public PredefinedBuildParameters(String properties) {
+		this(properties, false);
 	}
 
 	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
@@ -39,7 +46,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
 			// support multi-line parameters correctly
 			String s = entry.getValue().toString();
-			if(s.contains("\n")) {
+			if(textParamValueOnNewLine && s.contains("\n")) {
 				values.add(new TextParameterValue(entry.getKey().toString(), env.expand(s)));
 			} else {
 				values.add(new StringParameterValue(entry.getKey().toString(), env.expand(s)));
@@ -51,6 +58,10 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 	public String getProperties() {
 		return properties;
+	}
+
+	public boolean getTextParamValueOnNewLine() {
+		return textParamValueOnNewLine;
 	}
 
 	@Extension
