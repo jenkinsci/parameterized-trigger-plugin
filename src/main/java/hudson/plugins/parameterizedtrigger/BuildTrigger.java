@@ -92,7 +92,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 			}
 		}
 
-		if (canDeclare(build.getProject())) {
+		if (canDeclare(build.getProject()) && !hasEnvVariables) {
 			// job will get triggered by dependency graph, so we have to capture buildEnvironment NOW before
 			// hudson.model.AbstractBuild.AbstractBuildExecution#cleanUp is called and reset
 			EnvVars env = build.getEnvironment(listener);

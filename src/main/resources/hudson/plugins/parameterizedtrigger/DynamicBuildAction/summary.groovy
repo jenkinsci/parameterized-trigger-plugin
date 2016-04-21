@@ -8,7 +8,6 @@ def l=namespace(lib.LayoutTagLib)
 def acts = my.builds
 if (!acts.empty) {
     h2(_("Dynamic downstream projects"))
-    h3("build count " + acts.size())
     my.builds.each { build ->
         ul(style: "list-style-type: none;") {
             li {
@@ -16,10 +15,6 @@ if (!acts.empty) {
                     text("Build is null")
                 } else {
                     def prj = build.getProject()
-                    text("build")
-                    text(build.getDisplayName())
-                    text(" number ")
-                    text(build.getNumber())
                     if (null == prj) {
                         text("Project is null")
                     } else {

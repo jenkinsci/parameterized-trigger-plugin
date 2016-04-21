@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Shows a list of a dynamic downstream builds
+ */
 public class DynamicBuildAction implements RunAction2 {
 
     private Map<String, Integer> buildsMap;

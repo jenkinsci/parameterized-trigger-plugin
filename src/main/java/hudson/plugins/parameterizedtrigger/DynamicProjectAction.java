@@ -5,6 +5,9 @@ import hudson.model.Action;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Shows a list of a downstream jobs that specified with parameters.
+ */
 public class DynamicProjectAction implements Action {
 
     private List<BuildTriggerConfig> configs;
