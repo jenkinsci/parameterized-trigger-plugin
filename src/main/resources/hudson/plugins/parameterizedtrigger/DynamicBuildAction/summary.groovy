@@ -1,10 +1,5 @@
 package hudson.plugins.parameterizedtrigger.DynamicBuildAction
 
-def f=namespace(lib.FormTagLib)
-def j=namespace(lib.JenkinsTagLib)
-def l=namespace(lib.LayoutTagLib)
-
-
 def acts = my.builds
 if (!acts.empty) {
     h2(_("Dynamic downstream projects"))
