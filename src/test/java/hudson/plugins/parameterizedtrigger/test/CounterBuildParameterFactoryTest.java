@@ -14,17 +14,27 @@ import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class CounterBuildParameterFactoryTest extends HudsonTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+public class CounterBuildParameterFactoryTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
     public void testWithOneParameter() throws Exception {
-        Project<?,?> projectA = createFreeStyleProject();
-        Project projectB = createFreeStyleProject();
+        Project<?,?> projectA = r.createFreeStyleProject();
+        Project projectB = r.createFreeStyleProject();
         projectA.getBuildersList().add(
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
@@ -35,10 +45,10 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(0);
-        hudson.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0, new Cause.UserCause()).get();
-        waitUntilNoActivity();
+        r.waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(2, builds.size());
         Set<String> values = Sets.newHashSet();
@@ -50,9 +60,10 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
         assertEquals(ImmutableSet.of("COUNT0","COUNT1"), values);
     }
 
+    @Test
     public void testWithTwoParameters() throws Exception {
-        Project<?,?> projectA = createFreeStyleProject();
-        Project projectB = createFreeStyleProject();
+        Project<?,?> projectA = r.createFreeStyleProject();
+        Project projectB = r.createFreeStyleProject();
         projectA.getBuildersList().add(
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
@@ -67,10 +78,10 @@ public class CounterBuildParameterFactoryTest extends HudsonTestCase {
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(0);
-        hudson.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0, new Cause.UserCause()).get();
-        waitUntilNoActivity();
+        r.waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(6, builds.size());
         Set<String> values = Sets.newHashSet();
