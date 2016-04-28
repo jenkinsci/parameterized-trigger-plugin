@@ -32,6 +32,7 @@ import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.matrix.AxisList;
 import hudson.matrix.LabelAxis;
+import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixProject;
 import hudson.matrix.TextAxis;
 import hudson.model.AbstractBuild;
@@ -42,6 +43,7 @@ import hudson.model.ParameterValue;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
 import hudson.model.Project;
+import hudson.model.Result;
 import hudson.model.StringParameterValue;
 import hudson.model.labels.LabelExpression;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -56,17 +58,28 @@ import hudson.tasks.ArtifactArchiver;
 import hudson.util.FormValidation;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Bug;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SingleFileSCM;
 import org.jvnet.hudson.test.ExtractResourceSCM;
 
-public class FileBuildTriggerConfigTest extends HudsonTestCase {
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+public class FileBuildTriggerConfigTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void test() throws Exception {
 
-		Project projectA = createFreeStyleProject("projectA");
+		Project projectA = r.createFreeStyleProject("projectA");
 		String properties = "KEY=value";
 		projectA.setScm(new SingleFileSCM("properties.txt", properties));
 		projectA.getPublishersList().add(
@@ -75,21 +88,22 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 						new FileBuildParameters("properties.txt"))));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
-		hudson.getQueue().getItem(projectB).getFuture().get();
+		r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		assertEquals("value", builder.getEnvVars().get("KEY"));
 	}
 
+    @Test
 	public void test_multiplefiles() throws Exception {
 
-		Project projectA = createFreeStyleProject("projectA");
+		Project projectA = r.createFreeStyleProject("projectA");
 		projectA.setScm(new ExtractResourceSCM(getClass().getResource("multiple_property_files.zip")));
 		projectA.getPublishersList().add(
 				new BuildTrigger(
@@ -98,13 +112,13 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 		projectA.getPublishersList().add(new ArtifactArchiver("a_properties.txt"));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
-		hudson.getQueue().getItem(projectB).getFuture().get();
+		r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		// test from first file
@@ -117,9 +131,10 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 
 	}
 
+    @Test
 	public void test_failOnMissingFile() throws Exception {
 
-		Project projectA = createFreeStyleProject("projectA");
+		Project projectA = r.createFreeStyleProject("projectA");
 		projectA.setScm(new ExtractResourceSCM(getClass().getResource("multiple_property_files.zip")));
 		projectA.getPublishersList().add(
 				new BuildTrigger(
@@ -127,21 +142,22 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
 						new FileBuildParameters("a_properties.txt,missing_file.txt,z_properties.txt",true))));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
-		waitUntilNoActivity();
+		r.waitUntilNoActivity();
 
 		// There should be no builds of projectB as not triggered.
 		assertEquals(0, projectB.getBuilds().size());
 	}
-	
+    
+    @Test
     public void testUtf8File() throws Exception {
 
-        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        FreeStyleProject projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=こんにちは\n"  // "hello" in Japanese.
                 + "ＫＥＹ=value"; // "KEY" in multibytes.
         projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes("UTF-8")));
@@ -151,24 +167,25 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                         new FileBuildParameters("properties.txt", "UTF-8", true))));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        FreeStyleProject projectB = r.createFreeStyleProject("projectB");
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
-        hudson.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0).get();
-        hudson.getQueue().getItem(projectB).getFuture().get();
+        r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
         assertNotNull("builder should record environment", builder.getEnvVars());
         assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
         assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
     }
 
+    @Test
     public void testShiftJISFile() throws Exception {
         // ShiftJIS is an encoding of Japanese texts.
         // I test here that a non-UTF-8 encoding also works.
 
-        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        FreeStyleProject projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=こんにちは\n"  // "hello" in Japanese.
                 + "ＫＥＹ=value"; // "KEY" in multibytes.
         projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes("Shift_JIS")));
@@ -178,24 +195,25 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                         new FileBuildParameters("properties.txt", "Shift_JIS", true))));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        FreeStyleProject projectB = r.createFreeStyleProject("projectB");
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
-        hudson.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0).get();
-        hudson.getQueue().getItem(projectB).getFuture().get();
+        r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
         assertNotNull("builder should record environment", builder.getEnvVars());
         assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
         assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
     }
     
+    @Test
     public void testPlatformDefaultEncodedFile() throws Exception {
         // ShiftJIS is an encoding of Japanese texts.
         // I test here that a non-UTF-8 encoding also works.
 
-        FreeStyleProject projectA = createFreeStyleProject("projectA");
+        FreeStyleProject projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=こんにちは\n"  // "hello" in Japanese.
                 + "ＫＥＹ=value"; // "KEY" in multibytes.
         projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes()));
@@ -205,13 +223,13 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                         new FileBuildParameters("properties.txt"))));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-        FreeStyleProject projectB = createFreeStyleProject("projectB");
+        FreeStyleProject projectB = r.createFreeStyleProject("projectB");
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
-        hudson.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0).get();
-        hudson.getQueue().getItem(projectB).getFuture().get();
+        r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
         assertNotNull("builder should record environment", builder.getEnvVars());
 
@@ -224,9 +242,10 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         }
     }
 
+    @Test
     public void testDoCheckEncoding() throws Exception {
         FileBuildParameters.DescriptorImpl d
-            = (FileBuildParameters.DescriptorImpl)jenkins.getDescriptorOrDie(FileBuildParameters.class);
+            = (FileBuildParameters.DescriptorImpl)r.jenkins.getDescriptorOrDie(FileBuildParameters.class);
         
         assertEquals(FormValidation.Kind.OK, d.doCheckEncoding(null).kind);
         assertEquals(FormValidation.Kind.OK, d.doCheckEncoding("").kind);
@@ -237,6 +256,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         assertEquals(FormValidation.Kind.ERROR, d.doCheckEncoding("NoSuchEncoding").kind);
     }
     
+    @Test
     public void testNullifyEncoding() throws Exception {
         // to use default encoding, encoding must be null.
         {
@@ -297,14 +317,15 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         return ((StringParameterValue)v).value;
     }
     
+    @Test
     public void testMatrixBuildsOnSameNodes() throws Exception {
         // all builds runs on master.
         // upstream matrix projects creates properties files in each builds.
-        MatrixProject upstream = createMatrixProject();
+        MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("childname", "child1", "child2")));
         WriteFileBuilder wfb = new WriteFileBuilder("properties.txt", "triggered_${childname}=true");
         
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
         // Without useMatrixBuild, publisher
         // Downstream project is triggered without parameters.
@@ -319,12 +340,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
@@ -346,12 +367,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             // Build is triggered without parameters.
             assertEquals(1, downstream.getBuilds().size());
@@ -374,12 +395,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             // Build is triggered in each builds with parameters.
             assertEquals(2, downstream.getBuilds().size());
@@ -418,12 +439,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             // Build is triggered in each builds with parameters.
             assertEquals(2, downstream.getBuilds().size());
@@ -449,17 +470,18 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         }
     }
     
+    @Test
     public void testMatrixBuildsOnOtherNodes() throws Exception {
         // each builds run on other nodes.
         // upstream matrix projects creates properties files in each builds.
-        createOnlineSlave(LabelExpression.parseExpression("child1"));
-        createOnlineSlave(LabelExpression.parseExpression("child2"));
+        r.createOnlineSlave(LabelExpression.parseExpression("child1"));
+        r.createOnlineSlave(LabelExpression.parseExpression("child2"));
         
-        MatrixProject upstream = createMatrixProject();
+        MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new LabelAxis("childname", Arrays.asList("child1", "child2"))));
         WriteFileBuilder wfb = new WriteFileBuilder("properties.txt", "triggered_${childname}=true");
         
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
         // Without useMatrixBuild, publisher
         // Downstream project is triggered without parameters.
@@ -474,12 +496,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
@@ -501,12 +523,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
@@ -528,12 +550,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(2, downstream.getBuilds().size());
             FreeStyleBuild build1 = downstream.getLastBuild();
@@ -571,12 +593,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
             
             upstream.getPublishersList().clear();
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(2, downstream.getBuilds().size());
             FreeStyleBuild build1 = downstream.getLastBuild();
@@ -601,12 +623,13 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         }
     }
     
+    @Test
     public void testMatrixBuildsCombinationFilter() throws Exception {
-        MatrixProject upstream = createMatrixProject();
+        MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("childname", "child1", "child2", "child3")));
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "triggered_${childname}=true"));
         
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
         // without combinationFilter
         {
@@ -617,12 +640,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
@@ -641,12 +664,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
@@ -657,12 +680,13 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         }
     }
     
+    @Test
     public void testMatrixBuildsOnlyExactRuns() throws Exception {
-        MatrixProject upstream = createMatrixProject();
+        MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("childname", "child1", "child2", "child3")));
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "triggered_${childname}=true"));
         
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
         // Run build.
         // builds of child1, child2, child3 is created.
@@ -680,13 +704,14 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
-            upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
-            
+            MatrixBuild b = upstream.scheduleBuild2(0).get();
+            r.waitUntilNoActivity();
+            System.out.println(">>>>>>>>"+b.getLog());
+
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
             assertEquals("true", getStringParameterValue(build, "triggered_child1"));
@@ -704,12 +729,12 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                     ))
             ));
             
-            jenkins.rebuildDependencyGraph();
+            r.jenkins.rebuildDependencyGraph();
             
             assertEquals(0, downstream.getBuilds().size());
             
             upstream.scheduleBuild2(0).get();
-            waitUntilNoActivity();
+            r.waitUntilNoActivity();
             
             assertEquals(1, downstream.getBuilds().size());
             FreeStyleBuild build = downstream.getLastBuild();
@@ -721,10 +746,11 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
     }
     
     @Bug(22705)
+    @Test
     public void testMatrixBuildsConfiguration() throws Exception {
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
-        MatrixProject upstream = createMatrixProject();
+        MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("axis1", "value1", "value2")));
         upstream.getPublishersList().add(new BuildTrigger(
                 new BuildTriggerConfig(downstream.getFullName(), ResultCondition.SUCCESS, true, Arrays.<AbstractBuildParameters>asList(
@@ -735,10 +761,7 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         
         String upstreamName = upstream.getFullName();
         
-        WebClient wc = createWebClient();
-        submit(wc.getPage(upstream, "configure").getFormByName("config"));
-        
-        upstream = jenkins.getItemByFullName(upstreamName, MatrixProject.class);
+        upstream = r.jenkins.getItemByFullName(upstreamName, MatrixProject.class);
         assertNotNull(upstream);
         
         BuildTrigger trigger = upstream.getPublishersList().get(BuildTrigger.class);
@@ -758,18 +781,19 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
         assertTrue(p.isOnlyExactRuns());
     }
     
+    @Test
     public void testAbsolutePath() throws Exception {
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
-        FreeStyleProject upstream = createFreeStyleProject();
+        FreeStyleProject upstream = r.createFreeStyleProject();
         
-        File absoluteFile = new File(jenkins.getRootDir(), "properties.txt");
+        File absoluteFile = new File(r.jenkins.getRootDir(), "properties.txt");
         if(!absoluteFile.getParentFile().exists()) {
             FileUtils.forceMkdir(absoluteFile.getParentFile());
         }
         FileUtils.writeStringToFile(absoluteFile, "absolute_param=value1");
         
-        File workspace = new File(jenkins.getWorkspaceFor(upstream).getRemote());
+        File workspace = new File(r.jenkins.getWorkspaceFor(upstream).getRemote());
         File relativeDir = workspace.getParentFile();
         
         if(!relativeDir.exists()) {
@@ -785,10 +809,10 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                 ))
         ));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
-        assertBuildStatusSuccess(upstream.scheduleBuild2(0));
-        waitUntilNoActivity();
+        r.assertBuildStatusSuccess(upstream.scheduleBuild2(0));
+        r.waitUntilNoActivity();
         
         FreeStyleBuild build = downstream.getLastBuild();
         assertNotNull(build);
@@ -811,14 +835,15 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
     }
     
     @Bug(22229)
+    @Test
     public void testAbsolutePathWithoutWorkspace() throws Exception {
         // Though it is rather a problem with ws-cleanup-plugin, 
         // there's a case a workspace is removed.
-        FreeStyleProject downstream = createFreeStyleProject();
+        FreeStyleProject downstream = r.createFreeStyleProject();
         
-        FreeStyleProject upstream = createFreeStyleProject();
+        FreeStyleProject upstream = r.createFreeStyleProject();
         
-        File absoluteFile = new File(jenkins.getRootDir(), "properties.txt");
+        File absoluteFile = new File(r.jenkins.getRootDir(), "properties.txt");
         if(!absoluteFile.getParentFile().exists()) {
             FileUtils.forceMkdir(absoluteFile.getParentFile());
         }
@@ -831,10 +856,10 @@ public class FileBuildTriggerConfigTest extends HudsonTestCase {
                 ))
         ));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
-        assertBuildStatusSuccess(upstream.scheduleBuild2(0));
-        waitUntilNoActivity();
+        r.assertBuildStatusSuccess(upstream.scheduleBuild2(0));
+        r.waitUntilNoActivity();
         
         FreeStyleBuild build = downstream.getLastBuild();
         assertNotNull(build);
