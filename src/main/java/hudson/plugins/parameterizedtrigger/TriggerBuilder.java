@@ -37,14 +37,23 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.model.Job;
+import hudson.model.Item;
 import hudson.model.Run;
+import hudson.model.Build;
+import hudson.model.Queue;
+import hudson.model.Result;
+import hudson.model.Cause;
+import hudson.model.Cause.UpstreamCause;
+import hudson.util.RunList;
 import hudson.util.IOException2;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
+import jenkins.model.Jenkins;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
+import java.lang.InterruptedException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -151,6 +160,58 @@ public class TriggerBuilder extends Builder {
                     }
                 }
             }
+        } catch (InterruptedException y) {
+            for (BlockableBuildTriggerConfig config : configs) {
+                Queue buildQueue = Jenkins.getInstance().getQueue();
+                for (Queue.Item queueItem : buildQueue.getItems()) {
+                    List<Cause> causes = queueItem.getCauses();
+                    boolean isBuildCause = false;
+                    for (Cause c : causes) {
+                        if (c == null) {
+                            continue;
+                        }
+                        if (!(c instanceof UpstreamCause)) {
+                            continue;
+                        }
+                        UpstreamCause upstreamCause = (UpstreamCause) c;
+                        if (upstreamCause.pointsTo(build)) {
+                            isBuildCause = true;
+                            break;
+                        }
+                    }
+                    if (isBuildCause) {
+                        try {
+                            queueItem.doCancelQueue();
+                        } catch (javax.servlet.ServletException ex) {
+                            // pass
+                        }
+                    }
+                }
+
+                List<Job> projectList = config.getJobs(build.getRootBuild().getProject().getParent(), env);
+                for (Job p : projectList) {
+                    Item item = Jenkins.getInstance().getItem(p.getFullName(), p, Item.class);
+                    for (Job job : item.getAllJobs()) {
+                        RunList runList = job.getNewBuilds();
+                        for (Iterator<Build> it = runList.iterator(); it.hasNext(); ) {
+                            Build latestBuild = it.next();
+                            UpstreamCause cause = (UpstreamCause) latestBuild.getCause(UpstreamCause.class);
+                            if (cause == null) {
+                                continue;
+                            }
+                            if (cause.pointsTo(build)) {
+                                try {
+                                    listener.getLogger().println("Aborting " + HyperlinkNote.encodeTo('/' + latestBuild.getUrl(), latestBuild.getFullDisplayName()));
+                                    latestBuild.doStop();
+                                } catch (javax.servlet.ServletException ex) {
+                                    // pass, build has already completed or aborted
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            throw new InterruptedException();
         } catch (ExecutionException e) {
             throw new IOException2(e); // can't happen, I think.
         }
