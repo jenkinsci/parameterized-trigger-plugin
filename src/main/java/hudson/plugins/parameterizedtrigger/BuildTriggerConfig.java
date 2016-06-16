@@ -154,12 +154,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     /**
      * Provides a SubProjectData object containing four set, each containing projects to be displayed on the project
      * view under 'Subprojects' section.<br>
-     * <li>
-     * The first set contains fixed (statically) configured project to be trigger.
-     * The second set contains dynamically configured project, resolved by back tracking builds environment variables.
-     * The third set contains other recently triggered project found during back tracking builds
-     * The fourth set contains dynamically configured project that couldn't be resolved or project that doesn't exists.
-     * </li>
+     * <ul>
+     * <li>The first set contains fixed (statically) configured project to be trigger.</li>
+     * <li>The second set contains dynamically configured project, resolved by back tracking builds environment variables.</li>
+     * <li>The third set contains other recently triggered project found during back tracking builds</li>
+     * <li>The fourth set contains dynamically configured project that couldn't be resolved or project that doesn't exists.</li>
+     * </ul>
      *
      * @param context   The container with which to resolve relative project names.
      * @return A data object containing sets with projects
