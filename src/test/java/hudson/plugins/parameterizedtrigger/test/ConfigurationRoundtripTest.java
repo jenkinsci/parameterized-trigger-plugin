@@ -30,12 +30,20 @@ import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.FileBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.plugins.parameterizedtrigger.SubversionRevisionBuildParameters;
-import org.jvnet.hudson.test.HudsonTestCase;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
 /**
  * @author Kohsuke Kawaguchi
  */
-public class ConfigurationRoundtripTest extends HudsonTestCase {
+public class ConfigurationRoundtripTest {
+    
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
     public void testConfigRoundtrip() throws Exception {
 /*  poorly written core breaks this test, so this is not yet testable.      
         FreeStyleProject p = createFreeStyleProject();

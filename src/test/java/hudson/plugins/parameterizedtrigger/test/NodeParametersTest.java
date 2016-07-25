@@ -5,45 +5,52 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.AbstractBuild;
-import hudson.model.Cause;
-import hudson.model.ParametersAction;
 import hudson.model.Project;
-import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.NodeParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.slaves.DumbSlave;
+
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  *
  * @author cjohnson
  */
-public class NodeParametersTest extends HudsonTestCase {
+public class NodeParametersTest {
 
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void test() throws Exception {
 
-		DumbSlave slave0 = createOnlineSlave();
-		DumbSlave slave1 = createOnlineSlave();
+		DumbSlave slave0 = r.createOnlineSlave();
+		DumbSlave slave1 = r.createOnlineSlave();
 		
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, new NodeParameters())));
 
 		projectA.setAssignedNode(slave0);
 		
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
 		// set to build on slave1 
 		projectB.setAssignedNode(slave1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		AbstractBuild buildA = projectA.scheduleBuild2(0).get();
-		waitUntilNoActivity();
+		r.waitUntilNoActivity();
 //		hudson.getQueue().getItem(projectB).getFuture().get();
 		
 		assertEquals(slave0, buildA.getBuiltOn());
@@ -53,28 +60,29 @@ public class NodeParametersTest extends HudsonTestCase {
 
 	}
 
+    @Test
 	public void testQueuedJobsCombined() throws Exception {
 
-		DumbSlave slave0 = createOnlineSlave();
-		DumbSlave slave1 = createOnlineSlave();
+		DumbSlave slave0 = r.createOnlineSlave();
+		DumbSlave slave1 = r.createOnlineSlave();
 		
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, new NodeParameters())));
 
 		projectA.setAssignedNode(slave0);
 		
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(10);
 		// set to build on slave1 
 		projectB.setAssignedNode(slave1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		AbstractBuild buildA = projectA.scheduleBuild2(0).get();
 		AbstractBuild buildA2 = projectA.scheduleBuild2(0).get();
-		waitUntilNoActivity();
+		r.waitUntilNoActivity();
 //		hudson.getQueue().getItem(projectB).getFuture().get();
 		assertEquals(2, projectA.getBuilds().size());
 		
@@ -87,33 +95,34 @@ public class NodeParametersTest extends HudsonTestCase {
 		assertEquals(1, projectB.getBuilds().size());
 	}
 	
+    @Test
 	public void testQueuedJobsNotCombined() throws Exception {
 
-		DumbSlave slave0 = createOnlineSlave();
-		DumbSlave slave1 = createOnlineSlave();
-		DumbSlave slave2 = createOnlineSlave();
+		DumbSlave slave0 = r.createOnlineSlave();
+		DumbSlave slave1 = r.createOnlineSlave();
+		DumbSlave slave2 = r.createOnlineSlave();
 		
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, new NodeParameters())));
 
 		projectA.setAssignedNode(slave0);
 		
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		
 		int firstBuildNumber = projectB.getNextBuildNumber();
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(5);
 		// set to build on slave1 
 		projectB.setAssignedNode(slave1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		AbstractBuild buildA = projectA.scheduleBuild2(0).get();
 		// Now trigger on another slave
 		projectA.setAssignedNode(slave2);
 		AbstractBuild buildA2 = projectA.scheduleBuild2(0).get();
-		waitUntilNoActivity();
+		r.waitUntilNoActivity();
 		
 		assertEquals(slave0, buildA.getBuiltOn());
 		assertEquals(slave2, buildA2.getBuiltOn());

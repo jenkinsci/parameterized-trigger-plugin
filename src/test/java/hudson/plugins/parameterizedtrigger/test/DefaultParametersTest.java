@@ -25,7 +25,6 @@ package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.EnvVars;
 import hudson.model.Cause.UserCause;
-import hudson.model.ParameterDefinition;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
@@ -39,33 +38,40 @@ import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 
-import java.util.Arrays;
-
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class DefaultParametersTest extends HudsonTestCase {
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
+public class DefaultParametersTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void test() throws Exception {
 
-		Project projectA = createFreeStyleProject("projectA");
+		Project projectA = r.createFreeStyleProject("projectA");
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
 						new CurrentBuildParameters())));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.addProperty(new ParametersDefinitionProperty(
 				new StringParameterDefinition("key1", "value1"),
 				new StringParameterDefinition("key2", "value2")
 				));
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
-		String log = getLog((Run)projectA.scheduleBuild2(0, new UserCause(),
+		String log = JenkinsRule.getLog((Run)projectA.scheduleBuild2(0, new UserCause(),
 			new ParametersAction(new StringParameterValue("KEY3", "value3"))).get());
-		Queue.Item q = hudson.getQueue().getItem(projectB);
+		Queue.Item q = r.jenkins.getQueue().getItem(projectB);
 		assertNotNull("projectB should be triggered: " + log, q);
 		q.getFuture().get();
 		assertNotNull("builder should record environment", builder.getEnvVars());
@@ -74,14 +80,15 @@ public class DefaultParametersTest extends HudsonTestCase {
 		assertEquals("value3", builder.getEnvVars().get("KEY3"));
 
 		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(new StringParameterValue("key1", "value3"))).get();
-		hudson.getQueue().getItem(projectB).getFuture().get();
+		r.jenkins.getQueue().getItem(projectB).getFuture().get();
 		assertEquals("value3", builder.getEnvVars().get("KEY1"));
 		assertEquals("value2", builder.getEnvVars().get("KEY2"));
 	}
 
+    @Test
     public void testMergeParameters() throws Exception {
-        Project projectA = createFreeStyleProject("projectA");
-        Project projectB = createFreeStyleProject("projectB");
+        Project projectA = r.createFreeStyleProject("projectA");
+        Project projectB = r.createFreeStyleProject("projectB");
         //    projectB defaults: FOO=bar  BAR=override-me
         // Invoke projectA with:          BAR=foo  BAZ=override-me
         //  Merge in predefined:                   BAZ=moo  HOHO=blah
@@ -96,15 +103,15 @@ public class DefaultParametersTest extends HudsonTestCase {
                 new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
                     new CurrentBuildParameters(),
                     new PredefinedBuildParameters("BAZ=moo\nHOHO=blah"))));
-        hudson.rebuildDependencyGraph();
-        Run r = (Run)projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
+        r.jenkins.rebuildDependencyGraph();
+        Run run = (Run)projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
                 new StringParameterValue("BAR", "foo"),
                 new StringParameterValue("BAZ", "override-me"))).get();
-        Queue.Item q = hudson.getQueue().getItem(projectB);
-        assertNotNull("projectB should be triggered: " + getLog(r), q);
-        r = (Run)q.getFuture().get();
+        Queue.Item q = r.jenkins.getQueue().getItem(projectB);
+        assertNotNull("projectB should be triggered: " + JenkinsRule.getLog(run), q);
+        run = (Run)q.getFuture().get();
         assertEquals("should be exactly one ParametersAction", 1,
-                     r.getActions(ParametersAction.class).size());
+                     run.getActions(ParametersAction.class).size());
         EnvVars envVars = builder.getEnvVars();
         assertNotNull("builder should record environment", envVars);
         assertEquals("FOO", "bar", envVars.get("FOO"));
