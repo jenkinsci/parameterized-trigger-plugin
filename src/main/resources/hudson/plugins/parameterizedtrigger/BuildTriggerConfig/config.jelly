@@ -9,7 +9,11 @@
   <f:entry title="${%Trigger build without parameters}" field="triggerWithNoParameters" >
      <f:checkbox checked="${instance.triggerWithNoParameters}"/>
   </f:entry>
-
+  <j:if test="${descriptor.isItemGroup(it)}">
+     <f:entry title="${%Trigger build from child projects}" field="triggerFromChildProjects" >
+        <f:checkbox checked="${instance.triggerFromChildProjects()}"/>
+     </f:entry>
+  </j:if>
   <f:block>
     <f:hetero-list name="configs" hasHeader="true"
                    descriptors="${descriptor.getBuilderConfigDescriptors()}"

@@ -9,6 +9,7 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.DependecyDeclarer;
 import hudson.model.DependencyGraph;
+import hudson.model.ItemGroup;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.model.Job;
@@ -19,6 +20,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -96,7 +98,16 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 		for (BuildTriggerConfig config : configs) {
 			List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
 			for (AbstractProject project : projectList) {
-				ParameterizedDependency.add(owner, project, config, graph);
+                            if (config.triggerFromChildProjects() && owner instanceof ItemGroup) {
+                                ItemGroup parent = (ItemGroup) owner;
+                                for (AbstractProject child : (Collection<AbstractProject>)parent.getItems()) {
+                                    ParameterizedDependency.add(child, project, config, graph);
+                                }
+                            }
+                            else{	
+                                ParameterizedDependency.add(owner, project, config, graph);
+
+                            }
 			}
 		}
 	}
