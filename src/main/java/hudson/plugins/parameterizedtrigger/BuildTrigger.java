@@ -9,6 +9,7 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.DependecyDeclarer;
 import hudson.model.DependencyGraph;
+import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
@@ -99,9 +100,12 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 			List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
 			for (AbstractProject project : projectList) {
                             if (config.triggerFromChildProjects() && owner instanceof ItemGroup) {
-                                ItemGroup parent = (ItemGroup) owner;
-                                for (AbstractProject child : (Collection<AbstractProject>)parent.getItems()) {
-                                    ParameterizedDependency.add(child, project, config, graph);
+                                ItemGroup<Item> parent = (ItemGroup) owner;
+                                for (Item item : parent.getItems()) {
+                                    if(item instanceof AbstractProject){
+                                        AbstractProject child = (AbstractProject) item;
+                                        ParameterizedDependency.add(child, project, config, graph);
+                                    }
                                 }
                             }
                             else{	
