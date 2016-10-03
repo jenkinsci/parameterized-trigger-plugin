@@ -115,7 +115,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			String s = null;
 			VirtualFile artifact = build.getArtifactManager().root().child(file);
 			if (artifact.isFile()) {
-			    s = IOUtils.toString(artifact.open());
+			    s = ParameterizedTriggerUtils.readFileToString(artifact);
 			}
 
 			if (s == null) {
