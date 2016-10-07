@@ -33,12 +33,14 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
+import hudson.model.DependencyGraph;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.util.IOException2;
+import jenkins.model.DependencyDeclarer;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -53,7 +55,7 @@ import java.util.concurrent.Future;
  *
  * @author Kohsuke Kawaguchi
  */
-public class TriggerBuilder extends Builder {
+public class TriggerBuilder extends Builder implements DependencyDeclarer{
 
     private final ArrayList<BlockableBuildTriggerConfig> configs;
 
@@ -158,6 +160,27 @@ public class TriggerBuilder extends Builder {
         return buildStepResult;
     }
 
+    private boolean canDeclare(AbstractProject owner) {
+        // In Hudson 1.341+ builds will be triggered via DependencyGraph
+        // Inner class added in Hudson 1.341
+        String ownerClassName = owner.getClass().getName();
+        return DependencyGraph.class.getClasses().length > 0
+                // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
+                && !ownerClassName.equals("hudson.plugins.promoted_builds.PromotionProcess");
+    }
+
+    @Override
+    public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
+        // Can only add dependencies in Hudson 1.341 or higher
+        if (!canDeclare(owner)) return;
+
+        for (BuildTriggerConfig config : configs) {
+            List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
+            for (AbstractProject project : projectList) {
+                ParameterizedDependency.add(owner, project, config, graph);
+            }
+        }
+    }
     // Public but restricted so we can add tests without completely changing the tests package
     @Restricted(value=org.kohsuke.accmod.restrictions.NoExternalUse.class)
     public String getProjectListAsString(List<Job> projectList){
