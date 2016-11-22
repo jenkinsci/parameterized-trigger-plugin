@@ -35,6 +35,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.DependencyGraph;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
@@ -183,7 +184,6 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
         return projectListString.toString();
     }
 
-
     @Override
     public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
         return ImmutableList.of(new SubProjectsAction(project, configs));
@@ -206,8 +206,19 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
         for (BuildTriggerConfig config : configs) {
             List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
             for (AbstractProject project : projectList) {
-                ParameterizedDependency.add(owner, project, config, graph);
+                graph.addDependency(new TriggerBuilderDependency(owner, project, config));
             }
+        }
+    }
+
+    public static class TriggerBuilderDependency extends ParameterizedDependency {
+        public TriggerBuilderDependency(AbstractProject upstream, AbstractProject downstream, BuildTriggerConfig config) {
+            super(upstream, downstream, config);
+        }
+
+        @Override
+        public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
+            return false;
         }
     }
 
