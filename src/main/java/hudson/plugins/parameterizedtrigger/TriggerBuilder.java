@@ -134,15 +134,17 @@ public class TriggerBuilder extends Builder {
                         }
                         for (Future<Run> future : futures.get(p)) {
                             try {
-                                listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                Run b = future.get();
-                                listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getParent().getFullName(), b.getNumber(), b.getResult());
+                                if (future != null ) {
+                                    listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+                                    Run b = future.get();
+                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
+                                    BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getParent().getFullName(), b.getNumber(), b.getResult());
 
-                                if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
-                                    build.setResult(config.getBlock().mapBuildResult(b.getResult()));
-                                } else {
-                                    buildStepResult = false;
+                                    if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
+                                        build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                                    } else {
+                                        buildStepResult = false;
+                                    }
                                 }
                             } catch (CancellationException x) {
                                 throw new AbortException(p.getFullDisplayName() +" aborted.");
