@@ -43,6 +43,7 @@ import hudson.security.ACL;
 import hudson.security.AuthorizationMatrixProperty;
 import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
+import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -307,4 +308,39 @@ public class BuildTriggerConfigTest {
 
     }
 
+    @Test
+    public void testBlankConfig() throws Exception {
+        Project<?, ?> masterProject = r.createFreeStyleProject("project");
+
+        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "");
+
+        assertEquals(FormValidation.Kind.ERROR, form.kind);
+    }
+
+    @Test
+    public void testNonExistedProject() throws Exception {
+        Project<?, ?> masterProject = r.createFreeStyleProject("project");
+
+        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "nonExistedProject");
+
+        assertEquals(FormValidation.Kind.ERROR, form.kind);
+    }
+
+    @Test
+    public void testValidConfig() throws Exception {
+        Project<?, ?> masterProject = r.createFreeStyleProject("project");
+
+        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "project");
+
+        assertEquals(FormValidation.Kind.OK, form.kind);
+    }
+
+    @Test
+    public void testExtraCommaInConfig() throws Exception {
+        Project<?, ?> masterProject = r.createFreeStyleProject("project");
+
+        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "project, ");
+
+        assertEquals(FormValidation.Kind.ERROR, form.kind);
+    }
 }

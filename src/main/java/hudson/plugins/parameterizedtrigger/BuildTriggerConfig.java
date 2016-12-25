@@ -669,7 +669,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 }
 
                 hasProjects = true;
-
             }
             if (!hasProjects) {
             	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified());
