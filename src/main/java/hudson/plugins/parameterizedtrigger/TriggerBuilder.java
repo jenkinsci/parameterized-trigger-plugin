@@ -145,6 +145,8 @@ public class TriggerBuilder extends Builder {
                                     } else {
                                         buildStepResult = false;
                                     }
+                                } else {
+                                    listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project was disabled.");
                                 }
                             } catch (CancellationException x) {
                                 throw new AbortException(p.getFullDisplayName() +" aborted.");

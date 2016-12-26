@@ -23,6 +23,9 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import com.google.common.collect.ArrayListMultimap;
+import hudson.EnvVars;
+import hudson.Launcher;
 import hudson.model.*;
 import hudson.model.Cause.UpstreamCause;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
@@ -49,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
@@ -60,11 +64,14 @@ import java.lang.System;
 import jenkins.model.Jenkins;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 public class TriggerBuilderTest {
 
@@ -73,6 +80,34 @@ public class TriggerBuilderTest {
     
     private BlockableBuildTriggerConfig createTriggerConfig(String projects) {
         return new BlockableBuildTriggerConfig(projects, new BlockingBehaviour("never", "never", "never"), null);
+    }
+
+    @Test
+    public void testProjectWasEnabledDuringTheBuild() throws Exception {
+        final Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
+        final Project<?, ?> disabledJob = r.createFreeStyleProject("projectC");
+        final BlockableBuildTriggerConfig config = Mockito.mock(BlockableBuildTriggerConfig.class);
+        when(config.getProjects(any(EnvVars.class))).thenReturn(disabledJob.getName());
+        when(config.getBlock()).thenReturn(new BlockingBehaviour(Result.FAILURE, Result.FAILURE, Result.FAILURE));
+
+        final ArrayListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
+        when(config.perform3(any(AbstractBuild.class),
+                Mockito.any(Launcher.class),
+                Mockito.any(BuildListener.class))).thenReturn(futures);
+        // Then project is disabled scheduler returns null instead of Future<Run> object
+        futures.put(disabledJob, null);
+
+        final List<Job> jobs = new ArrayList<Job>();
+        jobs.add(disabledJob);
+
+        when(config.getJobs(any(ItemGroup.class), any(EnvVars.class))).thenReturn(jobs);
+
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        triggerProject.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, triggerProject.getLastBuild().getResult());
     }
 
     @Test
