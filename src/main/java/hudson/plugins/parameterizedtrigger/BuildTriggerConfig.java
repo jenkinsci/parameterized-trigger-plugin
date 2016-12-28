@@ -646,7 +646,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             while(tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
                 if (StringUtils.isBlank(projectName)) {
-                    return FormValidation.error(Messages.BuildTrigger_NoSuchProject(" ", "?"));
+                    return FormValidation.error("Blank project name in the list");
                 }
 
                 Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410

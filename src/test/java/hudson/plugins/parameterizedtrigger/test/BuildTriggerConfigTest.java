@@ -336,7 +336,7 @@ public class BuildTriggerConfigTest {
     }
 
     @Test
-    public void testExtraCommaInConfig() throws Exception {
+    public void testBlankProjectNameInConfig() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "project, ");
