@@ -39,6 +39,8 @@ import jenkins.model.ParameterizedJobMixIn;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -77,7 +79,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         this.configs = Util.fixNull(configs);
         this.triggerFromChildProjects = triggerFromChildProjects;
     }
-    
+
+    @Deprecated
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
         this(projects, condition, triggerWithNoParameters, configFactories, configs, false);
@@ -129,7 +132,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return triggerWithNoParameters;
     }
         
-    public boolean triggerFromChildProjects(){
+    public boolean isTriggerFromChildProjects(){
         return triggerFromChildProjects;
     }
 
@@ -646,7 +649,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             return Hudson.getInstance().<AbstractBuildParameterFactory,
               Descriptor<AbstractBuildParameterFactory>>getDescriptorList(AbstractBuildParameterFactory.class);
         }
-        
+
+        @Restricted(DoNotUse.class)
         public boolean isItemGroup(AbstractProject project){
             return project instanceof ItemGroup;
         }

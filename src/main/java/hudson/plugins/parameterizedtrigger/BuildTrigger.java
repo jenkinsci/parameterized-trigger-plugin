@@ -99,7 +99,7 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 		for (BuildTriggerConfig config : configs) {
 			List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
 			for (AbstractProject project : projectList) {
-                            if (config.triggerFromChildProjects() && owner instanceof ItemGroup) {
+                            if (config.isTriggerFromChildProjects() && owner instanceof ItemGroup) {
                                 ItemGroup<Item> parent = (ItemGroup) owner;
                                 for (Item item : parent.getItems()) {
                                     if(item instanceof AbstractProject){
