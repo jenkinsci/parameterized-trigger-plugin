@@ -669,28 +669,30 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             boolean hasProjects = false;
             while(tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
-                if (StringUtils.isNotBlank(projectName)) {
-                	Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
-                    if(item==null){
-                        Item nearest = Items.findNearest(Job.class, projectName, Jenkins.getInstance());
-                        String alternative = nearest != null ? nearest.getRelativeNameFrom(project) : "?";
-                        return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName, alternative));
-                    }
-                    if(!(item instanceof Job) || !(item instanceof ParameterizedJobMixIn.ParameterizedJob)) {
-                        return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
-                    }
-
-                    // check whether the supposed user is expected to be able to build
-                    Authentication auth = Tasks.getAuthenticationOf((ParameterizedJobMixIn.ParameterizedJob)project);
-                    if (auth.equals(ACL.SYSTEM) && !QueueItemAuthenticatorConfiguration.get().getAuthenticators().isEmpty()) {
-                        auth = Jenkins.ANONYMOUS;
-                    }
-                    if (!item.getACL().hasPermission(auth, Item.BUILD)) {
-                        return FormValidation.error(Messages.BuildTrigger_you_have_no_permission_to_build_(projectName));
-                    }
-
-                    hasProjects = true;
+                if (StringUtils.isBlank(projectName)) {
+                    return FormValidation.error("Blank project name in the list");
                 }
+
+                Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
+                if(item==null){
+                    Item nearest = Items.findNearest(Job.class, projectName, Jenkins.getInstance());
+                    String alternative = nearest != null ? nearest.getRelativeNameFrom(project) : "?";
+                    return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName, alternative));
+                }
+                if(!(item instanceof Job) || !(item instanceof ParameterizedJobMixIn.ParameterizedJob)) {
+                    return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
+                }
+
+                // check whether the supposed user is expected to be able to build
+                Authentication auth = Tasks.getAuthenticationOf((ParameterizedJobMixIn.ParameterizedJob)project);
+                if (auth.equals(ACL.SYSTEM) && !QueueItemAuthenticatorConfiguration.get().getAuthenticators().isEmpty()) {
+                    auth = Jenkins.ANONYMOUS;
+                }
+                if (!item.getACL().hasPermission(auth, Item.BUILD)) {
+                    return FormValidation.error(Messages.BuildTrigger_you_have_no_permission_to_build_(projectName));
+                }
+
+                hasProjects = true;
             }
             if (!hasProjects) {
             	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified());
