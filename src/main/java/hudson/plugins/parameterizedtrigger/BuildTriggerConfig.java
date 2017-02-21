@@ -39,6 +39,8 @@ import jenkins.model.ParameterizedJobMixIn;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -66,17 +68,30 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	private String projects;
 	private final ResultCondition condition;
 	private boolean triggerWithNoParameters;
+        private boolean triggerFromChildProjects;
 
-    public BuildTriggerConfig(String projects, ResultCondition condition,
-            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+    public BuildTriggerConfig(String projects, ResultCondition condition, boolean triggerWithNoParameters, 
+            List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs, boolean triggerFromChildProjects) {
         this.projects = projects;
         this.condition = condition;
         this.triggerWithNoParameters = triggerWithNoParameters;
         this.configFactories = configFactories;
         this.configs = Util.fixNull(configs);
+        this.triggerFromChildProjects = triggerFromChildProjects;
+    }
+
+    @Deprecated
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+        this(projects, condition, triggerWithNoParameters, configFactories, configs, false);
     }
 
     @DataBoundConstructor
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            boolean triggerWithNoParameters, List<AbstractBuildParameters> configs, boolean triggerFromChildProjects) {
+        this(projects, condition, triggerWithNoParameters, null, configs, triggerFromChildProjects);
+    }
+    
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
         this(projects, condition, triggerWithNoParameters, null, configs);
@@ -115,6 +130,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	public boolean getTriggerWithNoParameters() {
         return triggerWithNoParameters;
+    }
+        
+    public boolean isTriggerFromChildProjects(){
+        return triggerFromChildProjects;
     }
 
     /**
@@ -629,6 +648,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         public List<Descriptor<AbstractBuildParameterFactory>> getBuilderConfigFactoryDescriptors() {
             return Hudson.getInstance().<AbstractBuildParameterFactory,
               Descriptor<AbstractBuildParameterFactory>>getDescriptorList(AbstractBuildParameterFactory.class);
+        }
+
+        @Restricted(DoNotUse.class)
+        public boolean isItemGroup(AbstractProject project){
+            return project instanceof ItemGroup;
         }
 
         /**
