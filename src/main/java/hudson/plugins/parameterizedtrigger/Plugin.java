@@ -1,10 +1,14 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.Extension;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
+import hudson.model.Items;
 import hudson.model.Project;
 import hudson.model.listeners.ItemListener;
+import hudson.plugins.parameterizedtrigger.BuildInfoExporterAction.StaticBuildReference;
 import hudson.util.EnumConverter;
 
 import java.io.IOException;
@@ -27,6 +31,7 @@ public class Plugin extends hudson.Plugin {
 	public void start() throws Exception {
 		Stapler.CONVERT_UTILS.register(new EnumConverter(),
 				ResultCondition.class);
+	  Items.XSTREAM2.addCompatibilityAlias("hudson.plugins.parameterizedtrigger.BuildInfoExporterAction$BuildReference", StaticBuildReference.class);
 	}
 
         /**
