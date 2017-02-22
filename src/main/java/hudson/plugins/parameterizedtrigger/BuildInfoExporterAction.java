@@ -41,11 +41,84 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import jenkins.model.Jenkins;
+
+import org.apache.commons.beanutils.ConversionException;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+
 @ExportedBean
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
+
+  public static class ConverterImpl implements Converter {
+
+    @Override
+    public boolean canConvert(Class type) {
+      return BuildInfoExporterAction.class.equals(type);
+    }
+
+    @Override
+    public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+      BuildInfoExporterAction action = (BuildInfoExporterAction) source;
+      writer.addAttribute("version", "3");
+      writer.startNode("builds");
+      context.convertAnother(action.builds);
+      writer.endNode();
+      writer.startNode("lastReference");
+      context.convertAnother(action.lastReference);
+      writer.endNode();
+    }
+
+    @Override
+    public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+      String versionStr = reader.getAttribute("version");
+      int version = (versionStr == null) ? 0 : Integer.valueOf(versionStr);
+      switch (version) {
+      case 0: {
+        // before 2.32
+        ArrayList<AbstractBuildReference> builds = new ArrayList<AbstractBuildReference>();
+        reader.moveDown();
+        if ("buildRefs".equals(reader.getNodeName())) {
+          // before 2.11 -> need to convert buildRefs to builds list
+          Map<String, List<BuildReference>> buildRefs = (Map<String, List<BuildReference>>) context.convertAnother(null,
+              Map.class);
+          for (List<BuildReference> buildRefsList : buildRefs.values()) {
+            builds.addAll(buildRefsList);
+          }
+        } else if ("builds".equals(reader.getNodeName())) {
+          builds.addAll((ArrayList<BuildReference>) context.convertAnother(null, ArrayList.class));
+        } else {
+          throw new ConversionException("unable to load data");
+        }
+        reader.moveUp();
+        reader.moveDown();
+        AbstractBuildReference lastReference = (AbstractBuildReference) context.convertAnother(null,
+            AbstractBuildReference.class);
+        reader.moveUp();
+        return new BuildInfoExporterAction(builds, lastReference);
+      }
+      case 3:
+        // since 2.32
+        reader.moveDown();
+        ArrayList<AbstractBuildReference> builds = (ArrayList<AbstractBuildReference>) context.convertAnother(null,
+            ArrayList.class);
+        reader.moveUp();
+        reader.moveDown();
+        AbstractBuildReference lastReference = (AbstractBuildReference) context.convertAnother(null,
+            AbstractBuildReference.class);
+        reader.moveUp();
+        return new BuildInfoExporterAction(builds, lastReference);
+      default:
+        throw new ConversionException("unsupported version");
+      }
+    }
+
+  }
 
   public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
   public static final String ALL_JOBS_NAME_VARIABLE = "TRIGGERED_JOB_NAMES";
@@ -58,23 +131,21 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   private transient String buildName;
   private transient int buildNumber;
 
-  // used in version =< 2.21.
-  // this is now migrated to this.builds.
-  private transient Map<String, List<AbstractBuildReference>> buildRefs;
-
   private List<AbstractBuildReference> builds;
 
-  // used in version =< 2.32.
-  // this is now migrated to this.lastReference2.
-  private transient BuildReference lastReference;
-  private AbstractBuildReference lastReference2;
+  private AbstractBuildReference lastReference;
 
   public BuildInfoExporterAction(AbstractBuildReference buildRef) {
     super();
 
     this.builds = new ArrayList<AbstractBuildReference>();
     addBuild(buildRef);
-    this.lastReference2 = buildRef;
+    this.lastReference = buildRef;
+  }
+
+  private BuildInfoExporterAction(List<AbstractBuildReference> builds, AbstractBuildReference lastReference) {
+    this.builds = builds;
+    this.lastReference = lastReference;
   }
 
   public BuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, AbstractBuildReference buildRef) {
@@ -82,7 +153,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   }
 
   public BuildInfoExporterAction(String buildName, int buildNumber, AbstractBuild<?, ?> parentBuild, Result buildResult) {
-    this(new BuildReference(buildName, buildNumber, buildResult));
+    this(new StaticBuildReference(buildName, buildNumber, buildResult));
   }
 
   static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, QueueTaskFuture<? extends AbstractBuild> buildFuture) {
@@ -113,7 +184,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     this.builds.add(br);
 
     if (br.getBuildNumber() != 0) {
-      this.lastReference2 = br;
+      this.lastReference = br;
     }
   }
 
@@ -135,39 +206,14 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    * @deprecated kept for compatibility
    */
   @Deprecated
-  public static class BuildReference extends AbstractBuildReference {
-
-    public String projectName;
-    public int buildNumber;
-    public Result buildResult;
+  public static class BuildReference extends StaticBuildReference {
 
     public BuildReference(String projectName, int buildNumber, Result buildResult) {
-      this.projectName = projectName;
-      this.buildNumber = buildNumber;
-      this.buildResult = buildResult;
+      super(projectName, buildNumber, buildResult);
     }
 
     public BuildReference(final String projectName) {
-      this.projectName = projectName;
-      this.buildNumber = 0;
-      this.buildResult = Result.NOT_BUILT;
-    }
-
-    public String getProjectName() {
-      return projectName;
-    }
-
-    public int getBuildNumber() {
-      return buildNumber;
-    }
-
-    public Result getBuildResult() {
-      return buildResult;
-    }
-
-    @Override
-    public void update() {
-
+      super(projectName);
     }
   }
 
@@ -366,30 +412,6 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   }
 
   /**
-   * Handle cases from older builds so that they still add old variables if
-   * needed to. Should not show any UI as there will be no data added.
-   *
-   * @return
-   */
-  public Object readResolve() {
-    if (this.lastReference2 == null) {
-      this.lastReference2 = this.lastReference;
-    }
-    if (this.builds == null) {
-      this.builds = new ArrayList<AbstractBuildReference>();
-    }
-    if (this.buildRefs != null) {
-      for (List<AbstractBuildReference> buildReferences : buildRefs.values()) {
-        this.builds.addAll(buildReferences);
-      }
-    }
-    if (this.getLastReference() == null) {
-      this.lastReference2 = new StaticBuildReference(this.buildName, this.buildNumber, Result.NOT_BUILT);
-    }
-    return this;
-  }
-
-  /**
    * Gets a string for all of the build numbers
    *
    * @param refs
@@ -458,11 +480,11 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     for (int i = this.builds.size() - 1; i >= 0; --i) {
       AbstractBuildReference br = this.builds.get(i);
       if (br.getBuildNumber() != 0) {
-        lastReference2 = br;
+        lastReference = br;
         break;
       }
     }
-    return lastReference2;
+    return lastReference;
   }
 
   public void updateReferences() {
