@@ -661,6 +661,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
          * Copied from hudson.tasks.BuildTrigger.doCheck(Item project, String value)
          */
         public FormValidation doCheckProjects(@AncestorInPath Job<?,?> project, @QueryParameter String value ) {
+            // JENKINS-32527: Check that it behaves gracefully for an unknown context
+            if (project == null) return FormValidation.ok("Context Unknown: the value specified cannot be validated");
             // Require CONFIGURE permission on this project
             if(!project.hasPermission(Item.CONFIGURE)){
             	return FormValidation.ok();

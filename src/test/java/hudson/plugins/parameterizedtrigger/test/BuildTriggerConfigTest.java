@@ -45,6 +45,7 @@ import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
+import org.acegisecurity.context.SecurityContextHolder;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -62,8 +63,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jvnet.hudson.test.Bug;
+import org.jvnet.hudson.test.Issue;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
@@ -71,7 +75,7 @@ public class BuildTriggerConfigTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
+
     private BlockableBuildTriggerConfig createConfig(String projectToTrigger){
         List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
         buildParameters.add(new CurrentBuildParameters());
@@ -204,7 +208,7 @@ public class BuildTriggerConfigTest {
         r.assertBuildStatusSuccess(workflowRun);
         r.assertLogContains("GOOBER", workflowRun);
     }
-    
+
     @Bug(31727)
     @Test
     public void testShouldNotFailOnDiscoverWithoutReadPermission() throws Exception {
@@ -215,42 +219,42 @@ public class BuildTriggerConfigTest {
         strategy.add(Item.DISCOVER, "anonymous");
         strategy.add(Jenkins.READ, "anonymous");
         r.jenkins.setAuthorizationStrategy(strategy);
-        
+
         // Create project with downstream trigger
         final FreeStyleProject downstreamProject = r.createFreeStyleProject("downstreamProject");
         final FreeStyleProject upstreamProject = r.createFreeStyleProject("upstreamProject");
         final BlockableBuildTriggerConfig triggerConfg = createConfig("downstreamProject");
         addParameterizedTrigger(upstreamProject, triggerConfg);
-        
+
         // Setup upstream project security
         Map<Permission,Set<String>> permissions = new HashMap<Permission,Set<String>>();
         Set<String> userIds = new HashSet<String>(Arrays.asList("testUser"));
         permissions.put(Item.READ, userIds);
         AuthorizationMatrixProperty projectPermissions = new AuthorizationMatrixProperty(permissions);
         upstreamProject.addProperty(projectPermissions);
-        
+
         // Ensure that we can get the info about the downstream project, but it is unresolved
         ACL.impersonate(user.impersonate(), new Runnable() {
             @Override
-            public void run() {   
+            public void run() {
                 SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
-                assertTrue("Downstream project should be unresolved, because testUser has no READ permission", 
+                assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
         });
-        
+
         // Now invoke the build and check again (other logic handlers)
         r.buildAndAssertSuccess(upstreamProject);
         ACL.impersonate(user.impersonate(), new Runnable() {
             @Override
-            public void run() {   
+            public void run() {
                 SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
-                assertTrue("Downstream project should be unresolved, because testUser has no READ permission", 
+                assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
         });
     }
-   
+
     /**
      * Testing statically and dynamically defined projects
      *
@@ -342,5 +346,27 @@ public class BuildTriggerConfigTest {
         FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "project, ");
 
         assertEquals(FormValidation.Kind.ERROR, form.kind);
+    }
+
+    @Issue("JENKINS-32527")
+    @Test
+    public void testFieldValidation() throws Exception {
+        FreeStyleProject p = r.createFreeStyleProject("project");
+        BuildTriggerConfig.DescriptorImpl descriptor = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class);
+        assertNotNull(descriptor);
+        // Valid value, Empty Value
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, p.getFullName()).kind);
+        assertSame(FormValidation.Kind.ERROR, descriptor.doCheckProjects(p, "FOO").kind);
+        assertSame(FormValidation.Kind.ERROR, descriptor.doCheckProjects(p, "").kind);
+        //JENKINS-32526: Check that it behaves gracefully for an unknown context.
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, p.getFullName()).kind);
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "FOO").kind);
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "").kind);
+
+        // Just returns OK if no permission
+        r.jenkins.setAuthorizationStrategy(new ProjectMatrixAuthorizationStrategy());
+        SecurityContextHolder.clearContext();
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, "").kind);
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "").kind);
     }
 }
