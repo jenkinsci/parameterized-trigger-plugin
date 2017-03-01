@@ -25,7 +25,10 @@ package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.Cause.UserCause;
 import hudson.model.ParametersAction;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
+import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -56,6 +59,10 @@ public class CurrentBuildParametersTest {
     @Test
 	public void test() throws Exception {
 		Project<?,?> projectA = r.createFreeStyleProject("projectA");
+		// SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("KEY","key"));
+		projectA.addProperty(new ParametersDefinitionProperty(definition));
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, new CurrentBuildParameters())));
 
@@ -63,6 +70,7 @@ public class CurrentBuildParametersTest {
 		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(

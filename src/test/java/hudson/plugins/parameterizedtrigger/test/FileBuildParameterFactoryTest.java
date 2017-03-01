@@ -34,7 +34,10 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
+import hudson.model.StringParameterDefinition;
 import hudson.model.Result;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -51,6 +54,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -87,6 +91,10 @@ public class FileBuildParameterFactoryTest {
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("TEST","test"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 
         //create triggering build
         FreeStyleProject projectA = r.createFreeStyleProject();
@@ -125,6 +133,10 @@ public class FileBuildParameterFactoryTest {
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("TEST","test"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 
         //create triggering build
         FreeStyleProject projectA = r.createFreeStyleProject();
@@ -245,22 +257,31 @@ public class FileBuildParameterFactoryTest {
             }
         });
 
-        // add Trigger builder, with file parameter factory
-        projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "UTF-8"));
+        // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-        projectA.scheduleBuild2(0).get();
+            // add Trigger builder, with file parameter factory
+            projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "UTF-8"));
 
-        // check triggered builds are correct.
-        r.waitUntilNoActivity();
-        List<FreeStyleBuild> builds = projectB.getBuilds();
-        assertEquals(1, builds.size());
+            projectA.scheduleBuild2(0).get();
 
-        for (FreeStyleBuild build : builds) {
-            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-            System.out.println(String.format("'%s'", "こんにちは"));
-            System.out.println(String.format("'%s'", buildEnvVar.get("TEST")));
-            assertEquals("こんにちは", buildEnvVar.get("TEST"));
-            assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
+            // check triggered builds are correct.
+            r.waitUntilNoActivity();
+            List<FreeStyleBuild> builds = projectB.getBuilds();
+            assertEquals(1, builds.size());
+
+            for (FreeStyleBuild build : builds) {
+                EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+                System.out.println(String.format("'%s'", "こんにちは"));
+                System.out.println(String.format("'%s'", buildEnvVar.get("TEST")));
+                assertEquals("こんにちは", buildEnvVar.get("TEST"));
+                assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
+            }
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
         }
 
     }
@@ -289,20 +310,29 @@ public class FileBuildParameterFactoryTest {
             }
         });
 
-        // add Trigger builder, with file parameter factory
-        projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "Shift_JIS"));
+        // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-        projectA.scheduleBuild2(0).get();
+            // add Trigger builder, with file parameter factory
+            projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, "Shift_JIS"));
 
-        // check triggered builds are correct.
-        r.waitUntilNoActivity();
-        List<FreeStyleBuild> builds = projectB.getBuilds();
-        assertEquals(1, builds.size());
+            projectA.scheduleBuild2(0).get();
 
-        for (FreeStyleBuild build : builds) {
-            EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-            assertEquals("こんにちは", buildEnvVar.get("TEST"));
-            assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
+            // check triggered builds are correct.
+            r.waitUntilNoActivity();
+            List<FreeStyleBuild> builds = projectB.getBuilds();
+            assertEquals(1, builds.size());
+
+            for (FreeStyleBuild build : builds) {
+                EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+                assertEquals("こんにちは", buildEnvVar.get("TEST"));
+                assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
+            }
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
         }
 
     }
@@ -328,24 +358,33 @@ public class FileBuildParameterFactoryTest {
             }
         });
 
-        // add Trigger builder, with file parameter factory
-        projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, ""));
+        // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-        projectA.scheduleBuild2(0).get();
+            // add Trigger builder, with file parameter factory
+            projectA.getBuildersList().add(createTriggerBuilder(projectB, NoFilesFoundEnum.SKIP, ""));
 
-        // check triggered builds are correct.
-        r.waitUntilNoActivity();
-        List<FreeStyleBuild> builds = projectB.getBuilds();
-        assertEquals(1, builds.size());
+            projectA.scheduleBuild2(0).get();
 
-        // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be windows-1250
-        // or windows-1252. With these single-byte encodings we cannot expect multi-byte strings to be encoded correctly.
-        final boolean isMultiByteDefaultCharset = Charset.defaultCharset().newEncoder().maxBytesPerChar() > 1.0f;
-        if (isMultiByteDefaultCharset) {
-            for (FreeStyleBuild build : builds) {
-                EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-                assertEquals("ｈｅｌｌｏ＿ａｂｃ", buildEnvVar.get("ＴＥＳＴ"));
+            // check triggered builds are correct.
+            r.waitUntilNoActivity();
+            List<FreeStyleBuild> builds = projectB.getBuilds();
+            assertEquals(1, builds.size());
+
+            // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be windows-1250
+            // or windows-1252. With these single-byte encodings we cannot expect multi-byte strings to be encoded correctly.
+            final boolean isMultiByteDefaultCharset = Charset.defaultCharset().newEncoder().maxBytesPerChar() > 1.0f;
+            if (isMultiByteDefaultCharset) {
+                for (FreeStyleBuild build : builds) {
+                    EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
+                    assertEquals("ｈｅｌｌｏ＿ａｂｃ", buildEnvVar.get("ＴＥＳＴ"));
+                }
             }
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
         }
     }
     
