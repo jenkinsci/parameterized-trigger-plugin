@@ -42,9 +42,11 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.ParameterValue;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
+import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
 import hudson.model.Result;
+import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.model.labels.LabelExpression;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -66,6 +68,9 @@ import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SingleFileSCM;
 import org.jvnet.hudson.test.ExtractResourceSCM;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -127,7 +132,7 @@ public class FileBuildTriggerConfigTest {
         definition.add(new StringParameterDefinition("A_TEST_03","test3"));
         definition.add(new StringParameterDefinition("Z_TEST_01","test1"));
         definition.add(new StringParameterDefinition("Z_TEST_02","test2"));
-        workflowProject.addProperty(new ParametersDefinitionProperty(definition));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
