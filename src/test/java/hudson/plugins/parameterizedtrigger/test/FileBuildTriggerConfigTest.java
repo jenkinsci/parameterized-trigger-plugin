@@ -130,8 +130,8 @@ public class FileBuildTriggerConfigTest {
         definition.add(new StringParameterDefinition("A_TEST_01","test1"));
         definition.add(new StringParameterDefinition("A_TEST_02","test2"));
         definition.add(new StringParameterDefinition("A_TEST_03","test3"));
-        definition.add(new StringParameterDefinition("Z_TEST_01","test1"));
-        definition.add(new StringParameterDefinition("Z_TEST_02","test2"));
+        definition.add(new StringParameterDefinition("Z_TEST_100","test1"));
+        definition.add(new StringParameterDefinition("Z_TEST_101","test2"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
@@ -192,6 +192,9 @@ public class FileBuildTriggerConfigTest {
 
         // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
         try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
+
             projectA.scheduleBuild2(0).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
@@ -226,6 +229,9 @@ public class FileBuildTriggerConfigTest {
 
         // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
         try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
+
             projectA.scheduleBuild2(0).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
@@ -260,6 +266,9 @@ public class FileBuildTriggerConfigTest {
 
         // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
         try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
+
             projectA.scheduleBuild2(0).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
