@@ -152,8 +152,7 @@
     </pluginRepositories>
     
     <properties>
-      <jenkins.version>1.638</jenkins.version>
-      <java.level>6</java.level>
+      <jenkins.version>1.642.3</jenkins.version>
       <findbugs.failOnError>false</findbugs.failOnError>
     </properties>
 </project>  
