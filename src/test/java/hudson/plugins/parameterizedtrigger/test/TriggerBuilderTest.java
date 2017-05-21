@@ -23,9 +23,11 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import com.google.common.collect.ArrayListMultimap;
+import hudson.EnvVars;
+import hudson.Launcher;
 import hudson.model.*;
 import hudson.model.Cause.UpstreamCause;
-import hudson.model.queue.MappingWorksheet;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -36,7 +38,8 @@ import hudson.plugins.promoted_builds.PromotionProcess;
 import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
-import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.Bug;
 
 import hudson.matrix.TextAxis;
@@ -45,40 +48,78 @@ import hudson.matrix.MatrixRun;
 import hudson.matrix.AxisList;
 
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
 
-import org.jvnet.hudson.test.HudsonTestCase;
 import com.google.common.collect.ImmutableList;
 
 import java.lang.System;
 
 import jenkins.model.Jenkins;
+import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
-public class TriggerBuilderTest extends HudsonTestCase {
+public class TriggerBuilderTest {
 
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
     private BlockableBuildTriggerConfig createTriggerConfig(String projects) {
         return new BlockableBuildTriggerConfig(projects, new BlockingBehaviour("never", "never", "never"), null);
     }
 
-    public void testOrderOfLogEntries() throws Exception {
-        createFreeStyleProject("project1");
-        createFreeStyleProject("project2");
-        createFreeStyleProject("project3");
-        createFreeStyleProject("project4");
-        createFreeStyleProject("project5");
-        createFreeStyleProject("project6");
+    @Test
+    public void testProjectWasEnabledDuringTheBuild() throws Exception {
+        final Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
+        final Project<?, ?> disabledJob = r.createFreeStyleProject("projectC");
+        final BlockableBuildTriggerConfig config = Mockito.mock(BlockableBuildTriggerConfig.class);
+        when(config.getProjects(any(EnvVars.class))).thenReturn(disabledJob.getName());
+        when(config.getBlock()).thenReturn(new BlockingBehaviour(Result.FAILURE, Result.FAILURE, Result.FAILURE));
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        final ArrayListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
+        when(config.perform3(any(AbstractBuild.class),
+                Mockito.any(Launcher.class),
+                Mockito.any(BuildListener.class))).thenReturn(futures);
+        // Then project is disabled scheduler returns null instead of Future<Run> object
+        futures.put(disabledJob, null);
+
+        final List<Job> jobs = new ArrayList<Job>();
+        jobs.add(disabledJob);
+
+        when(config.getJobs(any(ItemGroup.class), any(EnvVars.class))).thenReturn(jobs);
+
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        triggerProject.scheduleBuild2(0).get();
+
+        assertEquals(Result.SUCCESS, triggerProject.getLastBuild().getResult());
+    }
+
+    @Test
+    public void testOrderOfLogEntries() throws Exception {
+        r.createFreeStyleProject("project1");
+        r.createFreeStyleProject("project2");
+        r.createFreeStyleProject("project3");
+        r.createFreeStyleProject("project4");
+        r.createFreeStyleProject("project5");
+        r.createFreeStyleProject("project6");
+
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
 
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
         triggerBuilder.getConfigs().add(createTriggerConfig("project2"));
@@ -100,20 +141,21 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "project6 #1 completed. Result was SUCCESS");
     }
 
+    @Test
     public void testSubParameterBuilds() throws Exception {
-        hudson.setNumExecutors(10); // makes sure there are enough executors so that there are no deadlocks
-        hudson.setNodes(hudson.getNodes()); // update nodes configuration (TODO https://github.com/jenkinsci/jenkins/pull/1596 renders this workaround unnecessary)
+        r.jenkins.setNumExecutors(10); // makes sure there are enough executors so that there are no deadlocks
+        r.jenkins.setNodes(r.jenkins.getNodes()); // update nodes configuration (TODO https://github.com/jenkinsci/jenkins/pull/1596 renders this workaround unnecessary)
 
-        FreeStyleProject p1 = createFreeStyleProject("project1");
-        createFreeStyleProject("project2");
-        createFreeStyleProject("project3");
+        FreeStyleProject p1 = r.createFreeStyleProject("project1");
+        r.createFreeStyleProject("project2");
+        r.createFreeStyleProject("project3");
 
         ///triggered from project 1
-        createFreeStyleProject("projectZ4");
-        createFreeStyleProject("projectZ5");
-        createFreeStyleProject("projectZ6");
+        r.createFreeStyleProject("projectZ4");
+        r.createFreeStyleProject("projectZ5");
+        r.createFreeStyleProject("projectZ6");
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
 
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
         triggerBuilder.getConfigs().add(createTriggerConfig("project2"));
@@ -133,12 +175,13 @@ public class TriggerBuilderTest extends HudsonTestCase {
             "project3 #1 completed. Result was SUCCESS");
     }
 
+    @Test
     public void testWaitingForCompletion() throws Exception {
-        createFreeStyleProject("project1");
-        createFreeStyleProject("project2");
-        createFreeStyleProject("project3");
+        r.createFreeStyleProject("project1");
+        r.createFreeStyleProject("project2");
+        r.createFreeStyleProject("project3");
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
 
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1, project2, project3"));
 
@@ -152,12 +195,13 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "Waiting for the completion of project3");
     }
 
+    @Test
     public void testNonBlockingTrigger() throws Exception {
-        createFreeStyleProject("project1");
-        createFreeStyleProject("project2");
-        createFreeStyleProject("project3");
+        r.createFreeStyleProject("project1");
+        r.createFreeStyleProject("project2");
+        r.createFreeStyleProject("project3");
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
 
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("project1, project2, project3", null, null);
         TriggerBuilder triggerBuilder = new TriggerBuilder(config);
@@ -170,12 +214,13 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "Triggering projects: project1, project2, project3");
     }
 
+    @Test
     public void testConsoleOutputWithCounterParameters() throws Exception{
-        createFreeStyleProject("project1");
-        createFreeStyleProject("project2");
-        createFreeStyleProject("project3");
+        r.createFreeStyleProject("project1");
+        r.createFreeStyleProject("project2");
+        r.createFreeStyleProject("project3");
 
-        Project<?,?> triggerProject = createFreeStyleProject();
+        Project<?,?> triggerProject = r.createFreeStyleProject();
 
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
         ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
@@ -199,14 +244,14 @@ public class TriggerBuilderTest extends HudsonTestCase {
                 "project3 #3 completed. Result was SUCCESS");
     }
 
-
+    @Test
     public void testBlockingTriggerWithDisabledProjects() throws Exception {
-        createFreeStyleProject("project1");
-        Project<?, ?> p2 = createFreeStyleProject("project2");
+        r.createFreeStyleProject("project1");
+        Project<?, ?> p2 = r.createFreeStyleProject("project2");
         p2.disable();
-        createFreeStyleProject("project3");
+        r.createFreeStyleProject("project3");
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
 
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1, project2, project3"));
 
@@ -222,11 +267,12 @@ public class TriggerBuilderTest extends HudsonTestCase {
     }
 
     /** Verify that workflow build can be triggered */
+    @Test
     public void testTriggerWithWorkflow() throws Exception {
         WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "project1");
         p.setDefinition(new CpsFlowDefinition("println('hello')"));
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
         triggerProject.getBuildersList().add(triggerBuilder);
         triggerProject.scheduleBuild2(0).get();
@@ -236,13 +282,34 @@ public class TriggerBuilderTest extends HudsonTestCase {
         assertNotNull(p.getLastBuild());
     }
 
+    /** Verify that getProjectsList works with workflow and normal projects */
+    @Issue("JENKINS-30040")
+    @Test
+    public void testGetProjectsList() throws Exception {
+        WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "project1");
+        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        Project<?, ?> p2 = r.createFreeStyleProject("project2");
+
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        List<Job> jobs = new ArrayList<Job>();
+        jobs.add(p);
+        jobs.add(p2);
+        String projectListAsString = triggerBuilder.getProjectListAsString(jobs);
+        r.assertStringContains(projectListAsString, "project1");
+        r.assertStringContains(projectListAsString, "project2");
+    }
+
     /** Verify that workflow build can be triggered with normal project too */
+    @Test
     public void testTriggerWithWorkflowMixedTypes() throws Exception {
-        createFreeStyleProject("project1");
+        r.createFreeStyleProject("project1");
         WorkflowJob p = (WorkflowJob) Jenkins.getInstance().createProject(WorkflowJob.class, "project2");
         p.setDefinition(new CpsFlowDefinition("println('hello')"));
 
-        Project<?, ?> triggerProject = createFreeStyleProject("projectA");
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1, project2"));
         triggerProject.getBuildersList().add(triggerBuilder);
         triggerProject.scheduleBuild2(0).get();
@@ -253,6 +320,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
     }
 
     @Bug(14278)
+    @Test
     public void testBlockingTriggerWithMatrixProject() throws Exception {
 
         /* This test case will start a matrix project that is configured with 2 Axis
@@ -269,15 +337,15 @@ public class TriggerBuilderTest extends HudsonTestCase {
          * Set as 50 for first case.
          */
 
-        hudson.setNumExecutors(50);
-        hudson.setNodes(hudson.getNodes()); // update nodes configuration
+        r.jenkins.setNumExecutors(50);
+        r.jenkins.setNodes(r.jenkins.getNodes()); // update nodes configuration
 
-        createFreeStyleProject("project1");
-        createFreeStyleProject("project2");
-        createFreeStyleProject("project3");
-        createFreeStyleProject("project4");
-        createFreeStyleProject("project5");
-        createFreeStyleProject("project6");
+        r.createFreeStyleProject("project1");
+        r.createFreeStyleProject("project2");
+        r.createFreeStyleProject("project3");
+        r.createFreeStyleProject("project4");
+        r.createFreeStyleProject("project5");
+        r.createFreeStyleProject("project6");
 
         MatrixProject matrixProject = createMatrixProject("matrixProject");
 
@@ -311,6 +379,7 @@ public class TriggerBuilderTest extends HudsonTestCase {
     }
 
     @Bug(17751)
+    @Test
     public void testTriggerFromPromotion() throws Exception {
         assertNotNull("promoted-builds must be installed.", Jenkins.getInstance().getPlugin("promoted-builds"));
         // Test combination with PromotedBuilds.
@@ -318,9 +387,9 @@ public class TriggerBuilderTest extends HudsonTestCase {
         // The configuration is as following:
         // Project1 -> (built-in trigger) -> Project2
         //          -> (promotion) -> Project1/Promotion/TRIGGER -> (Parameterrized Trigger) -> Project3
-        FreeStyleProject project1 = createFreeStyleProject();
-        FreeStyleProject project2 = createFreeStyleProject();
-        FreeStyleProject project3 = createFreeStyleProject();
+        FreeStyleProject project1 = r.createFreeStyleProject();
+        FreeStyleProject project2 = r.createFreeStyleProject();
+        FreeStyleProject project3 = r.createFreeStyleProject();
         
         // project1 -> project2
         project1.getPublishersList().add(new hudson.tasks.BuildTrigger(project2.getName(), "SUCCESS"));
@@ -396,18 +465,17 @@ public class TriggerBuilderTest extends HudsonTestCase {
             }
         }
         
-        assertBuildStatusSuccess(project1_build);
-        assertBuildStatusSuccess(project2_build);
-        assertBuildStatusSuccess(project3_build);
+        r.assertBuildStatusSuccess(project1_build);
+        r.assertBuildStatusSuccess(project2_build);
+        r.assertBuildStatusSuccess(project3_build);
         
         UpstreamCause c = project3_build.getCause(UpstreamCause.class);
         assertNotNull(String.format("Failed to get UpstreamCause from project3(%s)", project3.getName()), c);
         assertEquals("UpstreamCause is not properly set.", project1.getName(), c.getUpstreamProject());
     }
 
-    @Override
     protected MatrixProject createMatrixProject(String name) throws IOException {
-        MatrixProject p = super.createMatrixProject(name);
+        MatrixProject p = r.createProject(MatrixProject.class, name);
         // set up 2x2 matrix
         AxisList axes = new AxisList();
         axes.add(new TextAxis("db","mysql","oracle"));
@@ -417,26 +485,27 @@ public class TriggerBuilderTest extends HudsonTestCase {
         return p;
     }
 
+    @Test
     public void testExpansionOfMultipleProjectsInEnvVariable() throws Exception {
-        FreeStyleProject upstream = createFreeStyleProject();
+        FreeStyleProject upstream = r.createFreeStyleProject();
         upstream.addProperty(new ParametersDefinitionProperty(
                 new StringParameterDefinition("PARAM", "downstream1,downstream2")
         ));
 
-        FreeStyleProject downstream1 = createFreeStyleProject("downstream1");
-        FreeStyleProject downstream2 = createFreeStyleProject("downstream2");
+        FreeStyleProject downstream1 = r.createFreeStyleProject("downstream1");
+        FreeStyleProject downstream2 = r.createFreeStyleProject("downstream2");
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("${PARAM}", null, null);
         TriggerBuilder triggerBuilder = new TriggerBuilder(config);
 
         upstream.getBuildersList().add(triggerBuilder);
 
         FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new Cause.UserCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
-        assertBuildStatusSuccess(upstreamBuild);
-        waitUntilNoActivity();
+        r.assertBuildStatusSuccess(upstreamBuild);
+        r.waitUntilNoActivity();
         FreeStyleBuild downstream1Build = downstream1.getLastBuild();
         FreeStyleBuild downstream2Build = downstream2.getLastBuild();
-        assertBuildStatusSuccess(downstream1Build);
-        assertBuildStatusSuccess(downstream2Build);
+        r.assertBuildStatusSuccess(downstream1Build);
+        r.assertBuildStatusSuccess(downstream2Build);
     }
 
     private void assertLines(Run<?,?> build, String... lines) throws IOException {

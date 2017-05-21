@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:entry title="${%Projects to build}" field="projects">
     <f:textbox autoCompleteDelimChar="," />
@@ -8,7 +9,11 @@
   <f:entry title="${%Trigger build without parameters}" field="triggerWithNoParameters" >
      <f:checkbox checked="${instance.triggerWithNoParameters}"/>
   </f:entry>
-
+  <j:if test="${descriptor.isItemGroup(it)}">
+     <f:entry title="${%Trigger build from child projects}" field="triggerFromChildProjects" >
+        <f:checkbox checked="${instance.isTriggerFromChildProjects()}"/>
+     </f:entry>
+  </j:if>
   <f:block>
     <f:hetero-list name="configs" hasHeader="true"
                    descriptors="${descriptor.getBuilderConfigDescriptors()}"

@@ -26,14 +26,22 @@ package hudson.plugins.parameterizedtrigger.test;
 import hudson.model.AbstractProject;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.recipes.LocalData;
 
-public class CompatibilityTest extends HudsonTestCase {
+import static org.junit.Assert.assertEquals;
 
+public class CompatibilityTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
 	@LocalData
+	@Test
 	public void test() throws Exception {
-		AbstractProject p = (AbstractProject) hudson.getItem("old");
+		AbstractProject p = (AbstractProject) r.jenkins.getItem("old");
 		BuildTrigger trigger = (BuildTrigger) p.getPublishersList().get(BuildTrigger.class);
 		assertEquals(2, trigger.getConfigs().size());
 	}

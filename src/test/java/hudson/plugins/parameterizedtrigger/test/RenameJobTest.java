@@ -46,22 +46,33 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import jenkins.model.Jenkins;
 import jenkins.model.ModifiableTopLevelItemGroup;
 
 import org.jenkins_ci.plugins.run_condition.BuildStepRunner;
 import org.jenkins_ci.plugins.run_condition.core.AlwaysRun;
 import org.jenkinsci.plugins.conditionalbuildstep.ConditionalBuilder;
 import org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockFolder;
 
-public class RenameJobTest extends HudsonTestCase {
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
+public class RenameJobTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void testRenameAndDeleteJobSingleProject() throws Exception {
-		FreeStyleProject projectA = createFreeStyleProject("projectA");
+		FreeStyleProject projectA = r.createFreeStyleProject("projectA");
 		configureTriggeringOf(projectA, "projectB");
-		Project<?,?> projectB = createFreeStyleProject("projectB");
-		hudson.rebuildDependencyGraph();
+		Project<?,?> projectB = r.createFreeStyleProject("projectB");
+		r.jenkins.rebuildDependencyGraph();
 
 		projectB.renameTo("projectB-renamed");
 
@@ -76,12 +87,13 @@ public class RenameJobTest extends HudsonTestCase {
 		assertNull("now-empty post build trigger should be removed", projectA.getPublishersList().get(BuildTrigger.class));
 	}
 
+    @Test
 	public void testRenameAndDeleteJobMultipleProjects() throws Exception {
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
 		configureTriggeringOf(projectA, "projectB", "projectC");
-		Project<?,?> projectB = createFreeStyleProject("projectB");
-		createFreeStyleProject("projectC");
-		hudson.rebuildDependencyGraph();
+		Project<?,?> projectB = r.createFreeStyleProject("projectB");
+		r.createFreeStyleProject("projectC");
+		r.jenkins.rebuildDependencyGraph();
 
 		projectB.renameTo("projectB-renamed");
 		
@@ -146,11 +158,12 @@ public class RenameJobTest extends HudsonTestCase {
     }
 
 	private <T extends TopLevelItem> T createProject(Class<T> type, ModifiableTopLevelItemGroup owner, String name) throws IOException {
-	    return (T) owner.createProject((TopLevelItemDescriptor) jenkins.getDescriptorOrDie(type), name, true);
+	    return (T) owner.createProject((TopLevelItemDescriptor) r.jenkins.getDescriptorOrDie(type), name, true);
 	}
 
+    @Test
     public void testRenameAndDeleteJobInSameFolder() throws Exception {
-        MockFolder folder1 = createProject(MockFolder.class, jenkins, "Folder1");
+        MockFolder folder1 = createProject(MockFolder.class, r.jenkins, "Folder1");
         FreeStyleProject p1 = createProject(FreeStyleProject.class, folder1, "ProjectA");
         FreeStyleProject p2 = createProject(FreeStyleProject.class, folder1, "ProjectB");
 
@@ -161,18 +174,18 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         // Test this works
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -190,12 +203,12 @@ public class RenameJobTest extends HudsonTestCase {
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -203,8 +216,9 @@ public class RenameJobTest extends HudsonTestCase {
         assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
 
+    @Test
     public void testRenameAndDeleteJobInSubFolder() throws Exception {
-        MockFolder folder1 = createProject(MockFolder.class, jenkins, "Folder1");
+        MockFolder folder1 = createProject(MockFolder.class, r.jenkins, "Folder1");
         MockFolder folder2 = createProject(MockFolder.class, folder1, "Folder2");
         FreeStyleProject p1 = createProject(FreeStyleProject.class, folder1, "ProjectA");
         FreeStyleProject p2 = createProject(FreeStyleProject.class, folder2, "ProjectB");
@@ -218,18 +232,18 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         // Test this works
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -247,12 +261,12 @@ public class RenameJobTest extends HudsonTestCase {
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -260,8 +274,9 @@ public class RenameJobTest extends HudsonTestCase {
         assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
 
+    @Test
     public void testRenameAndDeleteJobInParentFolder() throws Exception {
-        MockFolder folder1 = createProject(MockFolder.class, jenkins, "Folder1");
+        MockFolder folder1 = createProject(MockFolder.class, r.jenkins, "Folder1");
         MockFolder folder2 = createProject(MockFolder.class, folder1, "Folder2");
         FreeStyleProject p1 = createProject(FreeStyleProject.class, folder2, "ProjectA");
         FreeStyleProject p2 = createProject(FreeStyleProject.class, folder1, "ProjectB");
@@ -275,18 +290,18 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         // Test this works
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -304,12 +319,12 @@ public class RenameJobTest extends HudsonTestCase {
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -318,17 +333,18 @@ public class RenameJobTest extends HudsonTestCase {
     }
     
     /**
-     * {@link hudson.model.Items#computeRelativeNamesAfterRenaming(String, String, String, hudson.model.ItemGroup)} has a bug
+     * {@link r.jenkins.model.Items#computeRelativeNamesAfterRenaming(String, String, String, r.jenkins.model.ItemGroup)} has a bug
      * that renaming names that contains the target name as prefix.
      * E.g. renaming ProjectB to ProjectB-renamed results in renaming ProjectB2 to ProjectB-renamed2.
      * This is fixed in Jenkins 1.530.
      * 
      * This test verifies this plugin is not affected by that problem.
-     */
+     */ 
+    @Test
     public void testComputeRelativeNamesAfterRenaming() throws Exception {
-        FreeStyleProject projectA = createFreeStyleProject("ProjectA");
-        FreeStyleProject projectB = createFreeStyleProject("ProjectB");
-        FreeStyleProject projectB2 = createFreeStyleProject("ProjectB2");
+        FreeStyleProject projectA = r.createFreeStyleProject("ProjectA");
+        FreeStyleProject projectB = r.createFreeStyleProject("ProjectB");
+        FreeStyleProject projectB2 = r.createFreeStyleProject("ProjectB2");
         
         projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 String.format("%s,%s", projectB.getName(), projectB2.getName()),
@@ -338,7 +354,7 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         projectB.renameTo("ProjectB-renamed");
         

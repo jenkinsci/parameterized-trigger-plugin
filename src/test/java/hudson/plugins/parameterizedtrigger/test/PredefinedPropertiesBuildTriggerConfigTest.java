@@ -29,35 +29,45 @@ import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
+public class PredefinedPropertiesBuildTriggerConfigTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void test() throws Exception {
 
-		Project projectA = createFreeStyleProject("projectA");
+		Project projectA = r.createFreeStyleProject("projectA");
 		String properties = "KEY=value";
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
 						new PredefinedBuildParameters(properties))));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
-		hudson.getQueue().getItem(projectB).getFuture().get();
+		r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		assertEquals("value", builder.getEnvVars().get("KEY"));
 	}
 	
+    @Test
     public void testNonAscii() throws Exception {
 
-        Project projectA = createFreeStyleProject("projectA");
+        Project projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=１２３\n" // 123 in multibytes
                 + "ＫＥＹ=value\n";    // "KEY" in multibytes
         projectA.getPublishersList().add(
@@ -65,13 +75,13 @@ public class PredefinedPropertiesBuildTriggerConfigTest extends HudsonTestCase {
                         new PredefinedBuildParameters(properties))));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-        Project projectB = createFreeStyleProject("projectB");
+        Project projectB = r.createFreeStyleProject("projectB");
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
-        hudson.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0).get();
-        hudson.getQueue().getItem(projectB).getFuture().get();
+        r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
         assertNotNull("builder should record environment", builder.getEnvVars());
         assertEquals("１２３", builder.getEnvVars().get("KEY"));

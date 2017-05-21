@@ -38,13 +38,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 import jenkins.util.VirtualFile;
 
 public class FileBuildParameters extends AbstractBuildParameters {
-	private static final Logger LOGGER = Logger.getLogger(FileBuildParameters.class.getName());
-
 	private final String propertiesFile;
 	private final String encoding;
 	private final boolean failTriggerOnMissing;
@@ -118,14 +115,19 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			String s = null;
 			VirtualFile artifact = build.getArtifactManager().root().child(file);
 			if (artifact.isFile()) {
-			    s = IOUtils.toString(artifact.open());
+			    s = ParameterizedTriggerUtils.readFileToString(artifact);
 			}
 
 			if (s == null) {
-			    FilePath f = build.getWorkspace().child(file);
-			    if (f.exists()) {
-			        s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
-			    }
+				FilePath workspace = build.getWorkspace();
+				if (workspace == null) {
+					listener.getLogger().printf(Plugin.LOG_TAG + " Could not load workspace of build %s%n", build.getFullDisplayName());
+				} else {
+					FilePath f = workspace.child(file);
+					if (f.exists()) {
+						s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
+					}
+				}
 			}
 
 			if (s == null) {
