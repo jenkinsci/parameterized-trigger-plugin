@@ -41,7 +41,6 @@ import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -118,10 +117,10 @@ public class ParameterizedTriggerPermissionTest {
     @Nonnull
     private FreeStyleProject createProjectWithPermissions(@Nonnull String projectName, @Nonnull String userName, 
             @CheckForNull List<Permission> permissions) throws Exception {
-        final TreeSet<String> userSet = new TreeSet<String>(Arrays.asList(userName));
+        final TreeSet<String> userSet = new TreeSet<>(Arrays.asList(userName));
         
         FreeStyleProject project = r.createFreeStyleProject(projectName);
-        HashMap<Permission, Set<String>> masterPermissions = new HashMap<Permission, Set<String>>();
+        HashMap<Permission, Set<String>> masterPermissions = new HashMap<>();
         if (permissions != null) {
             for (Permission p : permissions) {
                 masterPermissions.put(p, userSet);
@@ -136,7 +135,7 @@ public class ParameterizedTriggerPermissionTest {
     }
  
     private BlockableBuildTriggerConfig createConfig(String projectToTrigger){
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         return new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
@@ -148,7 +147,6 @@ public class ParameterizedTriggerPermissionTest {
         projectA.getBuildersList().add(builder);
     }
     
-    // TODO: replace by the implementation from Jenkins core when is becomes available
     /**
      * Differs from {@link MockQueueItemAuthenticator} from the test-harness,
      * because authenticates the specified user for all jobs.

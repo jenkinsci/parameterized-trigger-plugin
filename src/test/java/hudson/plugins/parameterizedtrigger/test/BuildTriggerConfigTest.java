@@ -59,11 +59,14 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import jenkins.security.QueueItemAuthenticatorConfiguration;
+import org.acegisecurity.context.SecurityContext;
 
 import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.Issue;
@@ -73,6 +76,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.MockQueueItemAuthenticator;
 
 public class BuildTriggerConfigTest {
 
@@ -373,8 +378,21 @@ public class BuildTriggerConfigTest {
 
         // Just returns OK if no permission
         r.jenkins.setAuthorizationStrategy(new ProjectMatrixAuthorizationStrategy());
-        SecurityContextHolder.clearContext();
-        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, "").kind);
-        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "").kind);
+        SecurityContext orig = ACL.impersonate(Jenkins.ANONYMOUS);
+        try {
+            assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, "").kind);
+            assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "").kind);
+        } finally {
+            SecurityContextHolder.setContext(orig);
+        }
+
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
+        QueueItemAuthenticatorConfiguration.get().getAuthenticators().add(new MockQueueItemAuthenticator(Collections.singletonMap("project", User.get("alice").impersonate())));
+        FreeStyleProject other = r.createFreeStyleProject("other");
+        MockAuthorizationStrategy auth = new MockAuthorizationStrategy().grant(Jenkins.READ, Item.READ).onItems(other).to("alice");
+        r.jenkins.setAuthorizationStrategy(auth);
+        assertSame(FormValidation.Kind.ERROR, descriptor.doCheckProjects(p, "other").kind);
+        auth.grant(Item.BUILD).onItems(other).to("alice");
+        assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, "other").kind);
     }
 }
