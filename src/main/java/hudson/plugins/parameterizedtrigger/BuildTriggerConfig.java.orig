@@ -58,11 +58,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
+<<<<<<< HEAD
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.acegisecurity.AccessDeniedException;
 import javax.annotation.Nonnull;
 import jenkins.security.QueueItemAuthenticator;
+=======
+import javax.annotation.Nonnull;
+import org.acegisecurity.AccessDeniedException;
+>>>>>>> master
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     
@@ -537,7 +541,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 if (LOGGER.isLoggable(Level.WARNING)) {
                     LOGGER.log(Level.WARNING, "Cannot schedule the build of {0} from {1}. "
                                 + "The authenticated build user {2} has no Item.BUILD permission",
-                            new Object[] {project, build, Jenkins.getAuthentication()});
+                            new Object[] {project, build, User.current()});
                 }
                 return null;
             }
@@ -560,6 +564,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             return false;
         }
         
+        //TODO: should be a part of the Jenkins core
         if (!job.hasPermission(Item.BUILD)) {
             return false;
         }

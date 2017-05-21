@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import hudson.*;
 import hudson.console.HyperlinkNote;
+import hudson.console.ModelHyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
@@ -132,7 +133,7 @@ public class TriggerBuilder extends Builder {
                         if(!config.canBeScheduled(p)){
                             listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + 
                                     ". The project is either disabled,"
-                                    + " or the authenticated user " + User.current() + " has no Item.BUILD permissions,"
+                                    + " or the authenticated user " + ModelHyperlinkNote.encodeTo(User.current()) + " has no Item.BUILD permissions,"
                                     + " or the configuration has not been saved yet.");
                             continue;
                         }
@@ -150,7 +151,7 @@ public class TriggerBuilder extends Builder {
                                         buildStepResult = false;
                                     }
                                 } else {
-                                    listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project was not triggered by some reason.");
+                                    listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project was not triggered by some reason.");
                                 }
                             } catch (CancellationException x) {
                                 throw new AbortException(p.getFullDisplayName() +" aborted.");

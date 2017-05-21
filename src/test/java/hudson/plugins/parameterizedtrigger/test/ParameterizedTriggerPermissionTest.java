@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2015 CloudBees, Inc..
+ * Copyright (c) 2015-2017 CloudBees, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +65,7 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.MockQueueItemAuthenticator;
 
 /**
- * Provides some permission checks of {@link TriggerBuilder}.
+ * Provides some permission checks for {@link TriggerBuilder}.
  * @author Oleg Nenashev
  */
 public class ParameterizedTriggerPermissionTest {
