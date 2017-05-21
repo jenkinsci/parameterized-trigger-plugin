@@ -29,7 +29,10 @@ import hudson.model.Cause;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Job;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
+import hudson.model.StringParameterDefinition;
 import hudson.model.User;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -178,8 +181,12 @@ public class BuildTriggerConfigTest {
     @Test
     public void testBuildWithWorkflowProjects() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
-        WorkflowJob workflowProject = Jenkins.getInstance().createProject(WorkflowJob.class, "workflowproject");
+        WorkflowJob workflowProject = r.createProject(WorkflowJob.class, "workflowproject");
         workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }"));
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("myParam","myParam"));
+        workflowProject.addProperty(new ParametersDefinitionProperty(definition));
 
         // Trigger a normal and workflow project
         String projectToTrigger = "subproject1, workflowproject";
@@ -196,6 +203,7 @@ public class BuildTriggerConfigTest {
 
         Project subProject1 = r.createFreeStyleProject("subproject1");
         subProject1.setQuietPeriod(0);
+        subProject1.addProperty(new ParametersDefinitionProperty(definition));
 
         masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
 

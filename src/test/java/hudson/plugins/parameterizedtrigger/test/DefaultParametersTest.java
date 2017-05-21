@@ -61,7 +61,7 @@ public class DefaultParametersTest {
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 		Project projectB = r.createFreeStyleProject("projectB");
-		projectB.addProperty(new ParametersDefinitionProperty(
+        projectB.addProperty(new ParametersDefinitionProperty(
 				new StringParameterDefinition("key1", "value1"),
 				new StringParameterDefinition("key2", "value2")
 				));
@@ -69,20 +69,30 @@ public class DefaultParametersTest {
 		projectB.setQuietPeriod(1);
 		r.jenkins.rebuildDependencyGraph();
 
-		String log = JenkinsRule.getLog((Run)projectA.scheduleBuild2(0, new UserCause(),
-			new ParametersAction(new StringParameterValue("KEY3", "value3"))).get());
-		Queue.Item q = r.jenkins.getQueue().getItem(projectB);
-		assertNotNull("projectB should be triggered: " + log, q);
-		q.getFuture().get();
-		assertNotNull("builder should record environment", builder.getEnvVars());
-		assertEquals("value1", builder.getEnvVars().get("KEY1"));
-		assertEquals("value2", builder.getEnvVars().get("KEY2"));
-		assertEquals("value3", builder.getEnvVars().get("KEY3"));
+        try {
+            // SECURITY-170: this is needed for tests down the line.
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
+            
 
-		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(new StringParameterValue("key1", "value3"))).get();
-		r.jenkins.getQueue().getItem(projectB).getFuture().get();
-		assertEquals("value3", builder.getEnvVars().get("KEY1"));
-		assertEquals("value2", builder.getEnvVars().get("KEY2"));
+            String log = JenkinsRule.getLog((Run)projectA.scheduleBuild2(0, new UserCause(),
+			    new ParametersAction(new StringParameterValue("KEY3", "value3"))).get());
+            Queue.Item q = r.jenkins.getQueue().getItem(projectB);
+            assertNotNull("projectB should be triggered: " + log, q);
+            q.getFuture().get();
+            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertEquals("value1", builder.getEnvVars().get("KEY1"));
+            assertEquals("value2", builder.getEnvVars().get("KEY2"));
+            assertEquals("value3", builder.getEnvVars().get("KEY3"));
+
+            projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(new StringParameterValue("key1", "value3"))).get();
+            r.jenkins.getQueue().getItem(projectB).getFuture().get();
+            assertEquals("value3", builder.getEnvVars().get("KEY1"));
+            assertEquals("value2", builder.getEnvVars().get("KEY2"));
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
+        }
 	}
 
     @Test
@@ -104,19 +114,28 @@ public class DefaultParametersTest {
                     new CurrentBuildParameters(),
                     new PredefinedBuildParameters("BAZ=moo\nHOHO=blah"))));
         r.jenkins.rebuildDependencyGraph();
-        Run run = (Run)projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
+
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
+
+            Run run = (Run)projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
                 new StringParameterValue("BAR", "foo"),
                 new StringParameterValue("BAZ", "override-me"))).get();
-        Queue.Item q = r.jenkins.getQueue().getItem(projectB);
-        assertNotNull("projectB should be triggered: " + JenkinsRule.getLog(run), q);
-        run = (Run)q.getFuture().get();
-        assertEquals("should be exactly one ParametersAction", 1,
-                     run.getActions(ParametersAction.class).size());
-        EnvVars envVars = builder.getEnvVars();
-        assertNotNull("builder should record environment", envVars);
-        assertEquals("FOO", "bar", envVars.get("FOO"));
-        assertEquals("BAR", "foo", envVars.get("BAR"));
-        assertEquals("BAZ", "moo", envVars.get("BAZ"));
-        assertEquals("HOHO", "blah", envVars.get("HOHO"));
+            Queue.Item q = r.jenkins.getQueue().getItem(projectB);
+            assertNotNull("projectB should be triggered: " + JenkinsRule.getLog(run), q);
+            run = (Run)q.getFuture().get();
+            assertEquals("should be exactly one ParametersAction", 1,
+                        run.getActions(ParametersAction.class).size());
+            EnvVars envVars = builder.getEnvVars();
+            assertNotNull("builder should record environment", envVars);
+            assertEquals("FOO", "bar", envVars.get("FOO"));
+            assertEquals("BAR", "foo", envVars.get("BAR"));
+            assertEquals("BAZ", "moo", envVars.get("BAZ"));
+            assertEquals("HOHO", "blah", envVars.get("HOHO"));
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
+        }
     }
 }

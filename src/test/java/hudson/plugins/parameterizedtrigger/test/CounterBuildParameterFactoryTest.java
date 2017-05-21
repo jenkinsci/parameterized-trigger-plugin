@@ -6,7 +6,10 @@ import com.google.common.collect.Sets;
 import hudson.EnvVars;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
+import hudson.model.StringParameterDefinition;
 import hudson.model.Result;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -19,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +49,10 @@ public class CounterBuildParameterFactoryTest {
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(0);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("TEST","test"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0, new Cause.UserCause()).get();
@@ -78,6 +86,11 @@ public class CounterBuildParameterFactoryTest {
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(0);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("TEST","test"));
+        definition.add(new StringParameterDefinition("NEWTEST","newtest"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0, new Cause.UserCause()).get();

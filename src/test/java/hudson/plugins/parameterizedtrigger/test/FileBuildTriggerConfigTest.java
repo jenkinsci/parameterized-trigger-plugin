@@ -42,8 +42,11 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.ParameterValue;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParametersAction;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
 import hudson.model.Result;
+import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.model.labels.LabelExpression;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -65,6 +68,9 @@ import org.jvnet.hudson.test.Bug;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SingleFileSCM;
 import org.jvnet.hudson.test.ExtractResourceSCM;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -91,6 +97,10 @@ public class FileBuildTriggerConfigTest {
 		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("KEY","key"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
@@ -115,6 +125,14 @@ public class FileBuildTriggerConfigTest {
 		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("A_TEST_01","test1"));
+        definition.add(new StringParameterDefinition("A_TEST_02","test2"));
+        definition.add(new StringParameterDefinition("A_TEST_03","test3"));
+        definition.add(new StringParameterDefinition("Z_TEST_100","test1"));
+        definition.add(new StringParameterDefinition("Z_TEST_101","test2"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
@@ -172,12 +190,21 @@ public class FileBuildTriggerConfigTest {
         projectB.setQuietPeriod(1);
         r.jenkins.rebuildDependencyGraph();
 
-        projectA.scheduleBuild2(0).get();
-        r.jenkins.getQueue().getItem(projectB).getFuture().get();
+        // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
-        assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
-        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+            projectA.scheduleBuild2(0).get();
+            r.jenkins.getQueue().getItem(projectB).getFuture().get();
+
+            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+            assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
+        }
     }
 
     @Test
@@ -200,12 +227,21 @@ public class FileBuildTriggerConfigTest {
         projectB.setQuietPeriod(1);
         r.jenkins.rebuildDependencyGraph();
 
-        projectA.scheduleBuild2(0).get();
-        r.jenkins.getQueue().getItem(projectB).getFuture().get();
+        // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
-        assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
-        assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+            projectA.scheduleBuild2(0).get();
+            r.jenkins.getQueue().getItem(projectB).getFuture().get();
+
+            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+            assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
+        }
     }
     
     @Test
@@ -228,17 +264,26 @@ public class FileBuildTriggerConfigTest {
         projectB.setQuietPeriod(1);
         r.jenkins.rebuildDependencyGraph();
 
-        projectA.scheduleBuild2(0).get();
-        r.jenkins.getQueue().getItem(projectB).getFuture().get();
+        // SECURITY-170: need to allow multibyte params that can't be traditionally declared.
+        try {
+            //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
+            System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
+            projectA.scheduleBuild2(0).get();
+            r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-        // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be windows-1250
-        // or windows-1252. With these single-byte encodings we cannot expect multi-byte strings to be encoded correctly.
-        final boolean isMultiByteDefaultCharset = Charset.defaultCharset().newEncoder().maxBytesPerChar() > 1.0f;
-        if (isMultiByteDefaultCharset) {
-            assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
-            assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+            assertNotNull("builder should record environment", builder.getEnvVars());
+
+            // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be windows-1250
+            // or windows-1252. With these single-byte encodings we cannot expect multi-byte strings to be encoded correctly.
+            final boolean isMultiByteDefaultCharset = Charset.defaultCharset().newEncoder().maxBytesPerChar() > 1.0f;
+            if (isMultiByteDefaultCharset) {
+                assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
+                assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
+            }
+        } finally {
+            //System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
+            System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");
         }
     }
 

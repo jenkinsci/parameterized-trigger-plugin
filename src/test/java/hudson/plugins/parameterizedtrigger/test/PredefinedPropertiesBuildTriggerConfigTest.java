@@ -23,7 +23,10 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
+import hudson.model.StringParameterDefinition;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
@@ -36,6 +39,9 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PredefinedPropertiesBuildTriggerConfigTest {
 
@@ -55,6 +61,10 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
 		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("KEY","key"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
@@ -78,6 +88,11 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
         Project projectB = r.createFreeStyleProject("projectB");
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
+        // SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("KEY","key"));
+        definition.add(new StringParameterDefinition("ＫＥＹ","otherkey"));
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
 
         projectA.scheduleBuild2(0).get();
