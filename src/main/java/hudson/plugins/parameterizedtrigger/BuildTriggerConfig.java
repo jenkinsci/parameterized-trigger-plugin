@@ -560,10 +560,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             return false;
         }
         
-        if (!job.hasPermission(Item.BUILD)) {
-            return false;
-        }
-        return true;
+        return job.hasPermission(Item.BUILD);
     }
 
     protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list) throws InterruptedException, IOException {
