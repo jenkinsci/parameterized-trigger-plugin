@@ -151,7 +151,7 @@ public class TriggerBuilder extends Builder {
                                         buildStepResult = false;
                                     }
                                 } else {
-                                    listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project was not triggered by some reason.");
+                                    listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo(p) + ". The project was not triggered by some reason.");
                                 }
                             } catch (CancellationException x) {
                                 throw new AbortException(p.getFullDisplayName() +" aborted.");
