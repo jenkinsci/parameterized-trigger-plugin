@@ -31,10 +31,10 @@ public class SubversionRevisionBuildTriggerConfigTest {
 		p2.setQuietPeriod(1);
 
 		p1.setScm(new SubversionSCM(
-					"https://svn.jenkins-ci.org/trunk/hudson/test-projects/trivial-ant@13000"));
+					"svn://svn.jenkins-ci.org/trunk/hudson/test-projects/trivial-ant@13000"));
 
 		p2.setScm(new SubversionSCM(
-					"https://svn.jenkins-ci.org/trunk/hudson/test-projects/trivial-ant"));
+					"svn://svn.jenkins-ci.org/trunk/hudson/test-projects/trivial-ant"));
 
 		p1.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig(p2.getName(), ResultCondition.SUCCESS,
