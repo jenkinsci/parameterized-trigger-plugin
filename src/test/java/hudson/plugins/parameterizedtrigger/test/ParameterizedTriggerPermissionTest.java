@@ -123,7 +123,7 @@ public class ParameterizedTriggerPermissionTest {
         // Assert the subproject1 has not been built
         assertTrue("The subproject1 has been triggered, but it should not happen due to the build permissions", 
                 subproject1.getBuilds().isEmpty());
-        r.assertLogContains("has no Item.BUILD permission", build);
+        r.assertLogContains("has no Job.BUILD permission", build);
         
         if (!useBuildStep) {
             // Non-blocking, we have to check the status

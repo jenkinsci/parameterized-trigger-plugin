@@ -565,10 +565,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     /*package*/ static boolean canTriggerProject(@Nonnull AbstractBuild<?, ?> build, 
             @Nonnull final Job job, @Nonnull TaskListener taskListener) {
         if (!job.hasPermission(Item.BUILD)) {
-            //TODO: It would be also great to print it to the build log, but there is no TaskListener
             String message = String.format("Cannot schedule the build of %s from %s. "
-                        + "The authenticated build user %s has no Item.BUILD permission",
-                        job, build, Jenkins.getAuthentication()); 
+                        + "The authenticated build user %s has no Job.BUILD permission",
+                        job.getFullDisplayName(), build.getFullDisplayName(), Jenkins.getAuthentication().getName()); 
             LOGGER.log(Level.WARNING, message);
             taskListener.error(message);
             return false;
