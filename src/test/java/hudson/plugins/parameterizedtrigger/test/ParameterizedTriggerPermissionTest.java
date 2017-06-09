@@ -31,16 +31,21 @@ import hudson.model.Item;
 import hudson.model.Project;
 import hudson.model.Queue;
 import hudson.model.User;
+import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
+import hudson.plugins.parameterizedtrigger.BuildTrigger;
+import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
+import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.security.AuthorizationMatrixProperty;
 import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -89,12 +94,26 @@ public class ParameterizedTriggerPermissionTest {
     
     @Test
     @Issue("SECURITY-201")
-    public void shouldBeUnableToTriggerWithoutPermissions() throws Exception {        
+    public void shouldBeUnableToTriggerWithoutPermissions_BuildStep() throws Exception {
+        shouldBeUnableToTriggerWithoutPermissions(true);
+    }
+    
+    @Test
+    @Issue("SECURITY-201")
+    public void shouldBeUnableToTriggerWithoutPermissions_Recorder() throws Exception {
+        shouldBeUnableToTriggerWithoutPermissions(false);
+    }
+    
+    public void shouldBeUnableToTriggerWithoutPermissions(boolean useBuildStep) throws Exception {        
         // Create master project
         FreeStyleProject masterProject = createProjectWithPermissions("project", "foo", Arrays.asList(Item.BUILD));
-        BlockableBuildTriggerConfig masterConfig = createConfig("subproject1,subproject2");
-        addParameterizedTrigger(masterProject, masterConfig);
-
+        
+        if (useBuildStep) {
+            addParameterizedTrigger_BuildStep(masterProject, createBlockableConfig( "subproject1,subproject2"));
+        } else {
+            addParameterizedTrigger_Recorder(masterProject, createNonBlockableConfig("subproject1,subproject2"));
+        }
+        
         // Create subprojects
         FreeStyleProject subproject1 = createProjectWithPermissions("subproject1", "foo", null);
         FreeStyleProject subproject2 = createProjectWithPermissions("subproject2", "foo", Arrays.asList(Item.BUILD));
@@ -104,6 +123,12 @@ public class ParameterizedTriggerPermissionTest {
         // Assert the subproject1 has not been built
         assertTrue("The subproject1 has been triggered, but it should not happen due to the build permissions", 
                 subproject1.getBuilds().isEmpty());
+        
+        if (!useBuildStep) {
+            // Non-blocking, we have to check the status
+            r.jenkins.getQueue().maintain();
+            r.waitUntilNoActivity();
+        }
         
         // Assert the subproject2 has been built properly
         assertEquals("The subproject2 should have been triggered once during the build", 
@@ -134,19 +159,34 @@ public class ParameterizedTriggerPermissionTest {
         return project;
     }
  
-    private BlockableBuildTriggerConfig createConfig(String projectToTrigger){
+    private BlockableBuildTriggerConfig createBlockableConfig(String projectToTrigger){
         List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         return new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
     }
     
-    private void addParameterizedTrigger(Project<?, ?> projectA, BlockableBuildTriggerConfig config) throws Exception {
+    private BuildTriggerConfig createNonBlockableConfig(String projectToTrigger){
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
+        buildParameters.add(new CurrentBuildParameters());
+        return new BuildTriggerConfig(projectToTrigger, ResultCondition.SUCCESS, true, 
+                Collections.<AbstractBuildParameterFactory>emptyList(), Collections.<AbstractBuildParameters>emptyList(), false);
+    }
+    
+    private void addParameterizedTrigger_BuildStep(Project<?, ?> projectA, BlockableBuildTriggerConfig config) 
+            throws Exception {
         projectA.getBuildersList().add(new TriggerBuilder(config));
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         projectA.getBuildersList().add(builder);
     }
     
+    private void addParameterizedTrigger_Recorder(Project<?, ?> projectA, BuildTriggerConfig config) 
+            throws Exception {
+        projectA.getPublishersList().add(new BuildTrigger(config));
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        projectA.getBuildersList().add(builder);
+    }
+
     /**
      * Differs from {@link MockQueueItemAuthenticator} from the test-harness,
      * because authenticates the specified user for all jobs.
