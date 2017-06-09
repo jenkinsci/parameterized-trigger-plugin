@@ -532,13 +532,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             
             // We check the user permissions.
             // QueueItemAuthenticator should provide the user if it is configured correctly.
-            if (!project.hasPermission(Item.BUILD)) {
-                //TODO: It would be also great to print it to the build log, but there is no TaskListener
-                if (LOGGER.isLoggable(Level.WARNING)) {
-                    LOGGER.log(Level.WARNING, "Cannot schedule the build of {0} from {1}. "
-                                + "The authenticated build user {2} has no Item.BUILD permission",
-                            new Object[] {project, build, Jenkins.getAuthentication()});
-                }
+            //TODO: It would be also great to print it to the build log, but there is no TaskListener
+            if (!canTriggerProject(build, project, null)) {
                 return null;
             }
                    
@@ -547,6 +542,38 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         // Trigger is not compatible with un-parameterized jobs
         return null;
+    }
+    
+    /**
+     * Checks if the build can trigger a project.
+     * @param build Build, which is about to trigger the project
+     * @param job Job to be triggered
+     * @param taskListener Optional task listener
+     * @return {@code true} if the project can be scheduled.
+     *         {@code false} if there is a lack of permissions, details will be printed to the logs then.
+     */
+    /*package*/ static boolean canTriggerProject(@Nonnull AbstractBuild<?, ?> build, 
+            @Nonnull final Job job, @CheckForNull TaskListener taskListener) {
+        if (!job.hasPermission(Item.BUILD)) {
+            //TODO: It would be also great to print it to the build log, but there is no TaskListener
+            String message = null;
+            if (LOGGER.isLoggable(Level.WARNING) || taskListener != null) {
+               message = String.format("Cannot schedule the build of %s from %s. "
+                        + "The authenticated build user %s has no Item.BUILD permission",
+                        job, build, Jenkins.getAuthentication()); 
+            }
+            
+            if (message != null) {
+                LOGGER.log(Level.WARNING, message);
+            }
+            
+            if (taskListener != null) {
+                taskListener.error(message);
+            }
+            
+            return false;
+        }
+        return true;
     }
     
     /**

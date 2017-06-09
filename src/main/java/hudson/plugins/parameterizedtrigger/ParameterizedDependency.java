@@ -54,6 +54,10 @@ public class ParameterizedDependency extends Dependency {
 		if (!config.getCondition().isMet(build.getResult())){
 			return false;
 		}
+		              
+		if (!BuildTriggerConfig.canTriggerProject(build, getDownstreamProject(), listener)) {
+			return false;
+		}
 		try {
 			List<Action> actionList = config.getBaseActions(build, listener);
 			if (!actionList.isEmpty()) {
