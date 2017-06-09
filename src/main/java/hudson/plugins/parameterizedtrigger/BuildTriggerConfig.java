@@ -396,7 +396,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
-                        futures.add(schedule(build, project, list));
+                        futures.add(schedule(build, project, list, listener));
                     }
                 }
 
@@ -443,7 +443,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
-                        futures.put(project, schedule(build, project, list));
+                        futures.put(project, schedule(build, project, list, listener));
                     }
                 }
                 return futures;
@@ -511,8 +511,18 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return new UpstreamCause(build);
     }
 
+    /**
+     * @deprecated Use {@link #schedule(hudson.model.AbstractBuild, hudson.model.Job, java.util.List, hudson.model.TaskListener)}
+     */
     @CheckForNull
+    @Deprecated
     protected Future schedule(AbstractBuild<?, ?> build, final Job project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
+        return schedule(build, project, quietPeriod, list, TaskListener.NULL);
+    }
+    
+    @CheckForNull
+    protected Future schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull final Job project, int quietPeriod, 
+            @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
         // TODO Once it's in core (since 1.621) and LTS is out, switch to use new ParameterizedJobMixIn convenience method
         // From https://github.com/jenkinsci/jenkins/pull/1771
         Cause cause = createUpstreamCause(build);
@@ -533,7 +543,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             // We check the user permissions.
             // QueueItemAuthenticator should provide the user if it is configured correctly.
             //TODO: It would be also great to print it to the build log, but there is no TaskListener
-            if (!canTriggerProject(build, project, null)) {
+            if (!canTriggerProject(build, project, listener)) {
                 return null;
             }
                    
@@ -548,29 +558,19 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * Checks if the build can trigger a project.
      * @param build Build, which is about to trigger the project
      * @param job Job to be triggered
-     * @param taskListener Optional task listener
+     * @param taskListener Task listener
      * @return {@code true} if the project can be scheduled.
      *         {@code false} if there is a lack of permissions, details will be printed to the logs then.
      */
     /*package*/ static boolean canTriggerProject(@Nonnull AbstractBuild<?, ?> build, 
-            @Nonnull final Job job, @CheckForNull TaskListener taskListener) {
+            @Nonnull final Job job, @Nonnull TaskListener taskListener) {
         if (!job.hasPermission(Item.BUILD)) {
             //TODO: It would be also great to print it to the build log, but there is no TaskListener
-            String message = null;
-            if (LOGGER.isLoggable(Level.WARNING) || taskListener != null) {
-               message = String.format("Cannot schedule the build of %s from %s. "
+            String message = String.format("Cannot schedule the build of %s from %s. "
                         + "The authenticated build user %s has no Item.BUILD permission",
                         job, build, Jenkins.getAuthentication()); 
-            }
-            
-            if (message != null) {
-                LOGGER.log(Level.WARNING, message);
-            }
-            
-            if (taskListener != null) {
-                taskListener.error(message);
-            }
-            
+            LOGGER.log(Level.WARNING, message);
+            taskListener.error(message);
             return false;
         }
         return true;
@@ -590,13 +590,20 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return job.hasPermission(Item.BUILD);
     }
 
+    /**
+     * @deprecated Use {@link #schedule(hudson.model.AbstractBuild, hudson.model.Job, int, java.util.List, hudson.model.TaskListener)}
+     */
+    @Deprecated
     protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list) throws InterruptedException, IOException {
+        return schedule(build, project, list, TaskListener.NULL);
+    }
+    
+    protected Future schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull Job project, @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
         if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
-            return schedule(build, project, ((ParameterizedJobMixIn.ParameterizedJob) project).getQuietPeriod(), list);
+            return schedule(build, project, ((ParameterizedJobMixIn.ParameterizedJob) project).getQuietPeriod(), list, listener);
         } else {
-            return schedule(build, project, 0, list);
+            return schedule(build, project, 0, list, listener);
         }
-
     }
 
     /**
