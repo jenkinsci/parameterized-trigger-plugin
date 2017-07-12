@@ -400,6 +400,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                         future = schedule(build, project, list, listener);
                         if (future != null) {
                             futures.add(future);
+                        } else {
+                            LOGGER.log(Level.FINE, "The schedule for project {0} and build {1} failed due either security reasons or the trigger is not compatible with un-parameterized jobs", new Object[]{project.getFullName(), build.number});
                         }
                     }
                 }
