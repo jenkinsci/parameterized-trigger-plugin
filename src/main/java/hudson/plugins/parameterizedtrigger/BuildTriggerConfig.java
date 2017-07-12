@@ -401,7 +401,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                         if (future != null) {
                             futures.add(future);
                         } else {
-                            LOGGER.log(Level.FINE, "The schedule for project {0} and build {1} failed due either security reasons or the trigger is not compatible with un-parameterized jobs", new Object[]{project.getFullName(), build.number});
+                            reportSchedulingError(build, project, listener);
                         }
                     }
                 }
@@ -412,9 +412,20 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 			// don't trigger on this configuration
 		}
         return Collections.emptyList();
-	}
+    }
 
-
+    private void reportSchedulingError(@Nonnull Run<?, ?> run, @Nonnull Job<?, ?> jobToTrigger, @Nonnull BuildListener listener) {
+        // Do not print details to Build Listener, they have been reported previously in #canTriggerProject()
+        listener.error("Skipping " + jobToTrigger.getFullName() + "...");
+        if (LOGGER.isLoggable(Level.CONFIG)) {
+            String message = String.format("Cannot schedule project %s. Job type is not parameterized, "
+                + "or there is no Job/Build permission for the current authentication %s. "
+                + "Skipping...", jobToTrigger, Jenkins.getAuthentication().getName());
+             LOGGER.log(Level.CONFIG, String.format("%s: %s", run, message), 
+                     new UnsupportedOperationException("Cannot schedule job " + jobToTrigger.getFullName()));
+        }
+    }
+        
     /**
     *  @deprecated
     *      Use {@link #perform3(AbstractBuild, Launcher, BuildListener)}
@@ -449,7 +460,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
-                        futures.put(project, schedule(build, project, list, listener));
+                        final Future scheduled = schedule(build, project, list, listener);
+                        if (scheduled != null) {
+                            futures.put(project, scheduled);
+                        } else {
+                            reportSchedulingError(build, project, listener);
+                        }
                     }
                 }
                 return futures;
@@ -603,6 +619,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return schedule(build, project, list, TaskListener.NULL);
     }
     
+    @CheckForNull
     protected Future schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull Job project, @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
         if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
             return schedule(build, project, ((ParameterizedJobMixIn.ParameterizedJob) project).getQuietPeriod(), list, listener);
