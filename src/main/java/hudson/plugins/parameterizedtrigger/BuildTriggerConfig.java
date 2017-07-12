@@ -419,7 +419,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         listener.error("Skipping " + jobToTrigger.getFullName() + "...");
         if (LOGGER.isLoggable(Level.CONFIG)) {
             String message = String.format("Cannot schedule project %s. Job type is not parameterized, "
-                + "or there is no Item/Build permission for the current authentication %s. "
+                + "or there is no Job/Build permission for the current authentication %s. "
                 + "Skipping...", jobToTrigger, Jenkins.getAuthentication().getName());
              LOGGER.log(Level.CONFIG, String.format("%s: %s", run, message), 
                      new UnsupportedOperationException("Cannot schedule job " + jobToTrigger.getFullName()));
