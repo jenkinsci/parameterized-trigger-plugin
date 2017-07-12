@@ -387,6 +387,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         try {
 			if (condition.isMet(build.getResult())) {
+                Future future = null;
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
@@ -395,8 +396,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                             build, listener);
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
-
-                        futures.add(schedule(build, project, list, listener));
+                        //Future can be null as schedule can return null
+                        future = schedule(build, project, list, listener);
+                        if (future != null) {
+                            futures.add(future);
+                        }
                     }
                 }
 
