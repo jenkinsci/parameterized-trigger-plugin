@@ -23,6 +23,9 @@
     <f:entry field="encoding" title="${%File Encoding}">
       <f:textbox />
     </f:entry>
+    <f:entry field="textParamValueOnNewLine" title="${%Use TextParameterValue if property contains newline}">
+      <f:checkbox default="false" />
+    </f:entry>
   </f:advanced>
 
 </j:jelly>

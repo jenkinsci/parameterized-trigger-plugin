@@ -4,5 +4,10 @@
   <f:entry field="properties" title="Parameters">
     <f:textarea />
   </f:entry>
+  <f:advanced>
+    <f:entry field="textParamValueOnNewLine" title="${%Use TextParameterValue if property contains newline}">
+      <f:checkbox default="false" />
+    </f:entry>
+  </f:advanced>
 
 </j:jelly>

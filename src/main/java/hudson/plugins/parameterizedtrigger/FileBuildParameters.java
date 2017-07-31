@@ -19,6 +19,7 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.model.TextParameterValue;
 import hudson.util.FormValidation;
 
 import org.apache.commons.io.IOUtils;
@@ -45,6 +46,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 	private final String propertiesFile;
 	private final String encoding;
 	private final boolean failTriggerOnMissing;
+	private final boolean textParamValueOnNewLine;
 	
 	/*properties used for a matrix project*/
 	private final boolean useMatrixChild;
@@ -52,7 +54,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 	private final boolean onlyExactRuns;
 
 	@DataBoundConstructor
-	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns) {
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns, boolean textParamValueOnNewLine) {
 		this.propertiesFile = propertiesFile;
 		this.encoding = Util.fixEmptyAndTrim(encoding);
 		this.failTriggerOnMissing = failTriggerOnMissing;
@@ -64,6 +66,11 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			this.combinationFilter = null;
 			this.onlyExactRuns = false;
 		}
+		this.textParamValueOnNewLine = textParamValueOnNewLine;
+	}
+
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns) {
+		this(propertiesFile, encoding, failTriggerOnMissing, useMatrixChild, combinationFilter, onlyExactRuns, false);
 	}
 
 	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing) {
@@ -145,8 +152,13 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			Properties p = ParameterizedTriggerUtils.loadProperties(s);
 
 			for (Map.Entry<Object, Object> entry : p.entrySet()) {
-				values.add(new StringParameterValue(entry.getKey().toString(),
-						entry.getValue().toString()));
+				// support multi-line parameters correctly
+				s = entry.getValue().toString();
+				if(textParamValueOnNewLine && s.contains("\n")) {
+					values.add(new TextParameterValue(entry.getKey().toString(), s));
+				} else {
+					values.add(new StringParameterValue(entry.getKey().toString(), s));
+				}
 			}
 		}
 		return values;
@@ -187,6 +199,10 @@ public class FileBuildParameters extends AbstractBuildParameters {
 
 	public boolean getFailTriggerOnMissing() {
 		return failTriggerOnMissing;
+	}
+
+	public boolean getTextParamValueOnNewLine() {
+		return textParamValueOnNewLine;
 	}
 
 	public boolean isUseMatrixChild() {
