@@ -64,6 +64,7 @@ import java.lang.System;
 import jenkins.model.Jenkins;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.SleepBuilder;
 import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
@@ -77,7 +78,7 @@ public class TriggerBuilderTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
+
     private BlockableBuildTriggerConfig createTriggerConfig(String projects) {
         return new BlockableBuildTriggerConfig(projects, new BlockingBehaviour("never", "never", "never"), null);
     }
@@ -261,7 +262,7 @@ public class TriggerBuilderTest {
 
         assertLines(triggerProject.getLastBuild(),
                 "Waiting for the completion of project1",
-                "Skipping project2. The project is either disabled, or the authenticated user " + User.current() + 
+                "Skipping project2. The project is either disabled, or the authenticated user " + User.current() +
                         " has no Item.BUILD permissions, or the configuration has not been saved yet.",
                 "Waiting for the completion of project3");
     }
@@ -390,33 +391,33 @@ public class TriggerBuilderTest {
         FreeStyleProject project1 = r.createFreeStyleProject();
         FreeStyleProject project2 = r.createFreeStyleProject();
         FreeStyleProject project3 = r.createFreeStyleProject();
-        
+
         // project1 -> project2
         project1.getPublishersList().add(new hudson.tasks.BuildTrigger(project2.getName(), "SUCCESS"));
-        
+
         // promotion for project1.
         hudson.plugins.promoted_builds.JobPropertyImpl promote = new hudson.plugins.promoted_builds.JobPropertyImpl(project1);
         project1.addProperty(promote);
-        
+
         // promotion process to trigger project3
         PromotionProcess pp = promote.addProcess("TRIGGER");
         pp.conditions.add(new DownstreamPassCondition(project2.getName()));
         pp.getBuildSteps().add(new TriggerBuilder(createTriggerConfig(project3.getName())));
         // When using built-in BuildTrigger, set up as following:
         //pp.getBuildSteps().add(new hudson.tasks.BuildTrigger(project3.getName(), "SUCCESS"));
-        
+
         // Are there any other ways to enable a new BuildTrigger?
         Jenkins.getInstance().rebuildDependencyGraph();
-        
+
         project1.scheduleBuild2(0);
-        
+
         // wait for all builds finish
         long timeout = 30000;
         long till = System.currentTimeMillis() + timeout;
         FreeStyleBuild project1_build = null;
         FreeStyleBuild project2_build = null;
         FreeStyleBuild project3_build = null;
-        
+
         while(true) {
             Thread.sleep(1000);
             if(project1_build == null) {
@@ -434,7 +435,7 @@ public class TriggerBuilderTest {
             ) {
                 break;
             }
-            
+
             if(System.currentTimeMillis() > till) {
                 // something not completed.
                 assertNotNull(
@@ -464,11 +465,11 @@ public class TriggerBuilderTest {
                 break;
             }
         }
-        
+
         r.assertBuildStatusSuccess(project1_build);
         r.assertBuildStatusSuccess(project2_build);
         r.assertBuildStatusSuccess(project3_build);
-        
+
         UpstreamCause c = project3_build.getCause(UpstreamCause.class);
         assertNotNull(String.format("Failed to get UpstreamCause from project3(%s)", project3.getName()), c);
         assertEquals("UpstreamCause is not properly set.", project1.getName(), c.getUpstreamProject());
@@ -506,6 +507,24 @@ public class TriggerBuilderTest {
         FreeStyleBuild downstream2Build = downstream2.getLastBuild();
         r.assertBuildStatusSuccess(downstream1Build);
         r.assertBuildStatusSuccess(downstream2Build);
+    }
+
+    @Test
+    public void testProjectTriggeredOnce() throws Exception {
+        r.jenkins.setQuietPeriod(0);
+        Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
+        Project<?, ?> triggeredProject = r.createFreeStyleProject("project1");
+
+        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("project1", null, null);
+        TriggerBuilder triggerBuilder = new TriggerBuilder(config);
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+        triggerProject.getBuildersList().add(new SleepBuilder(500));
+
+
+        triggerProject.scheduleBuild2(0).get();
+        Thread.sleep(500);
+        assertEquals(triggeredProject.getBuilds().toArray().length, 1);
     }
 
     private void assertLines(Run<?,?> build, String... lines) throws IOException {
