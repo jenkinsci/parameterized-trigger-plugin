@@ -190,17 +190,12 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
     }
 
     private boolean canDeclare(AbstractProject owner) {
-        // In Hudson 1.341+ builds will be triggered via DependencyGraph
-        // Inner class added in Hudson 1.341
-        String ownerClassName = owner.getClass().getName();
-        return DependencyGraph.class.getClasses().length > 0
-                // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
-                && !ownerClassName.equals("hudson.plugins.promoted_builds.PromotionProcess");
+        // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
+        return !owner.getClass().getName().equals("hudson.plugins.promoted_builds.PromotionProcess");
     }
 
     @Override
     public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
-        // Can only add dependencies in Hudson 1.341 or higher
         if (!canDeclare(owner)) return;
 
         for (BuildTriggerConfig config : configs) {
