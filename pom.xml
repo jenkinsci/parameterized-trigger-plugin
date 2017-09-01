@@ -18,7 +18,7 @@
 
     <artifactId>parameterized-trigger</artifactId>
     <packaging>hpi</packaging>
-    <version>2.35.2-SNAPSHOT</version>
+    <version>2.35.2</version>
     <name>Jenkins Parameterized Trigger plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin</url>
 
