@@ -5,7 +5,7 @@
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
         <version>2.31</version>
-        <relativePath/>
+        <relativePath />
     </parent>
     
     <licenses>
@@ -18,7 +18,7 @@
 
     <artifactId>parameterized-trigger</artifactId>
     <packaging>hpi</packaging>
-    <version>2.35.2-SNAPSHOT</version>
+    <version>2.35.2</version>
     <name>Jenkins Parameterized Trigger plugin</name>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin</url>
 
@@ -168,7 +168,7 @@
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/parameterized-trigger-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:jenkinsci/parameterized-trigger-plugin.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>parameterized-trigger-2.35.2</tag>
     </scm>
 
     <repositories>
