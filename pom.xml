@@ -4,14 +4,14 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>2.31</version>
+        <version>3.1</version>
         <relativePath />
     </parent>
     
     <licenses>
         <license>
             <name>The MIT License (MIT)</name>
-            <url>http://opensource.org/licenses/MIT</url>
+            <url>https://opensource.org/licenses/MIT</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -20,7 +20,7 @@
     <packaging>hpi</packaging>
     <version>2.35.3-SNAPSHOT</version>
     <name>Jenkins Parameterized Trigger plugin</name>
-    <url>http://wiki.jenkins-ci.org/display/JENKINS/Parameterized+Trigger+Plugin</url>
+    <url>https://wiki.jenkins.io/display/JENKINS/Parameterized+Trigger+Plugin</url>
 
     <developers>
         <developer>
@@ -174,19 +174,20 @@
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
+            <url>https://repo.jenkins-ci.org/public/</url>
         </repository>
     </repositories>
 
     <pluginRepositories>
         <pluginRepository>
             <id>repo.jenkins-ci.org</id>
-            <url>http://repo.jenkins-ci.org/public/</url>
+            <url>https://repo.jenkins-ci.org/public/</url>
         </pluginRepository>
     </pluginRepositories>
     
     <properties>
       <jenkins.version>1.642.3</jenkins.version>
+      <java.level>7</java.level>
       <findbugs.failOnError>false</findbugs.failOnError>
     </properties>
 </project>  
