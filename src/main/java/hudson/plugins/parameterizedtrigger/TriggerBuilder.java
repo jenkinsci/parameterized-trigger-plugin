@@ -42,6 +42,7 @@ import hudson.tasks.Builder;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.User;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.util.IOException2;
 import jenkins.model.DependencyDeclarer;
 import org.kohsuke.accmod.Restricted;
@@ -90,7 +91,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
-                ListMultimap<Job, Future<Run>> futures = config.perform3(build, launcher, listener);
+                ListMultimap<Job, QueueTaskFuture<? extends AbstractBuild<?,?>>> futures = config.perform3(build, launcher, listener);
                 // Only contains resolved projects
                 List<Job> projectList = config.getJobs(build.getRootBuild().getProject().getParent(), env);
 
@@ -140,7 +141,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                     + " or the configuration has not been saved yet.");
                             continue;
                         }
-                        for (Future<Run> future : futures.get(p)) {
+                        for (QueueTaskFuture<? extends AbstractBuild<?,?>> future : futures.get(p)) {
                             try {
                                 if (future != null ) {
                                     listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));

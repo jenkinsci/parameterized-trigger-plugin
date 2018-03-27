@@ -28,6 +28,7 @@ import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.*;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -91,7 +92,7 @@ public class TriggerBuilderTest {
         when(config.getProjects(any(EnvVars.class))).thenReturn(disabledJob.getName());
         when(config.getBlock()).thenReturn(new BlockingBehaviour(Result.FAILURE, Result.FAILURE, Result.FAILURE));
 
-        final ArrayListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
+        final ArrayListMultimap<Job, QueueTaskFuture<? extends AbstractBuild<?,?>>> futures = ArrayListMultimap.create();
         when(config.perform3(any(AbstractBuild.class),
                 Mockito.any(Launcher.class),
                 Mockito.any(BuildListener.class))).thenReturn(futures);
