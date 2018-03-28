@@ -30,11 +30,16 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.Result;
+import hudson.model.queue.QueueTaskFuture;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
@@ -49,74 +54,92 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public static final String BUILD_RESULT_VARIABLE_PREFIX = "TRIGGERED_BUILD_RESULT_";
   public static final String BUILD_RUN_COUNT_PREFIX = "TRIGGERED_BUILD_RUN_COUNT_";
   public static final String RUN = "_RUN_";
-  //now unused as part of map
+  // now unused as part of map
   private transient String buildName;
   private transient int buildNumber;
-  
+
   // used in version =< 2.21.
   // this is now migrated to this.builds.
-  private transient Map<String, List<BuildReference>> buildRefs;
+  private transient Map<String, List<AbstractBuildReference>> buildRefs;
 
-  private List<BuildReference> builds;
-  private BuildReference lastReference;
+  private List<AbstractBuildReference> builds;
 
-  public BuildInfoExporterAction(BuildReference buildRef) {
+  // used in version =< 2.32.
+  // this is now migrated to this.lastReference2.
+  private transient BuildReference lastReference;
+  private AbstractBuildReference lastReference2;
+
+  public BuildInfoExporterAction(AbstractBuildReference buildRef) {
     super();
 
-    this.builds = new ArrayList<BuildReference>();
+    this.builds = new ArrayList<AbstractBuildReference>();
     addBuild(buildRef);
-    lastReference = buildRef;
+    this.lastReference2 = buildRef;
+  }
+
+  public BuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, AbstractBuildReference buildRef) {
+    this(buildRef);
   }
 
   public BuildInfoExporterAction(String buildName, int buildNumber, AbstractBuild<?, ?> parentBuild, Result buildResult) {
     this(new BuildReference(buildName, buildNumber, buildResult));
   }
 
-  static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, String triggeredProject, int buildNumber, Result buildResult) {
+  static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, QueueTaskFuture<? extends AbstractBuild> buildFuture) {
     BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
+    FutureBuildReference buildRef = new FutureBuildReference(buildFuture);
     if (action == null) {
-      action = new BuildInfoExporterAction(triggeredProject, buildNumber, parentBuild, buildResult);
+      action = new BuildInfoExporterAction(parentBuild, buildRef);
       parentBuild.getActions().add(action);
     } else {
-      action.addBuildReference(triggeredProject, buildNumber, buildResult);
+      action.addBuildReference(buildRef);
     }
     return action;
   }
 
   static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, String triggeredProject) {
     BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
+    StaticBuildReference buildRef = new StaticBuildReference(triggeredProject);
     if (action == null) {
-
-      action = new BuildInfoExporterAction(new BuildReference(triggeredProject));
+      action = new BuildInfoExporterAction(buildRef);
       parentBuild.getActions().add(action);
     } else {
-      action.addBuildReference(new BuildReference(triggeredProject));
+      action.addBuildReference(buildRef);
     }
     return action;
   }
 
-  private void addBuild(BuildReference br) {
+  private void addBuild(AbstractBuildReference br) {
     this.builds.add(br);
 
-    if (br.buildNumber != 0) {
-      this.lastReference = br;
+    if (br.getBuildNumber() != 0) {
+      this.lastReference2 = br;
     }
   }
 
-  public void addBuildReference(String triggeredProject, int buildNumber, Result buildResult) {
-    BuildReference buildRef = new BuildReference(triggeredProject, buildNumber, buildResult);
+  public void addBuildReference(AbstractBuildReference buildRef) {
     addBuild(buildRef);
   }
 
-  public void addBuildReference(BuildReference buildRef) {
-    addBuild(buildRef);
+  public static abstract class AbstractBuildReference {
+    public abstract String getProjectName();
+
+    public abstract int getBuildNumber();
+
+    public abstract Result getBuildResult();
+
+    public abstract void update();
   }
 
-  public static class BuildReference {
+  /**
+   * @deprecated kept for compatibility
+   */
+  @Deprecated
+  public static class BuildReference extends AbstractBuildReference {
 
-    public final String projectName;
-    public final int buildNumber;
-    public final Result buildResult;
+    public String projectName;
+    public int buildNumber;
+    public Result buildResult;
 
     public BuildReference(String projectName, int buildNumber, Result buildResult) {
       this.projectName = projectName;
@@ -128,6 +151,111 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
       this.projectName = projectName;
       this.buildNumber = 0;
       this.buildResult = Result.NOT_BUILT;
+    }
+
+    public String getProjectName() {
+      return projectName;
+    }
+
+    public int getBuildNumber() {
+      return buildNumber;
+    }
+
+    public Result getBuildResult() {
+      return buildResult;
+    }
+
+    @Override
+    public void update() {
+
+    }
+  }
+
+  public static class StaticBuildReference extends AbstractBuildReference {
+
+    public String projectName;
+    public int buildNumber;
+    public Result buildResult;
+
+    public StaticBuildReference(String projectName, int buildNumber, Result buildResult) {
+      this.projectName = projectName;
+      this.buildNumber = buildNumber;
+      this.buildResult = buildResult;
+    }
+
+    public StaticBuildReference(final String projectName) {
+      this.projectName = projectName;
+      this.buildNumber = 0;
+      this.buildResult = Result.NOT_BUILT;
+    }
+
+    public String getProjectName() {
+      return projectName;
+    }
+
+    public int getBuildNumber() {
+      return buildNumber;
+    }
+
+    public Result getBuildResult() {
+      return buildResult;
+    }
+
+    @Override
+    public void update() {
+
+    }
+  }
+
+  public static class FutureBuildReference extends AbstractBuildReference {
+
+    private final transient QueueTaskFuture<? extends AbstractBuild> buildFuture;
+
+    public String projectName = "";
+    public int buildNumber = 0;
+    public Result buildResult = Result.NOT_BUILT;
+
+    public FutureBuildReference(QueueTaskFuture<? extends AbstractBuild> buildFuture) {
+      this.buildFuture = buildFuture;
+    }
+
+    public void update() {
+      if (buildFuture == null) {
+        return;
+      }
+
+      Future<? extends AbstractBuild> startCondition = buildFuture.getStartCondition();
+      if (!startCondition.isDone() || startCondition.isCancelled()) {
+        return;
+      }
+
+      try {
+        AbstractBuild build = startCondition.get();
+        projectName = build.getParent().getFullName();
+        buildNumber = build.getNumber();
+        buildResult = build.getResult();
+      } catch (CancellationException e) {
+        return;
+      } catch (InterruptedException e) {
+        return;
+      } catch (ExecutionException e) {
+        return;
+      }
+    }
+
+    public String getProjectName() {
+      update();
+      return projectName;
+    }
+
+    public int getBuildNumber() {
+      update();
+      return buildNumber;
+    }
+
+    public Result getBuildResult() {
+      update();
+      return buildResult;
     }
   }
 
@@ -150,8 +278,8 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
 
     // Note: this will only indicate the last project in the list that is ran
-    env.put(JOB_NAME_VARIABLE, lastReference.projectName.replaceAll("[^a-zA-Z0-9]+", "_"));
-    //all projects triggered.
+    env.put(JOB_NAME_VARIABLE, getLastReference().getProjectName().replaceAll("[^a-zA-Z0-9]+", "_"));
+    // all projects triggered.
     // this should not include projects that donot have a build item.
     String sanatizedProjectList = getProjectListString(",");
     env.put(ALL_JOBS_NAME_VARIABLE, sanatizedProjectList);
@@ -161,37 +289,38 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
       // all buildnumbers, lastbuildnumber
       // all Run results, last build result
       String sanatizedBuildName = project.replaceAll("[^a-zA-Z0-9]+", "_");
-      List<BuildReference> refs = getBuildRefs(project);
+      List<AbstractBuildReference> refs = getBuildRefs(project);
 
       env.put(ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, getBuildNumbersString(refs, ","));
       env.put(BUILD_RUN_COUNT_PREFIX + sanatizedBuildName, Integer.toString(refs.size()));
-      for (BuildReference br : refs) {
-        if (br.buildNumber != 0) {
-          String tiggeredBuildRunResultKey = BUILD_RESULT_VARIABLE_PREFIX + sanatizedBuildName + RUN + Integer.toString(br.buildNumber);
-          env.put(tiggeredBuildRunResultKey, br.buildResult.toString());
+      for (AbstractBuildReference br : refs) {
+        if (br.getBuildNumber() != 0) {
+          String tiggeredBuildRunResultKey = BUILD_RESULT_VARIABLE_PREFIX + sanatizedBuildName + RUN + Integer.toString(br.getBuildNumber());
+          env.put(tiggeredBuildRunResultKey, br.getBuildResult().toString());
         }
       }
-      BuildReference lastBuild = null;
+      AbstractBuildReference lastBuild = null;
       for (int i = (refs.size()); i > 0; i--) {
-        if (refs.get(i - 1).buildNumber != 0) {
+        if (refs.get(i - 1).getBuildNumber() != 0) {
           lastBuild = refs.get(i - 1);
         }
         break;
       }
       if (lastBuild != null) {
-        env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, Integer.toString(lastBuild.buildNumber));
-        env.put(BUILD_RESULT_VARIABLE_PREFIX + sanatizedBuildName, lastBuild.buildResult.toString());
+        env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, Integer.toString(lastBuild.getBuildNumber()));
+        env.put(BUILD_RESULT_VARIABLE_PREFIX + sanatizedBuildName, lastBuild.getBuildResult().toString());
       }
     }
   }
 
-    private List<BuildReference> getBuildRefs(String project) {
-        List<BuildReference> refs = new ArrayList<BuildReference>();
-        for (BuildReference br : builds) {
-            if (br.projectName.equals(project)) refs.add(br);
-        }
-        return refs;
+  private List<AbstractBuildReference> getBuildRefs(String project) {
+    List<AbstractBuildReference> refs = new ArrayList<AbstractBuildReference>();
+    for (AbstractBuildReference br : builds) {
+      if (br.getProjectName().equals(project))
+        refs.add(br);
     }
+    return refs;
+  }
 
   /**
    * Gets all the builds triggered from this one, filters out the items that
@@ -205,11 +334,11 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
     List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
 
-    for (BuildReference br : this.builds) {
-        AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-              Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
-        if (br.buildNumber != 0) {
-            builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
+    for (AbstractBuildReference br : this.builds) {
+      AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
+    		  Jenkins.getInstance().getItemByFullName(br.getProjectName(), AbstractProject.class);
+        if (br.getBuildNumber() != 0) {
+          builds.add((project != null)?project.getBuildByNumber(br.getBuildNumber()):null);
         }
     }
     return builds;
@@ -226,12 +355,12 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   public List<AbstractProject<?, ?>> getTriggeredProjects() {
     List<AbstractProject<?, ?>> projects = new ArrayList<AbstractProject<?, ?>>();
 
-    for (BuildReference br : this.builds) {
-        if (br.buildNumber == 0) {
-            AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-                    Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
-            projects.add(project);
-        }
+    for (AbstractBuildReference br : this.builds) {
+      if (br.getBuildNumber() == 0) {
+        AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
+        		Jenkins.getInstance().getItemByFullName(br.getProjectName(), AbstractProject.class);
+        projects.add(project);
+      }
     }
     return projects;
   }
@@ -243,16 +372,19 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    * @return
    */
   public Object readResolve() {
-    if (this.lastReference == null) {
-      this.lastReference = new BuildReference(this.buildName, this.buildNumber, Result.NOT_BUILT);
+    if (this.lastReference2 == null) {
+      this.lastReference2 = this.lastReference;
     }
     if (this.builds == null) {
-      this.builds = new ArrayList<BuildReference>();
+      this.builds = new ArrayList<AbstractBuildReference>();
     }
     if (this.buildRefs != null) {
-        for (List<BuildReference> buildReferences : buildRefs.values()) {
-            this.builds.addAll(buildReferences);
-        }
+      for (List<AbstractBuildReference> buildReferences : buildRefs.values()) {
+        this.builds.addAll(buildReferences);
+      }
+    }
+    if (this.getLastReference() == null) {
+      this.lastReference2 = new StaticBuildReference(this.buildName, this.buildNumber, Result.NOT_BUILT);
     }
     return this;
   }
@@ -260,23 +392,24 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   /**
    * Gets a string for all of the build numbers
    *
-   * @param refs List of build references to process.
+   * @param refs
+   *          List of build references to process.
    * @param separator
    * @return String containing all the build numbers from refs, never null but
-   * can be empty
+   *         can be empty
    */
-  private String getBuildNumbersString(List<BuildReference> refs, String separator) {
+  private String getBuildNumbersString(List<AbstractBuildReference> refs, String separator) {
     StringBuilder buf = new StringBuilder();
     boolean first = true;
 
-    for (BuildReference s : refs) {
-      if (s.buildNumber != 0) {
+    for (AbstractBuildReference s : refs) {
+      if (s.getBuildNumber() != 0) {
         if (first) {
           first = false;
         } else {
           buf.append(separator);
         }
-        buf.append(s.buildNumber);
+        buf.append(s.getBuildNumber());
       }
     }
     return buf.toString();
@@ -312,11 +445,29 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
   private Set<String> getProjectsWithBuilds() {
     Set<String> projects = new HashSet<String>();
 
-    for (BuildReference br : this.builds) {
-        if (br.buildNumber != 0) {
-          projects.add(br.projectName);
-        }
+    for (AbstractBuildReference br : this.builds) {
+      if (br.getBuildNumber() != 0) {
+        projects.add(br.getProjectName());
+      }
     }
     return projects;
+  }
+
+  private AbstractBuildReference getLastReference() {
+    // need to update last reference based on latest state of the references
+    for (int i = this.builds.size() - 1; i >= 0; --i) {
+      AbstractBuildReference br = this.builds.get(i);
+      if (br.getBuildNumber() != 0) {
+        lastReference2 = br;
+        break;
+      }
+    }
+    return lastReference2;
+  }
+
+  public void updateReferences() {
+    for (AbstractBuildReference br : this.builds) {
+      br.update();
+    }
   }
 }
