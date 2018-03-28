@@ -142,26 +142,45 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                             continue;
                         }
                         for (QueueTaskFuture<? extends AbstractBuild<?,?>> future : futures.get(p)) {
-                            try {
-                                if (future != null ) {
-                                    listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                    Run b = future.get();
-                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
-                                    BuildInfoExporterAction.addBuildInfoExporterAction(build, future);
-
-                                    if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
-                                        build.setResult(config.getBlock().mapBuildResult(b.getResult()));
-                                    } else {
-                                        buildStepResult = false;
-                                    }
-                                } else {
-                                    listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo(p) + ". The project was not triggered by some reason.");
-                                }
-                            } catch (CancellationException x) {
-                                throw new AbortException(p.getFullDisplayName() +" aborted.");
+                            if (future != null ) {
+                                listener.getLogger().println("Register " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+                                BuildInfoExporterAction.addBuildInfoExporterAction(build, future);
+                            } else {
+                                listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo(p) + ". The project was not triggered by some reason.");
                             }
                         }
                     }
+                }
+                
+                //handle blocking configs
+                for (Job p : projectList) {
+                	//handle non-buildable projects
+                	if(!config.canBeScheduled(p)){
+                		continue;
+                	}
+                    for (QueueTaskFuture<? extends AbstractBuild<?,?>> future : futures.get(p)) {
+                        try {
+                            if (future != null ) {
+                                listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+                                Run b = future.get();
+                                listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
+                                if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
+                                    build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                                } else {
+                                    buildStepResult = false;
+                                }
+                            } else {
+                                listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo(p) + ". The project was not triggered by some reason.");
+                            }
+                        } catch (CancellationException x) {
+                            throw new AbortException(p.getFullDisplayName() +" aborted.");
+                        }
+                    }
+                    
+                    //update the references by replacing the indirection to the futures by the values of the last execution
+                    BuildInfoExporterAction action = build.getAction(BuildInfoExporterAction.class);
+                    if (action != null)
+                        action.updateReferences();
                 }
             }
         } catch (ExecutionException e) {
