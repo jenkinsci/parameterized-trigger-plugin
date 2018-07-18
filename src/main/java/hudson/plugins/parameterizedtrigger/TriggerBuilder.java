@@ -87,7 +87,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
         env.overrideAll(build.getBuildVariables());
 
         boolean buildStepResult = true;
-        final int FIVE_SECONDS = 5000;
+        final int SLEEP_MILLISECONDS = 5000;
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
@@ -147,7 +147,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                     listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                                     while(!future.isDone()) {
                                         listener.getLogger().print(".");
-                                        Thread.sleep(FIVE_SECONDS);
+                                        Thread.sleep(SLEEP_MILLISECONDS);
                                     }
                                     Run b = future.get();
                                     listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
