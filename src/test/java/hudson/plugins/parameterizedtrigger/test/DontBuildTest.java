@@ -34,10 +34,18 @@ import hudson.plugins.parameterizedtrigger.ResultCondition;
 
 import java.io.IOException;
 
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class DontBuildTest extends HudsonTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+public class DontBuildTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
 	public static final class DontBuildTrigger extends AbstractBuildParameters {
 		boolean called = false;
 		@Override
@@ -48,16 +56,17 @@ public class DontBuildTest extends HudsonTestCase {
 		}
 	}
 
+	@Test
 	public void test() throws Exception {
 
-		Project projectA = createFreeStyleProject("projectA");
+		Project projectA = r.createFreeStyleProject("projectA");
 		DontBuildTrigger dbt = new DontBuildTrigger();
 		projectA.getPublishersList().add(
 			new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, dbt)));
 
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.setQuietPeriod(0);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0).get();
 		Thread.sleep(1000);

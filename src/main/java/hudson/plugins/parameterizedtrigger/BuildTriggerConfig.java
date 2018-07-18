@@ -14,6 +14,7 @@ import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
 import hudson.model.Result;
 import hudson.model.Cause;
+import hudson.model.CauseAction;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -25,19 +26,28 @@ import hudson.model.Job;
 import hudson.model.ParametersAction;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.model.queue.Tasks;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.plugins.promoted_builds.Promotion;
+import hudson.security.ACL;
 import hudson.tasks.Messages;
 import hudson.Util;
+import hudson.model.User;
 import hudson.util.FormValidation;
 import hudson.util.VersionNumber;
 
 import jenkins.model.Jenkins;
+import jenkins.model.ParameterizedJobMixIn;
+import jenkins.security.QueueItemAuthenticatorConfiguration;
+import org.acegisecurity.Authentication;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,11 +55,19 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.acegisecurity.AccessDeniedException;
+import javax.annotation.Nonnull;
+import jenkins.security.QueueItemAuthenticator;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
+    
+    private static final Logger LOGGER = Logger.getLogger(BuildTriggerConfig.class.getName());
 
 	private final List<AbstractBuildParameters> configs;
     private final List<AbstractBuildParameterFactory> configFactories;
@@ -57,17 +75,30 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	private String projects;
 	private final ResultCondition condition;
 	private boolean triggerWithNoParameters;
+        private boolean triggerFromChildProjects;
 
-    public BuildTriggerConfig(String projects, ResultCondition condition,
-            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+    public BuildTriggerConfig(String projects, ResultCondition condition, boolean triggerWithNoParameters, 
+            List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs, boolean triggerFromChildProjects) {
         this.projects = projects;
         this.condition = condition;
         this.triggerWithNoParameters = triggerWithNoParameters;
         this.configFactories = configFactories;
         this.configs = Util.fixNull(configs);
+        this.triggerFromChildProjects = triggerFromChildProjects;
+    }
+
+    @Deprecated
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            boolean triggerWithNoParameters, List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
+        this(projects, condition, triggerWithNoParameters, configFactories, configs, false);
     }
 
     @DataBoundConstructor
+    public BuildTriggerConfig(String projects, ResultCondition condition,
+            boolean triggerWithNoParameters, List<AbstractBuildParameters> configs, boolean triggerFromChildProjects) {
+        this(projects, condition, triggerWithNoParameters, null, configs, triggerFromChildProjects);
+    }
+    
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
         this(projects, condition, triggerWithNoParameters, null, configs);
@@ -107,35 +138,54 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	public boolean getTriggerWithNoParameters() {
         return triggerWithNoParameters;
     }
-
-    /**
-     * @deprecated
-     *      Use {@link #getProjectList(ItemGroup, EnvVars)}
-     */
-    public List<AbstractProject> getProjectList(EnvVars env) {
-        return getProjectList(null,env);
+        
+    public boolean isTriggerFromChildProjects(){
+        return triggerFromChildProjects;
     }
 
     /**
+     * @deprecated
+     *      Use {@link #getJobs(ItemGroup, EnvVars)}
+     */
+    public List<AbstractProject> getProjectList(EnvVars env) {
+        return getProjectList(null, env);
+    }
+
+    /**
+     * Deprecated: get all projects that are AbstractProject instances
      * @param env Environment variables from which to expand project names; Might be {@code null}.
      * @param context
      *      The container with which to resolve relative project names.
+     * @deprecated
+     *      Use {@link #getJobs(ItemGroup, EnvVars)}
      */
+    @Deprecated
 	public List<AbstractProject> getProjectList(ItemGroup context, EnvVars env) {
-        List<AbstractProject> projectList = new ArrayList<AbstractProject>();
-        projectList.addAll(Items.fromNameList(context, getProjects(env), AbstractProject.class));
-		return projectList;
+        return Util.filter(getJobs(context, env), AbstractProject.class);
 	}
+
+    /**
+     * Get list of all projects, including workflow job types
+     * @param env Environment variables from which to expand project names; Might be {@code null}.
+     * @param context
+     *      The container with which to resolve relative project names.
+     *      If the user has no {@link Item#READ} permission, the job won't be added to the list.
+     */
+    public List<Job> getJobs(ItemGroup context, EnvVars env) {
+        List<Job> projectList = new ArrayList<Job>();
+        projectList.addAll(readableItemsFromNameList(context, getProjects(env), Job.class));
+        return projectList;
+    }
 
     /**
      * Provides a SubProjectData object containing four set, each containing projects to be displayed on the project
      * view under 'Subprojects' section.<br>
-     * <li>
-     * The first set contains fixed (statically) configured project to be trigger.
-     * The second set contains dynamically configured project, resolved by back tracking builds environment variables.
-     * The third set contains other recently triggered project found during back tracking builds
-     * The fourth set contains dynamically configured project that couldn't be resolved or project that doesn't exists.
-     * </li>
+     * <ul>
+     * <li>The first set contains fixed (statically) configured project to be trigger.</li>
+     * <li>The second set contains dynamically configured project, resolved by back tracking builds environment variables.</li>
+     * <li>The third set contains other recently triggered project found during back tracking builds</li>
+     * <li>The fourth set contains dynamically configured project that couldn't be resolved or project that doesn't exists.</li>
+     * </ul>
      *
      * @param context   The container with which to resolve relative project names.
      * @return A data object containing sets with projects
@@ -186,7 +236,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
                 // But we can still get statically defined project
-                subProjectData.getFixed().addAll(Items.fromNameList(context.getParent(), projects, AbstractProject.class));
+                subProjectData.getFixed().addAll(readableItemsFromNameList(context.getParent(), projects, AbstractProject.class));
+                
                 // Remove them from unsolved
                 for (AbstractProject staticProject : subProjectData.getFixed()) {
                     subProjectData.getUnresolved().remove(staticProject.getFullName());
@@ -211,6 +262,34 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 resolveProject((AbstractBuild)context.getLastSuccessfulBuild(), subProjectData);
             }
         }
+    }
+    
+    /**
+     * Retrieves readable items from the list.
+     * @param <T> Type of the item
+     * @param context Current item
+     * @param list String list of items
+     * @param type Type of items to be retrieved
+     * @return List of readable items, others will be skipped if {@link AccessDeniedException} happens
+     */
+    private static <T extends Item> List<T> readableItemsFromNameList(
+            ItemGroup context, @Nonnull String list, @Nonnull Class<T> type) {
+        Jenkins hudson = Jenkins.getInstance();
+
+        List<T> r = new ArrayList<T>();
+        StringTokenizer tokens = new StringTokenizer(list,",");
+        while(tokens.hasMoreTokens()) {
+            String fullName = tokens.nextToken().trim();
+            T item = null;
+            try {
+                item = hudson.getItem(fullName, context, type);
+            } catch (AccessDeniedException ex) {
+                // Ignore, item won't be added to the resulting list
+            }
+            if(item!=null)
+                r.add(item);
+        }
+        return r;
     }
 
     /**
@@ -244,7 +323,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 destinationSet = subProjectData.getDynamic();
             }
 
-            AbstractProject resolvedProject = Jenkins.getInstance().getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
+            final Jenkins jenkins = Jenkins.getInstance();
+            AbstractProject resolvedProject = null;
+            try {
+                resolvedProject = jenkins == null ? null :
+                        jenkins.getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
+            } catch (AccessDeniedException ex) {
+                // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
+            }
             if (resolvedProject != null) {
                 destinationSet.add(resolvedProject);
                 unsolvedProjectIterator.remove();
@@ -253,7 +339,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         if (build != null && build.getAction(BuildInfoExporterAction.class) != null) {
             String triggeredProjects = build.getAction(BuildInfoExporterAction.class).getProjectListString(",");
-            subProjectData.getTriggered().addAll(Items.fromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
+            subProjectData.getTriggered().addAll(readableItemsFromNameList(build.getParent().getParent(), triggeredProjects, AbstractProject.class));
         }
     }
 
@@ -280,7 +366,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 		return actions;
 	}
 
-    List<Action> getBuildActions(List<Action> baseActions, AbstractProject<?,?> project) {
+    List<Action> getBuildActions(List<Action> baseActions, Job<?,?> project) {
             List<Action> actions = new ArrayList<Action>(baseActions);
 
             ProjectSpecificParametersActionFactory transformer = new ProjectSpecificParametersActionFactory(
@@ -302,17 +388,23 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         try {
         	Result previousResult = build.getPreviousBuild() != null ? build.getPreviousBuild().getResult() : build.getResult();
-			if (condition.isMet(build.getResult(), previousResult)) {
+          if (condition.isMet(build.getResult(), previousResult)) {
+                Future future = null;
                 List<Future<AbstractBuild>> futures = new ArrayList<Future<AbstractBuild>>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(
                             ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
                             build, listener);
-                    for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                    for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
-
-                        futures.add(schedule(build, project, list));
+                        //Future can be null as schedule can return null
+                        future = schedule(build, project, list, listener);
+                        if (future != null) {
+                            futures.add(future);
+                        } else {
+                            reportSchedulingError(build, project, listener);
+                        }
                     }
                 }
 
@@ -322,23 +414,61 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 			// don't trigger on this configuration
 		}
         return Collections.emptyList();
-	}
+    }
 
+    private void reportSchedulingError(@Nonnull Run<?, ?> run, @Nonnull Job<?, ?> jobToTrigger, @Nonnull BuildListener listener) {
+        // Do not print details to Build Listener, they have been reported previously in #canTriggerProject()
+        listener.error("Skipping " + jobToTrigger.getFullName() + "...");
+        if (LOGGER.isLoggable(Level.CONFIG)) {
+            String message = String.format("Cannot schedule project %s. Job type is not parameterized, "
+                + "or there is no Job/Build permission for the current authentication %s. "
+                + "Skipping...", jobToTrigger, Jenkins.getAuthentication().getName());
+             LOGGER.log(Level.CONFIG, String.format("%s: %s", run, message), 
+                     new UnsupportedOperationException("Cannot schedule job " + jobToTrigger.getFullName()));
+        }
+    }
+        
+    /**
+    *  @deprecated
+    *      Use {@link #perform3(AbstractBuild, Launcher, BuildListener)}
+    */
+    @Deprecated
     public ListMultimap<AbstractProject, Future<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<Job, Future<Run>> initialResult = perform3(build, launcher, listener);
+        ListMultimap<AbstractProject, Future<AbstractBuild>> output = ArrayListMultimap.create();
+
+        for (Map.Entry<Job, Future<Run>> entry : initialResult.entries()) {
+            if (entry.getKey() instanceof AbstractProject) {
+                // Due to type erasure we can't check if the Future<Run> is a Future<AbstractBuild>
+                // Plugins extending the method and dependent on the perform2 method will break if we trigger on a WorkflowJob
+                output.put((AbstractProject)entry.getKey(), (Future)entry.getValue());
+            }
+        }
+
+        return output;
+    }
+
+    //Replaces perform2 with more general form
+    public ListMultimap<Job, Future<Run>> perform3(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars env = build.getEnvironment(listener);
         env.overrideAll(build.getBuildVariables());
 
         try {
-        	Result previousResult = build.getPreviousBuild() != null ? build.getPreviousBuild().getResult() : build.getResult();
+            Result previousResult = build.getPreviousBuild() != null ? build.getPreviousBuild().getResult() : build.getResult();
             if (getCondition().isMet(build.getResult(), previousResult)) {
-                ListMultimap<AbstractProject, Future<AbstractBuild>> futures = ArrayListMultimap.create();
+                ListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
-                    for (AbstractProject project : getProjectList(build.getRootBuild().getProject().getParent(),env)) {
+                    for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
-                        futures.put(project, schedule(build, project, list));
+                        final Future scheduled = schedule(build, project, list, listener);
+                        if (scheduled != null) {
+                            futures.put(project, scheduled);
+                        } else {
+                            reportSchedulingError(build, project, listener);
+                        }
                     }
                 }
                 return futures;
@@ -384,46 +514,130 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     /**
      * Create UpstreamCause that triggers a downstream build.
-     * 
+     *
      * If the upstream build is a promotion, return the UpstreamCause
      * as triggered by the target of the promotion.
-     * 
+     *
      * @param build an upstream build
      * @return UpstreamCause
      */
-    protected Cause createUpstreamCause(AbstractBuild<?, ?> build) {
+    protected Cause createUpstreamCause(Run<?, ?> build) {
         if(Jenkins.getInstance().getPlugin("promoted-builds") != null) {
             // Test only when promoted-builds is installed.
             if(build instanceof Promotion) {
                 Promotion promotion = (Promotion)build;
-                
+
                 // This cannot be done for PromotionCause#PromotionCause is in a package scope.
                 // return new PromotionCause(build, promotion.getTarget());
-                
+
                 return new UpstreamCause((Run<?,?>)promotion.getTarget());
             }
         }
-        return new UpstreamCause((Run) build);
+        return new UpstreamCause(build);
     }
 
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
+    /**
+     * @deprecated Use {@link #schedule(hudson.model.AbstractBuild, hudson.model.Job, java.util.List, hudson.model.TaskListener)}
+     */
+    @CheckForNull
+    @Deprecated
+    protected Future schedule(AbstractBuild<?, ?> build, final Job project, int quietPeriod, List<Action> list) throws InterruptedException, IOException {
+        return schedule(build, project, quietPeriod, list, TaskListener.NULL);
+    }
+    
+    @CheckForNull
+    protected Future schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull final Job project, int quietPeriod, 
+            @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
+        // TODO Once it's in core (since 1.621) and LTS is out, switch to use new ParameterizedJobMixIn convenience method
+        // From https://github.com/jenkinsci/jenkins/pull/1771
         Cause cause = createUpstreamCause(build);
-        return project.scheduleBuild2(quietPeriod,
-                cause,
-                list.toArray(new Action[list.size()]));
+        List<Action> queueActions = new ArrayList<Action>(list);
+        if (cause != null) {
+            queueActions.add(new CauseAction(cause));
+        }
+
+        // Includes both traditional projects via AbstractProject and Workflow Job
+        if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
+            final ParameterizedJobMixIn<?, ?> parameterizedJobMixIn = new ParameterizedJobMixIn() {
+                @Override
+                protected Job<?, ?> asJob() {
+                    return project;
+                }
+            };
+            
+            // We check the user permissions.
+            // QueueItemAuthenticator should provide the user if it is configured correctly.
+            //TODO: It would be also great to print it to the build log, but there is no TaskListener
+            if (!canTriggerProject(build, project, listener)) {
+                return null;
+            }
+                   
+            return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[queueActions.size()]));
+        }
+
+        // Trigger is not compatible with un-parameterized jobs
+        return null;
+    }
+    
+    /**
+     * Checks if the build can trigger a project.
+     * @param build Build, which is about to trigger the project
+     * @param job Job to be triggered
+     * @param taskListener Task listener
+     * @return {@code true} if the project can be scheduled.
+     *         {@code false} if there is a lack of permissions, details will be printed to the logs then.
+     */
+    /*package*/ static boolean canTriggerProject(@Nonnull AbstractBuild<?, ?> build, 
+            @Nonnull final Job job, @Nonnull TaskListener taskListener) {
+        if (!job.hasPermission(Item.BUILD)) {
+            String message = String.format("Cannot schedule the build of %s from %s. "
+                        + "The authenticated build user %s has no Job.BUILD permission",
+                        job.getFullDisplayName(), build.getFullDisplayName(), Jenkins.getAuthentication().getName()); 
+            LOGGER.log(Level.WARNING, message);
+            taskListener.error(message);
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Checks if the project is buildable.
+     * The method also takes the security implications from {@link QueueItemAuthenticator} into account.
+     * @param job Job to be checked
+     * @return true if the job can be scheduled from the 
+     */
+    protected boolean canBeScheduled(@Nonnull Job<?, ?> job) {
+        if (!job.isBuildable()) {
+            return false;
+        }
+        
+        return job.hasPermission(Item.BUILD);
     }
 
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
-        return schedule(build, project, project.getQuietPeriod(), list);
+    /**
+     * @deprecated Use {@link #schedule(hudson.model.AbstractBuild, hudson.model.Job, int, java.util.List, hudson.model.TaskListener)}
+     */
+    @Deprecated
+    protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list) throws InterruptedException, IOException {
+        return schedule(build, project, list, TaskListener.NULL);
+    }
+    
+    @CheckForNull
+    protected Future schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull Job project, @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
+        if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
+            return schedule(build, project, ((ParameterizedJobMixIn.ParameterizedJob) project).getQuietPeriod(), list, listener);
+        } else {
+            return schedule(build, project, 0, list, listener);
+        }
     }
 
     /**
      * A backport of {@link Items#computeRelativeNamesAfterRenaming(String, String, String, ItemGroup)} in Jenkins 1.530.
-     * 
+     *
      * computeRelativeNamesAfterRenaming contains a bug in Jenkins < 1.530.
      * Replace this to {@link Items#computeRelativeNamesAfterRenaming(String, String, String, ItemGroup)}
      * when updated the target version to >= 1.530.
-     * 
+     *
      * @param oldFullName
      * @param newFullName
      * @param relativeNames
@@ -528,12 +742,19 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
               Descriptor<AbstractBuildParameterFactory>>getDescriptorList(AbstractBuildParameterFactory.class);
         }
 
+        @Restricted(DoNotUse.class)
+        public boolean isItemGroup(AbstractProject project){
+            return project instanceof ItemGroup;
+        }
+
         /**
          * Form validation method.
          *
          * Copied from hudson.tasks.BuildTrigger.doCheck(Item project, String value)
          */
-        public FormValidation doCheckProjects(@AncestorInPath AbstractProject<?,?> project, @QueryParameter String value ) {
+        public FormValidation doCheckProjects(@AncestorInPath Job<?,?> project, @QueryParameter String value ) {
+            // JENKINS-32527: Check that it behaves gracefully for an unknown context
+            if (project == null) return FormValidation.ok("Context Unknown: the value specified cannot be validated");
             // Require CONFIGURE permission on this project
             if(!project.hasPermission(Item.CONFIGURE)){
             	return FormValidation.ok();
@@ -542,20 +763,33 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             boolean hasProjects = false;
             while(tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
-                if (StringUtils.isNotBlank(projectName)) {
-                	Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
-                    if(item==null){
-                        return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName,AbstractProject.findNearest(projectName).getName()));
-                    }
-                    if(!(item instanceof AbstractProject)){
-                        return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
-                    }
-                    hasProjects = true;
+                if (StringUtils.isBlank(projectName)) {
+                    return FormValidation.error("Blank project name in the list");
                 }
+
+                Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
+                if(item==null){
+                    Item nearest = Items.findNearest(Job.class, projectName, Jenkins.getInstance());
+                    String alternative = nearest != null ? nearest.getRelativeNameFrom(project) : "?";
+                    return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName, alternative));
+                }
+                if(!(item instanceof Job) || !(item instanceof ParameterizedJobMixIn.ParameterizedJob)) {
+                    return FormValidation.error(Messages.BuildTrigger_NotBuildable(projectName));
+                }
+
+                // check whether the supposed user is expected to be able to build
+                Authentication auth = Tasks.getAuthenticationOf((ParameterizedJobMixIn.ParameterizedJob)project);
+                if (auth.equals(ACL.SYSTEM) && !QueueItemAuthenticatorConfiguration.get().getAuthenticators().isEmpty()) {
+                    auth = Jenkins.ANONYMOUS;
+                }
+                if (!item.getACL().hasPermission(auth, Item.BUILD)) {
+                    return FormValidation.error(Messages.BuildTrigger_you_have_no_permission_to_build_(projectName));
+                }
+
+                hasProjects = true;
             }
             if (!hasProjects) {
-//            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified()); // only works with Jenkins version built after 2011-01-30
-            	return FormValidation.error("No project specified");
+            	return FormValidation.error(Messages.BuildTrigger_NoProjectSpecified());
             }
 
             return FormValidation.ok();

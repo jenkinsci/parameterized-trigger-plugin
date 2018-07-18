@@ -56,6 +56,10 @@ public class ParameterizedDependency extends Dependency {
 		if (!config.getCondition().isMet(build.getResult(), previousResult)){
 			return false;
 		}
+		              
+		if (!BuildTriggerConfig.canTriggerProject(build, getDownstreamProject(), listener)) {
+			return false;
+		}
 		try {
 			List<Action> actionList = config.getBaseActions(build, listener);
 			if (!actionList.isEmpty()) {
@@ -66,7 +70,7 @@ public class ParameterizedDependency extends Dependency {
             if (config.getTriggerWithNoParameters()) {
                 return true;
             }
-            listener.getLogger().println("[parameterized-trigger] Downstream builds will not be triggered as no parameter is set.");
+            listener.getLogger().println(Plugin.LOG_TAG + " Downstream builds will not be triggered as no parameter is set.");
             return false;
 		} catch (AbstractBuildParameters.DontTriggerException ex) {
 			// don't trigger on this configuration

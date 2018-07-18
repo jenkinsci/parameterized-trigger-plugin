@@ -9,12 +9,15 @@ import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Hudson;
+import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Run;
+import jenkins.model.ParameterizedJobMixIn;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import hudson.model.TaskListener;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -60,7 +63,14 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     @Override
-    protected Future schedule(AbstractBuild<?, ?> build, AbstractProject project, List<Action> list) throws InterruptedException, IOException {
+    public ListMultimap<Job, Future<Run>> perform3(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<Job, Future<Run>> futures = super.perform3(build, launcher, listener);
+        if(block==null) return ArrayListMultimap.create();
+        return futures;
+    }
+
+    @Override
+    protected Future schedule(AbstractBuild<?, ?> build, Job project, List<Action> list, TaskListener listener) throws InterruptedException, IOException {
         if (block!=null) {
             while (true) {
                 // add DifferentiatingAction to make sure this doesn't get merged with something else,
@@ -69,15 +79,15 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
 
                 // if we fail to add the item to the queue, wait and retry.
                 // it also means we have to force quiet period = 0, or else it'll never leave the queue
-                Future f = schedule(build, project, 0, list);
-                //when a project is disabled or the configuration is not yet saved f will always be null and we'ure caught in a loop, therefore we need to check for it
-                if (f!=null || (f==null && !project.isBuildable())){
+                Future f = schedule(build, project, 0, list, listener);
+                // When a project is disabled or the configuration is not yet saved f will always be null and we're caught in a loop, therefore we need to check for it
+                if (f!=null || (f==null && !canBeScheduled(project))){
                     return f;
                 }
                 Thread.sleep(1000);
             }
         } else {
-            return super.schedule(build,project,list);
+            return super.schedule(build,project,list,listener);
         }
     }
 

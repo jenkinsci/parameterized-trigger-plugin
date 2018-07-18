@@ -42,6 +42,7 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,14 +51,24 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.recipes.LocalData;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class BuildInfoExporterTest extends HudsonTestCase {
+public class BuildInfoExporterTest {
 
+  @Rule
+  public JenkinsRule r = new JenkinsRule();
+  
+  @Test
   public void test() throws Exception {
-    Project<?, ?> projectA = createFreeStyleProject("projectA");
+    Project<?, ?> projectA = r.createFreeStyleProject("projectA");
     List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
     buildParameters.add(new CurrentBuildParameters());
     BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
@@ -67,9 +78,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
     projectA.getBuildersList().add(builder);
 
-    Project projectB = createFreeStyleProject("projectB");
+    Project projectB = r.createFreeStyleProject("projectB");
     projectB.setQuietPeriod(0);
-    hudson.rebuildDependencyGraph();
+    r.jenkins.rebuildDependencyGraph();
 
     // Just to make sure they differ from projectA's build numbers.
     projectB.updateNextBuildNumber(3);
@@ -107,8 +118,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
 
   }
 
-  public void test_oddchars() throws Exception {
-    Project<?, ?> projectA = createFreeStyleProject("projectA");
+@Test
+public void test_oddchars() throws Exception {
+    Project<?, ?> projectA = r.createFreeStyleProject("projectA");
     List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
     buildParameters.add(new CurrentBuildParameters());
     BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
@@ -121,9 +133,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
     projectA.getBuildersList().add(builder);
 
-    Project projectB = createFreeStyleProject(testName);
+    Project projectB = r.createFreeStyleProject(testName);
     projectB.setQuietPeriod(0);
-    hudson.rebuildDependencyGraph();
+    r.jenkins.rebuildDependencyGraph();
     // Just to make sure they differ from projectA's build numbers.
     projectB.updateNextBuildNumber(3);
 
@@ -150,14 +162,15 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult, Integer.toString(expectedBuildNumber)));
   }
 
+  @Test
   public void test_multipletriggers() throws Exception {
     String testNameResult = "projectB";
     String testNameResult2 = "projectC";
     int buildsToTest = 5;
 
-    Project<?, ?> projectA = createFreeStyleProject();
-    Project projectB = createFreeStyleProject(testNameResult);
-    Project projectC = createFreeStyleProject(testNameResult2);
+    Project<?, ?> projectA = r.createFreeStyleProject();
+    Project projectB = r.createFreeStyleProject(testNameResult);
+    Project projectC = r.createFreeStyleProject(testNameResult2);
     projectA.getBuildersList().add(
             new TriggerBuilder(
             new BlockableBuildTriggerConfig(testNameResult + "," + testNameResult2,
@@ -173,13 +186,13 @@ public class BuildInfoExporterTest extends HudsonTestCase {
 
     projectC.setQuietPeriod(0);
     projectC.updateNextBuildNumber(12);
-    hudson.rebuildDependencyGraph();
+    r.jenkins.rebuildDependencyGraph();
 
     int firstExpectedBuildNumberB = projectB.getNextBuildNumber();
     int firstExpectedBuildNumberC = projectC.getNextBuildNumber();
 
     projectA.scheduleBuild2(0, new UserCause()).get();
-    waitUntilNoActivity();
+    r.waitUntilNoActivity();
 
     EnvVars envVars = builder.getEnvVars();
     //System.out.println("envVars: " + envVars);
@@ -218,8 +231,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
 
   }
 
+  @Test
   public void testNonBlocking() throws Exception {
-    Project<?, ?> projectA = createFreeStyleProject("projectA");
+    Project<?, ?> projectA = r.createFreeStyleProject("projectA");
     List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
     buildParameters.add(new CurrentBuildParameters());
     BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
@@ -231,11 +245,11 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
     projectA.getBuildersList().add(builder);
 
-    Project projectB = createFreeStyleProject("projectB");
+    Project projectB = r.createFreeStyleProject("projectB");
     projectB.setQuietPeriod(0);
-    Project projectC = createFreeStyleProject("projectC");
+    Project projectC = r.createFreeStyleProject("projectC");
     projectB.setQuietPeriod(0);
-    hudson.rebuildDependencyGraph();
+    r.jenkins.rebuildDependencyGraph();
 
     // Just to make sure they differ from projectA's build numbers.
     projectB.updateNextBuildNumber(3);
@@ -244,7 +258,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
     int expectedBuildNumber = projectB.getNextBuildNumber();
     int expectedBuildNumberC = projectC.getNextBuildNumber();
     projectA.scheduleBuild2(0, new UserCause()).get();
-    waitUntilNoActivity();
+    r.waitUntilNoActivity();
 
     Run buildB1 = projectB.getBuildByNumber(expectedBuildNumber);
     Run buildC1 = projectC.getBuildByNumber(expectedBuildNumberC);
@@ -264,9 +278,10 @@ public class BuildInfoExporterTest extends HudsonTestCase {
 
   }
   
+  @Test
   public void testProjectDeleted() throws Exception {
-      FreeStyleProject p1 = createFreeStyleProject();
-      FreeStyleProject p2 = createFreeStyleProject();
+      FreeStyleProject p1 = r.createFreeStyleProject();
+      FreeStyleProject p2 = r.createFreeStyleProject();
       
       // Blocked build
       p1.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig(
@@ -282,7 +297,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
       )));
       
       FreeStyleBuild blockedBuild = p1.scheduleBuild2(0).get();
-      assertBuildStatusSuccess(blockedBuild);
+      r.assertBuildStatusSuccess(blockedBuild);
       
       // Unblocked build
       p1.getBuildersList().clear();
@@ -295,9 +310,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
       )));
       
       FreeStyleBuild unblockedBuild = p1.scheduleBuild2(0).get();
-      assertBuildStatusSuccess(unblockedBuild);
+      r.assertBuildStatusSuccess(unblockedBuild);
       
-      waitUntilNoActivity();
+      r.waitUntilNoActivity();
       
       assertEquals(1, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
       assertEquals(p2.getBuildByNumber(1), blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().get(0));
@@ -319,13 +334,14 @@ public class BuildInfoExporterTest extends HudsonTestCase {
   }
   
   @LocalData
+  @Test
   public void testMigrateFrom221() throws Exception
   {
       // lastReference should be preserved after migration.
       String lastReferenceValue = null;
       
       {
-          FreeStyleProject p = jenkins.getItemByFullName("upstream", FreeStyleProject.class);
+          FreeStyleProject p = r.jenkins.getItemByFullName("upstream", FreeStyleProject.class);
           assertNotNull(p);
           FreeStyleBuild b = p.getLastBuild();
           assertNotNull(b);
@@ -339,9 +355,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
           
           assertEquals(
               Sets.newHashSet(
-                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
-                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
-                      jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
+                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
+                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
+                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
               ),
               new HashSet<AbstractBuild<?,?>>(action.getTriggeredBuilds())
           );
@@ -355,7 +371,7 @@ public class BuildInfoExporterTest extends HudsonTestCase {
       }
       
       {
-          FreeStyleProject p = jenkins.getItemByFullName("upstream", FreeStyleProject.class);
+          FreeStyleProject p = r.jenkins.getItemByFullName("upstream", FreeStyleProject.class);
           assertNotNull(p);
           FreeStyleBuild b = p.getLastBuild();
           assertNotNull(b);
@@ -369,9 +385,9 @@ public class BuildInfoExporterTest extends HudsonTestCase {
           
           assertEquals(
               Sets.newHashSet(
-                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
-                      jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
-                      jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
+                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
+                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
+                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
               ),
               new HashSet<AbstractBuild<?,?>>(action.getTriggeredBuilds())
           );

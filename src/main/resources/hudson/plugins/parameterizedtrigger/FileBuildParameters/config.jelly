@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
   <f:entry field="propertiesFile" title="${%Use properties from file}">
@@ -21,6 +22,9 @@
   <f:advanced>
     <f:entry field="encoding" title="${%File Encoding}">
       <f:textbox />
+    </f:entry>
+    <f:entry field="textParamValueOnNewLine" title="${%Use TextParameterValue if property contains newline}">
+      <f:checkbox default="false" />
     </f:entry>
   </f:advanced>
 

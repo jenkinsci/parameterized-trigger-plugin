@@ -2,6 +2,7 @@ package hudson.plugins.parameterizedtrigger;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -16,15 +17,18 @@ import hudson.model.Action;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
-import hudson.model.Run;
 import hudson.model.StringParameterValue;
 import hudson.model.TaskListener;
+import hudson.model.TextParameterValue;
 import hudson.util.FormValidation;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -35,14 +39,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
+
+import jenkins.util.VirtualFile;
 
 public class FileBuildParameters extends AbstractBuildParameters {
-	private static final Logger LOGGER = Logger.getLogger(FileBuildParameters.class.getName());
-
 	private final String propertiesFile;
 	private final String encoding;
 	private final boolean failTriggerOnMissing;
+	private final boolean textParamValueOnNewLine;
 	
 	/*properties used for a matrix project*/
 	private final boolean useMatrixChild;
@@ -50,7 +54,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 	private final boolean onlyExactRuns;
 
 	@DataBoundConstructor
-	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns) {
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns, boolean textParamValueOnNewLine) {
 		this.propertiesFile = propertiesFile;
 		this.encoding = Util.fixEmptyAndTrim(encoding);
 		this.failTriggerOnMissing = failTriggerOnMissing;
@@ -62,6 +66,11 @@ public class FileBuildParameters extends AbstractBuildParameters {
 			this.combinationFilter = null;
 			this.onlyExactRuns = false;
 		}
+		this.textParamValueOnNewLine = textParamValueOnNewLine;
+	}
+
+	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing, boolean useMatrixChild, String combinationFilter, boolean onlyExactRuns) {
+		this(propertiesFile, encoding, failTriggerOnMissing, useMatrixChild, combinationFilter, onlyExactRuns, false);
 	}
 
 	public FileBuildParameters(String propertiesFile, String encoding, boolean failTriggerOnMissing) {
@@ -110,19 +119,26 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		List<ParameterValue> values = new ArrayList<ParameterValue>();
 		EnvVars env = getEnvironment(build, listener);
 		for(String file:allFiles) {
-			FilePath f = null;
-			// First try to retrieve as a build artifact, so we don't need build workspace to be online
-			for (Run.Artifact artifact : build.getArtifacts()) {
-				if (artifact.relativePath.equals(file)) {
-					f = new FilePath(artifact.getFile());
-					break;
+			String s = null;
+			VirtualFile artifact = build.getArtifactManager().root().child(file);
+			if (artifact.isFile()) {
+			    s = ParameterizedTriggerUtils.readFileToString(artifact);
+			}
+
+			if (s == null) {
+				FilePath workspace = build.getWorkspace();
+				if (workspace == null) {
+					listener.getLogger().printf(Plugin.LOG_TAG + " Could not load workspace of build %s%n", build.getFullDisplayName());
+				} else {
+					FilePath f = workspace.child(file);
+					if (f.exists()) {
+						s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
+					}
 				}
 			}
-			if (f == null) {
-				f = build.getWorkspace().child(file);
-			}
-			if (!f.exists()) {
-				listener.getLogger().println("[parameterizedtrigger] Properties file "
+
+			if (s == null) {
+				listener.getLogger().println(Plugin.LOG_TAG + " Properties file "
 						+ file + " did not exist.");
 				if (getFailTriggerOnMissing()) {
 					listener.getLogger().println("Not triggering due to missing file - did you archive it as a build artifact ?");
@@ -132,13 +148,17 @@ public class FileBuildParameters extends AbstractBuildParameters {
 				continue;
 			}
 
-			String s = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
 			s = env.expand(s);
 			Properties p = ParameterizedTriggerUtils.loadProperties(s);
 
 			for (Map.Entry<Object, Object> entry : p.entrySet()) {
-				values.add(new StringParameterValue(entry.getKey().toString(),
-						entry.getValue().toString()));
+				// support multi-line parameters correctly
+				s = entry.getValue().toString();
+				if(textParamValueOnNewLine && s.contains("\n")) {
+					values.add(new TextParameterValue(entry.getKey().toString(), s));
+				} else {
+					values.add(new StringParameterValue(entry.getKey().toString(), s));
+				}
 			}
 		}
 		return values;
@@ -179,6 +199,10 @@ public class FileBuildParameters extends AbstractBuildParameters {
 
 	public boolean getFailTriggerOnMissing() {
 		return failTriggerOnMissing;
+	}
+
+	public boolean getTextParamValueOnNewLine() {
+		return textParamValueOnNewLine;
 	}
 
 	public boolean isUseMatrixChild() {

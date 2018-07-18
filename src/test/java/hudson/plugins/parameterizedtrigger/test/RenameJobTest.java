@@ -24,7 +24,11 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.FreeStyleBuild;
+import hudson.model.ItemGroup;
+import hudson.model.Items;
+import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
+import hudson.model.AbstractProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -42,27 +46,37 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import jenkins.model.Jenkins;
+import jenkins.model.ModifiableTopLevelItemGroup;
+
 import org.jenkins_ci.plugins.run_condition.BuildStepRunner;
 import org.jenkins_ci.plugins.run_condition.core.AlwaysRun;
 import org.jenkinsci.plugins.conditionalbuildstep.ConditionalBuilder;
 import org.jenkinsci.plugins.conditionalbuildstep.singlestep.SingleConditionalBuilder;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.MockFolder;
 
-public class RenameJobTest extends HudsonTestCase {
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
+public class RenameJobTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void testRenameAndDeleteJobSingleProject() throws Exception {
-		//create projectA
-		Project<?,?> projectA = createParentProject("projectA", "projectB");
-		Project<?,?> projectB = createFreeStyleProject("projectB");
-		hudson.rebuildDependencyGraph();
+		FreeStyleProject projectA = r.createFreeStyleProject("projectA");
+		configureTriggeringOf(projectA, "projectB");
+		Project<?,?> projectB = r.createFreeStyleProject("projectB");
+		r.jenkins.rebuildDependencyGraph();
 
 		projectB.renameTo("projectB-renamed");
 
-		//confirm projectA's build step trigger is updated automatically
-		assertEquals("build step trigger project should be renamed", "projectB-renamed", projectA.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects());
-
-		//confirm projectA's post build trigger is updated automatically
-		assertEquals("post build trigger project should be renamed", "projectB-renamed", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
+		assertTriggering(projectA, "projectB-renamed");
 		
 		projectB.delete();
 
@@ -73,52 +87,29 @@ public class RenameJobTest extends HudsonTestCase {
 		assertNull("now-empty post build trigger should be removed", projectA.getPublishersList().get(BuildTrigger.class));
 	}
 
+    @Test
 	public void testRenameAndDeleteJobMultipleProjects() throws Exception {
-		Project<?,?> projectA = createParentProject("projectA", "projectB", "projectC");
-		Project<?,?> projectB = createFreeStyleProject("projectB");
-		createFreeStyleProject("projectC");
-		hudson.rebuildDependencyGraph();
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
+		configureTriggeringOf(projectA, "projectB", "projectC");
+		Project<?,?> projectB = r.createFreeStyleProject("projectB");
+		r.createFreeStyleProject("projectC");
+		r.jenkins.rebuildDependencyGraph();
 
 		projectB.renameTo("projectB-renamed");
 		
-		//confirm projectA's build step trigger is updated automatically
-		assertEquals("build step trigger project should be renamed", "projectB-renamed,projectC", projectA.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects());
-		
-	    final List<ConditionalBuilder> all = projectA.getBuildersList().getAll(ConditionalBuilder.class);
-	    final TriggerBuilder wrappedBuilder0 = (TriggerBuilder)all.get(0).getConditionalbuilders().get(0);
-	    assertEquals("build step trigger project within first conditionalbuildstep should be renamed", "projectB-renamed,projectC", wrappedBuilder0.getConfigs().get(0).getProjects());
-
-	    final List<SingleConditionalBuilder> allSingleConditions = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
-	    final TriggerBuilder singleCondTrigger0 = (TriggerBuilder)allSingleConditions.get(0).getBuildStep();
-        assertEquals("build step trigger project within first singleconditionalbuildstep should be renamed", "projectB-renamed,projectC", singleCondTrigger0.getConfigs().get(0).getProjects());
-
-		//confirm projectA's post build trigger is updated automatically
-		assertEquals("post build trigger project should be renamed", "projectB-renamed,projectC", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
+		assertTriggering(projectA, "projectB-renamed,projectC");
 		
 		projectB.delete();
-
-		//confirm projectA's build step trigger is updated automatically:
-		assertEquals("build step trigger project should be removed", "projectC", projectA.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects());
-
-		//confirm projectA's post build trigger is updated automatically:
-		assertEquals("post build trigger project should be removed", "projectC", projectA.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects());
 		
-	    //confirm deletes are reflected within conditional buildsteps too
-        final List<ConditionalBuilder> allAfterDelete = projectA.getBuildersList().getAll(ConditionalBuilder.class);
-        final TriggerBuilder wrappedBuilderAfterDel0 = (TriggerBuilder)allAfterDelete.get(0).getConditionalbuilders().get(0);
-        assertEquals("build step trigger project within first conditionalbuildstep should be removed", "projectC", wrappedBuilderAfterDel0.getConfigs().get(0).getProjects());
-        
-
-        final List<SingleConditionalBuilder> allSingleAfterDelete = projectA.getBuildersList().getAll(SingleConditionalBuilder.class);
-        final TriggerBuilder singleCondTriggerAfterDel0 = (TriggerBuilder)allSingleAfterDelete.get(0).getBuildStep();
-        assertEquals("build step trigger project within first singleconditionalbuildstep should be removed", "projectC", singleCondTriggerAfterDel0.getConfigs().get(0).getProjects());
-
+		assertTriggering(projectA, "projectC");
 	}
 
-	private Project<?, ?> createParentProject(String parentJobName, String... childJobNames) throws IOException {
-		//create ProjectA
-		Project<?,?> project = createFreeStyleProject(parentJobName);
-
+	/**
+	 * Configure all the triggers to point to a set of child jobs.
+	 *
+	 * @see {@link #assertTriggering(Project, String)}
+	 */
+	private Project<?, ?> configureTriggeringOf(Project<?,?> project, String... childJobNames) throws IOException {
 		List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
 		buildParameters.add(new CurrentBuildParameters());
 		
@@ -147,23 +138,35 @@ public class RenameJobTest extends HudsonTestCase {
 		return project;
 	}
 
+	/**
+     * Assert that all the triggers refers to expected jobs.
+     */
+    private void assertTriggering(Project<?, ?> p, String expected) {
+        String actual = p.getBuildersList().get(TriggerBuilder.class).getConfigs().get(0).getProjects();
+        assertEquals("build step trigger", expected, actual);
+
+        final TriggerBuilder triggerBuilder = (TriggerBuilder) p.getBuildersList().getAll(ConditionalBuilder.class).get(0).getConditionalbuilders().get(0);
+        actual = triggerBuilder.getConfigs().get(0).getProjects();
+        assertEquals("build step trigger project within first conditionalbuildstep", expected, actual);
+
+        final TriggerBuilder singleCondTrigger0 = (TriggerBuilder)p.getBuildersList().getAll(SingleConditionalBuilder.class).get(0).getBuildStep();
+        actual = singleCondTrigger0.getConfigs().get(0).getProjects();
+        assertEquals("build step trigger project within first singleconditionalbuildstep", expected, actual);
+
+        actual = p.getPublishersList().get(BuildTrigger.class).getConfigs().get(0).getProjects();
+        assertEquals("post build step trigger", expected, actual);
+    }
+
+	private <T extends TopLevelItem> T createProject(Class<T> type, ModifiableTopLevelItemGroup owner, String name) throws IOException {
+	    return (T) owner.createProject((TopLevelItemDescriptor) r.jenkins.getDescriptorOrDie(type), name, true);
+	}
+
+    @Test
     public void testRenameAndDeleteJobInSameFolder() throws Exception {
-        MockFolder folder1 = (MockFolder)jenkins.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder1",
-                true
-        );
-        FreeStyleProject p1 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectA", 
-                true
-        );
-        FreeStyleProject p2 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectB", 
-                true
-        );
-        
+        MockFolder folder1 = createProject(MockFolder.class, r.jenkins, "Folder1");
+        FreeStyleProject p1 = createProject(FreeStyleProject.class, folder1, "ProjectA");
+        FreeStyleProject p2 = createProject(FreeStyleProject.class, folder1, "ProjectB");
+
         p1.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 p2.getName(),   // This should not be getFullName().
                 ResultCondition.ALWAYS,
@@ -171,18 +174,18 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         // Test this works
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -200,12 +203,12 @@ public class RenameJobTest extends HudsonTestCase {
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -213,27 +216,12 @@ public class RenameJobTest extends HudsonTestCase {
         assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
 
+    @Test
     public void testRenameAndDeleteJobInSubFolder() throws Exception {
-        MockFolder folder1 = (MockFolder)jenkins.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder1",
-                true
-        );
-        MockFolder folder2 = (MockFolder)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder2",
-                true
-        );
-        FreeStyleProject p1 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectA", 
-                true
-        );
-        FreeStyleProject p2 = (FreeStyleProject)folder2.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectB", 
-                true
-        );
+        MockFolder folder1 = createProject(MockFolder.class, r.jenkins, "Folder1");
+        MockFolder folder2 = createProject(MockFolder.class, folder1, "Folder2");
+        FreeStyleProject p1 = createProject(FreeStyleProject.class, folder1, "ProjectA");
+        FreeStyleProject p2 = createProject(FreeStyleProject.class, folder2, "ProjectB");
         
         p1.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 String.format("%s/%s", folder2.getName(), p2.getName()),
@@ -244,18 +232,18 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         // Test this works
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -273,41 +261,26 @@ public class RenameJobTest extends HudsonTestCase {
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
         p2.delete();
         assertNull(p1.getPublishersList().get(BuildTrigger.class));
     }
-    
+
+    @Test
     public void testRenameAndDeleteJobInParentFolder() throws Exception {
-        MockFolder folder1 = (MockFolder)jenkins.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder1",
-                true
-        );
-        MockFolder folder2 = (MockFolder)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(MockFolder.class),
-                "Folder2",
-                true
-        );
-        FreeStyleProject p1 = (FreeStyleProject)folder2.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectA", 
-                true
-        );
-        FreeStyleProject p2 = (FreeStyleProject)folder1.createProject(
-                (TopLevelItemDescriptor)jenkins.getDescriptor(FreeStyleProject.class),
-                "ProjectB", 
-                true
-        );
-        
+        MockFolder folder1 = createProject(MockFolder.class, r.jenkins, "Folder1");
+        MockFolder folder2 = createProject(MockFolder.class, folder1, "Folder2");
+        FreeStyleProject p1 = createProject(FreeStyleProject.class, folder2, "ProjectA");
+        FreeStyleProject p2 = createProject(FreeStyleProject.class, folder1, "ProjectB");
+
         p1.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 String.format("../%s", p2.getName()),
                     // This should not be getFullName().
@@ -317,18 +290,18 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         // Test this works
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -346,12 +319,12 @@ public class RenameJobTest extends HudsonTestCase {
         {
             assertNull(p2.getLastBuild());
             
-            buildAndAssertSuccess(p1);
+            r.buildAndAssertSuccess(p1);
             
-            jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
+            r.jenkins.getQueue().getItem(p2).getFuture().get(60, TimeUnit.SECONDS);
             FreeStyleBuild b = p2.getLastBuild();
             assertNotNull(b);
-            assertBuildStatusSuccess(b);
+            r.assertBuildStatusSuccess(b);
             b.delete();
         }
         
@@ -360,17 +333,18 @@ public class RenameJobTest extends HudsonTestCase {
     }
     
     /**
-     * {@link hudson.model.Items#computeRelativeNamesAfterRenaming(String, String, String, hudson.model.ItemGroup)} has a bug
+     * {@link r.jenkins.model.Items#computeRelativeNamesAfterRenaming(String, String, String, r.jenkins.model.ItemGroup)} has a bug
      * that renaming names that contains the target name as prefix.
      * E.g. renaming ProjectB to ProjectB-renamed results in renaming ProjectB2 to ProjectB-renamed2.
      * This is fixed in Jenkins 1.530.
      * 
      * This test verifies this plugin is not affected by that problem.
-     */
+     */ 
+    @Test
     public void testComputeRelativeNamesAfterRenaming() throws Exception {
-        FreeStyleProject projectA = createFreeStyleProject("ProjectA");
-        FreeStyleProject projectB = createFreeStyleProject("ProjectB");
-        FreeStyleProject projectB2 = createFreeStyleProject("ProjectB2");
+        FreeStyleProject projectA = r.createFreeStyleProject("ProjectA");
+        FreeStyleProject projectB = r.createFreeStyleProject("ProjectB");
+        FreeStyleProject projectB2 = r.createFreeStyleProject("ProjectB2");
         
         projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig(
                 String.format("%s,%s", projectB.getName(), projectB2.getName()),
@@ -380,7 +354,7 @@ public class RenameJobTest extends HudsonTestCase {
                 Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
         )));
         
-        jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
         
         projectB.renameTo("ProjectB-renamed");
         

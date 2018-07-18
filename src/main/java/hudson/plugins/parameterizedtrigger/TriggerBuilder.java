@@ -29,14 +29,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import hudson.*;
 import hudson.console.HyperlinkNote;
+import hudson.console.ModelHyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
+import hudson.model.DependencyGraph;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Builder;
+import hudson.model.Job;
+import hudson.model.Run;
+import hudson.model.User;
 import hudson.util.IOException2;
+import jenkins.model.DependencyDeclarer;
+import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -50,7 +58,7 @@ import java.util.concurrent.Future;
  *
  * @author Kohsuke Kawaguchi
  */
-public class TriggerBuilder extends Builder {
+public class TriggerBuilder extends Builder implements DependencyDeclarer {
 
     private final ArrayList<BlockableBuildTriggerConfig> configs;
 
@@ -82,9 +90,9 @@ public class TriggerBuilder extends Builder {
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
-                ListMultimap<AbstractProject, Future<AbstractBuild>> futures = config.perform2(build, launcher, listener);
+                ListMultimap<Job, Future<Run>> futures = config.perform3(build, launcher, listener);
                 // Only contains resolved projects
-                List<AbstractProject> projectList = config.getProjectList(build.getRootBuild().getProject().getParent(),env);
+                List<Job> projectList = config.getJobs(build.getRootBuild().getProject().getParent(), env);
 
                 // Get the actual defined projects
                 StringTokenizer tokenizer = new StringTokenizer(config.getProjects(env), ",");
@@ -100,7 +108,7 @@ public class TriggerBuilder extends Builder {
                     while (tokenizer.hasMoreTokens()) {
                         unsolvedProjectNames.add(tokenizer.nextToken().trim());
                     }
-                    for (AbstractProject project : projectList) {
+                    for (Job project : projectList) {
                         unsolvedProjectNames.remove(project.getFullName());
                     }
 
@@ -117,29 +125,36 @@ public class TriggerBuilder extends Builder {
                     //handle non-blocking configs
                     if(futures.isEmpty()){
                         listener.getLogger().println("Triggering projects: " + getProjectListAsString(projectList));
-                        for(AbstractProject p : projectList) {
+                        for(Job p : projectList) {
                             BuildInfoExporterAction.addBuildInfoExporterAction(build, p.getFullName());
                         }
                         continue;
                     }
                     //handle blocking configs
-                    for (AbstractProject p : projectList) {
+                    for (Job p : projectList) {
                         //handle non-buildable projects
-                        if(!p.isBuildable()){
-                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + ". The project is either disabled or the configuration has not been saved yet.");
+                        if(!config.canBeScheduled(p)){
+                            listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + 
+                                    ". The project is either disabled,"
+                                    + " or the authenticated user " + ModelHyperlinkNote.encodeTo(User.current()) + " has no Item.BUILD permissions,"
+                                    + " or the configuration has not been saved yet.");
                             continue;
                         }
-                        for (Future<AbstractBuild> future : futures.get(p)) {
+                        for (Future<Run> future : futures.get(p)) {
                             try {
-                                listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                AbstractBuild b = future.get();
-                                listener.getLogger().println(HyperlinkNote.encodeTo('/'+ b.getUrl(), b.getFullDisplayName()) + " completed. Result was "+b.getResult());
-                                BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getProject().getFullName(), b.getNumber(), b.getResult());
+                                if (future != null ) {
+                                    listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+                                    Run b = future.get();
+                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
+                                    BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getParent().getFullName(), b.getNumber(), b.getResult());
 
-                                if(buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
-                                    build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                                    if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
+                                        build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                                    } else {
+                                        buildStepResult = false;
+                                    }
                                 } else {
-                                    buildStepResult = false;
+                                    listener.getLogger().println("Skipping " + ModelHyperlinkNote.encodeTo(p) + ". The project was not triggered by some reason.");
                                 }
                             } catch (CancellationException x) {
                                 throw new AbortException(p.getFullDisplayName() +" aborted.");
@@ -155,10 +170,12 @@ public class TriggerBuilder extends Builder {
         return buildStepResult;
     }
 
-    private String getProjectListAsString(List<AbstractProject> projectList){
+    // Public but restricted so we can add tests without completely changing the tests package
+    @Restricted(value=org.kohsuke.accmod.restrictions.NoExternalUse.class)
+    public String getProjectListAsString(List<Job> projectList){
         StringBuilder projectListString = new StringBuilder();
-        for (Iterator iterator = projectList.iterator(); iterator.hasNext();) {
-            AbstractProject project = (AbstractProject) iterator.next();
+        for (Iterator<Job> iterator = projectList.iterator(); iterator.hasNext();) {
+            Job project = iterator.next();
             projectListString.append(HyperlinkNote.encodeTo('/'+ project.getUrl(), project.getFullDisplayName()));
             if(iterator.hasNext()){
                 projectListString.append(", ");
@@ -167,10 +184,37 @@ public class TriggerBuilder extends Builder {
         return projectListString.toString();
     }
 
-
     @Override
     public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
         return ImmutableList.of(new SubProjectsAction(project, configs));
+    }
+
+    private boolean canDeclare(AbstractProject owner) {
+        // See HUDSON-5679 -- dependency graph is also not used when triggered from a promotion
+        return !owner.getClass().getName().equals("hudson.plugins.promoted_builds.PromotionProcess");
+    }
+
+    @Override
+    public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
+        if (!canDeclare(owner)) return;
+
+        for (BuildTriggerConfig config : configs) {
+            List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
+            for (AbstractProject project : projectList) {
+                graph.addDependency(new TriggerBuilderDependency(owner, project, config));
+            }
+        }
+    }
+
+    public static class TriggerBuilderDependency extends ParameterizedDependency {
+        public TriggerBuilderDependency(AbstractProject upstream, AbstractProject downstream, BuildTriggerConfig config) {
+            super(upstream, downstream, config);
+        }
+
+        @Override
+        public boolean shouldTriggerBuild(AbstractBuild build, TaskListener listener, List<Action> actions) {
+            return false;
+        }
     }
 
     @Extension

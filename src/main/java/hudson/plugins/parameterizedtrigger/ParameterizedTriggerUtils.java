@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.LinkedHashMap;
 import java.util.Properties;
+import jenkins.util.VirtualFile;
 
 /**
  * Common utility methods.
@@ -62,6 +63,22 @@ public class ParameterizedTriggerUtils {
         InputStream in = f.read();
         try {
             return IOUtils.toString(in, encoding);
+        } finally {
+            in.close();
+        }
+    }
+    
+    /**
+     * {@link} read VirtualFile
+     * 
+     * @param f file to read
+     * @return read string
+     * @throws IOException
+     */
+    public static String readFileToString(VirtualFile f) throws IOException, InterruptedException {
+        InputStream in = f.open();
+        try {
+            return IOUtils.toString(in);
         } finally {
             in.close();
         }

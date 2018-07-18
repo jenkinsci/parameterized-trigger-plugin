@@ -10,11 +10,21 @@ import hudson.plugins.parameterizedtrigger.DefaultParameterValuesActionsTransfor
 
 import java.io.IOException;
 
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
-public class DefaultParameterValuesActionsTransformTest extends HudsonTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+public class DefaultParameterValuesActionsTransformTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
     public void test() throws IOException {
-        Project project = createFreeStyleProject("project");
+        Project project = r.createFreeStyleProject("project");
 
         project.addProperty(new ParametersDefinitionProperty(
                     new StringParameterDefinition("key1", "value1"),

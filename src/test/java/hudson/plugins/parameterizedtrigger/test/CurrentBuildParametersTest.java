@@ -25,7 +25,10 @@ package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.Cause.UserCause;
 import hudson.model.ParametersAction;
+import hudson.model.ParameterDefinition;
+import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
+import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -38,25 +41,41 @@ import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 
-public class CurrentBuildParametersTest extends HudsonTestCase {
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+public class CurrentBuildParametersTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test
 	public void test() throws Exception {
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
+		// SECURITY-170: must define parameters in subjobs
+        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        definition.add(new StringParameterDefinition("KEY","key"));
+		projectA.addProperty(new ParametersDefinitionProperty(definition));
 		projectA.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, new CurrentBuildParameters())));
 
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = createFreeStyleProject("projectB");
+		Project projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+        projectB.addProperty(new ParametersDefinitionProperty(definition));
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
 			new StringParameterValue("KEY", "value"))).get();
-		hudson.getQueue().getItem(projectB).getFuture().get();
+		r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
 		assertNotNull("builder should record environment", builder.getEnvVars());
 		assertEquals("value", builder.getEnvVars().get("KEY"));
@@ -81,6 +100,7 @@ public class CurrentBuildParametersTest extends HudsonTestCase {
 	 *
 	 * @throws Exception
 	 */
+    @Test
 	public void testPostBuildTriggerNoParametersWithoutParametersFalse() throws Exception {
 		testPostBuildTriggerNoParameters(false);
  	}
@@ -94,24 +114,25 @@ public class CurrentBuildParametersTest extends HudsonTestCase {
 	 *
 	 * @throws Exception
 	 */
+    @Test
 	public void testPostBuildTriggerNoParametersWithoutParametersTrue() throws Exception {
 		testPostBuildTriggerNoParameters(true);
  	}
 	
 	public void testPostBuildTriggerNoParameters(boolean pWithoutParameters) throws Exception {
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
 		List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
 		buildParameters.add(new CurrentBuildParameters());
 		projectA.getPublishersList().add(new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, pWithoutParameters, buildParameters)));
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 
-		Project<?,?> projectB = createFreeStyleProject("projectB");
+		Project<?,?> projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0, new UserCause()).get();
-		assertEquals(pWithoutParameters, hudson.getQueue().contains(projectB));
+		assertEquals(pWithoutParameters, r.jenkins.getQueue().contains(projectB));
 		List<String> log = projectA.getLastBuild().getLog(20);
 		for (String string : log) {
 			System.out.println(string);
@@ -126,20 +147,21 @@ public class CurrentBuildParametersTest extends HudsonTestCase {
 	 *
 	 * @throws Exception
 	 */
+    @Test
 	public void testBuildStepTriggerBuildNoParameters() throws Exception {
-		Project<?,?> projectA = createFreeStyleProject("projectA");
+		Project<?,?> projectA = r.createFreeStyleProject("projectA");
 		List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
 		buildParameters.add(new CurrentBuildParameters());
 		projectA.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig("projectB", null, buildParameters)));
 		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
 
-		Project<?,?> projectB = createFreeStyleProject("projectB");
+		Project<?,?> projectB = r.createFreeStyleProject("projectB");
 		projectB.getBuildersList().add(builder);
 		projectB.setQuietPeriod(1);
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		projectA.scheduleBuild2(0, new UserCause()).get();
-		assertTrue(hudson.getQueue().contains(projectB));
+		assertTrue(r.jenkins.getQueue().contains(projectB));
 		List<String> log = projectA.getLastBuild().getLog(20);
 		for (String string : log) {
 			System.out.println(string);

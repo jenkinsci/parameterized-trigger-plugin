@@ -10,19 +10,24 @@ import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.plugins.parameterizedtrigger.SubversionRevisionBuildParameters;
 import hudson.scm.SubversionSCM;
 import hudson.scm.SubversionTagAction;
-import hudson.util.NullStream;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
-import org.jvnet.hudson.test.HudsonTestCase;
-import org.tmatesoft.svn.core.SVNException;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
-public class SubversionRevisionBuildTriggerConfigTest extends HudsonTestCase {
+public class SubversionRevisionBuildTriggerConfigTest {
 
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
+    
+    @Test @Ignore("https://groups.google.com/d/msg/jenkinsci-dev/8tLnOhHitKI/dCPJ53_wGAAJ")
 	public void testRevisionParameter() throws Exception {
-		FreeStyleProject p1 = createFreeStyleProject();
-		FreeStyleProject p2 = createFreeStyleProject();
+		FreeStyleProject p1 = r.createFreeStyleProject();
+		FreeStyleProject p2 = r.createFreeStyleProject();
 		p2.setQuietPeriod(1);
 
 		p1.setScm(new SubversionSCM(
@@ -34,11 +39,11 @@ public class SubversionRevisionBuildTriggerConfigTest extends HudsonTestCase {
 		p1.getPublishersList().add(
 				new BuildTrigger(new BuildTriggerConfig(p2.getName(), ResultCondition.SUCCESS,
 						new SubversionRevisionBuildParameters())));
-		hudson.rebuildDependencyGraph();
+		r.jenkins.rebuildDependencyGraph();
 
 		FreeStyleBuild b1 = p1.scheduleBuild2(0, new Cause.UserCause()).get();
-		Queue.Item q = hudson.getQueue().getItem(p2);
-		assertNotNull("p2 should be in queue (quiet period): " + getLog(b1), q);
+		Queue.Item q = r.jenkins.getQueue().getItem(p2);
+		assertNotNull("p2 should be in queue (quiet period): " + JenkinsRule.getLog(b1), q);
 		q.getFuture().get();
 
 		FreeStyleBuild b2 = p2.getLastBuild();
