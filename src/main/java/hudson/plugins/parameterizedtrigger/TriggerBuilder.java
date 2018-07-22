@@ -146,7 +146,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                 if (future != null ) {
                                     listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
                                     while(!future.isDone()) {
-                                        listener.getLogger().print(".");
+                                        listener.getLogger().print('.');
                                         Thread.sleep(SLEEP_MILLISECONDS);
                                     }
                                     Run b = future.get();
