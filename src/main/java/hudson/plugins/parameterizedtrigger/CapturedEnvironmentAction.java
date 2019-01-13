@@ -1,7 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.EnvVars;
-import hudson.model.Action;
 import hudson.model.InvisibleAction;
 
 /**

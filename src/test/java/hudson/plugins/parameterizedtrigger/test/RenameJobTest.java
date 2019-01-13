@@ -24,11 +24,8 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.FreeStyleBuild;
-import hudson.model.ItemGroup;
-import hudson.model.Items;
 import hudson.model.TopLevelItem;
 import hudson.model.TopLevelItemDescriptor;
-import hudson.model.AbstractProject;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -46,7 +43,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import jenkins.model.Jenkins;
 import jenkins.model.ModifiableTopLevelItemGroup;
 
 import org.jenkins_ci.plugins.run_condition.BuildStepRunner;

@@ -32,7 +32,6 @@ import hudson.plugins.promoted_builds.Promotion;
 import hudson.security.ACL;
 import hudson.tasks.Messages;
 import hudson.Util;
-import hudson.model.User;
 import hudson.util.FormValidation;
 import hudson.util.VersionNumber;
 

@@ -28,9 +28,7 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.model.AbstractDescribableImpl;
 import org.apache.commons.lang.StringUtils;
 import hudson.Extension;
-import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Result;
 import org.kohsuke.stapler.DataBoundConstructor;
 

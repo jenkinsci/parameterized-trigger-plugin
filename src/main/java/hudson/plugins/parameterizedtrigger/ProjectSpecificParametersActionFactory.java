@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Job;
 import hudson.model.ParametersAction;
