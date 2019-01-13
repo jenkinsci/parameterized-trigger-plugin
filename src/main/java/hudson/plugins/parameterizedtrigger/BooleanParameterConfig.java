@@ -26,7 +26,7 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -52,7 +52,7 @@ public class BooleanParameterConfig implements Describable<BooleanParameterConfi
 	}
 
 	public Descriptor<BooleanParameterConfig> getDescriptor() {
-		return Hudson.getInstance().getDescriptorOrDie(getClass());
+		return Jenkins.getInstance().getDescriptorOrDie(getClass());
 	}
 	
 	

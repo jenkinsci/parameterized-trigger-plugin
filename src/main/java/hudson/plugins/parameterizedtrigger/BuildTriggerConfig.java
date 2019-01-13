@@ -17,7 +17,6 @@ import hudson.model.CauseAction;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Items;
@@ -712,7 +711,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     public Descriptor<BuildTriggerConfig> getDescriptor() {
-        return Hudson.getInstance().getDescriptorOrDie(getClass());
+        return Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
 
     @Override
@@ -729,11 +728,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
 
         public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
-            return Hudson.getInstance().getDescriptorList(AbstractBuildParameters.class);
+            return Jenkins.getInstance().getDescriptorList(AbstractBuildParameters.class);
         }
 
         public List<Descriptor<AbstractBuildParameterFactory>> getBuilderConfigFactoryDescriptors() {
-            return Hudson.getInstance().getDescriptorList(AbstractBuildParameterFactory.class);
+            return Jenkins.getInstance().getDescriptorList(AbstractBuildParameterFactory.class);
         }
 
         @Restricted(DoNotUse.class)

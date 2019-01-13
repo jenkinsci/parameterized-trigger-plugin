@@ -7,10 +7,10 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
-import hudson.model.Hudson;
 import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Run;
+import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -91,7 +91,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     public Collection<Node> getNodes() {
-        return Hudson.getInstance().getLabel("asrt").getNodes();
+        return Jenkins.getInstance().getLabel("asrt").getNodes();
     }
 
     @Extension
