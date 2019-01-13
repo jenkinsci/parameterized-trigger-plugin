@@ -18,7 +18,7 @@ import java.util.Map;
  * @author wolfs
  */
 public class CaptureAllEnvironmentBuilder extends Builder {
-    private Map<String,EnvVars> envVars = Maps.newHashMap();
+    private final Map<String,EnvVars> envVars = Maps.newHashMap();
 
 	public Map<String, EnvVars> getEnvVars() {
 		return envVars;

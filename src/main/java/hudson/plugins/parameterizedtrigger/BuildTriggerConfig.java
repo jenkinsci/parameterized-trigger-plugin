@@ -74,8 +74,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	private String projects;
 	private final ResultCondition condition;
-	private boolean triggerWithNoParameters;
-        private boolean triggerFromChildProjects;
+	private final boolean triggerWithNoParameters;
+	private final boolean triggerFromChildProjects;
 
     public BuildTriggerConfig(String projects, ResultCondition condition, boolean triggerWithNoParameters, 
             List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs, boolean triggerFromChildProjects) {

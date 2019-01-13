@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 public class ProjectSpecificParametersActionFactory {
 
-    List<ITransformProjectParametersAction> transforms;
+    private final List<ITransformProjectParametersAction> transforms;
 
     public ProjectSpecificParametersActionFactory(ITransformProjectParametersAction... transforms) {
         super();

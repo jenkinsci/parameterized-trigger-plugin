@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class DynamicProjectAction implements Action {
 
-    private List<BuildTriggerConfig> configs;
+    private final List<BuildTriggerConfig> configs;
 
     public DynamicProjectAction(List<BuildTriggerConfig> configs) {
         this.configs = configs;

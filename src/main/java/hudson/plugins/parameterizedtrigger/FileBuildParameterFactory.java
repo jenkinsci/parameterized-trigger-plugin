@@ -55,7 +55,7 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
                 throw new RuntimeException();
         }};
 
-        private String description;
+        private final String description;
 
         public String getDescription() {
             return description;

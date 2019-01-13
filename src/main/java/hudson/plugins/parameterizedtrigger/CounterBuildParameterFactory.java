@@ -44,7 +44,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
                 listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateIgnore());
         }};
 
-        private String description;
+        private final String description;
 
         public String getDescription() {
             return description;
