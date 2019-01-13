@@ -76,10 +76,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
      * @return {@code false} if the triggering build step has to fail, {@code true} otherwise
      */
     public boolean mapBuildStepResult(Result r) {
-        if (buildStepFailureThreshold!=null && r.isWorseOrEqualTo(buildStepFailureThreshold)) {
-            return false;
-        }
-        return true;
+        return buildStepFailureThreshold == null || !r.isWorseOrEqualTo(buildStepFailureThreshold);
     }
 
     /**

@@ -175,6 +175,6 @@ public class Plugin extends hudson.Plugin {
         
         public static boolean isConditionalBuildStepInstalled(){
             final hudson.Plugin plugin = Jenkins.getInstance().getPlugin("conditional-buildstep");
-            return plugin != null ? plugin.getWrapper().isActive() : false;
+            return plugin != null && plugin.getWrapper().isActive();
         }
 }
