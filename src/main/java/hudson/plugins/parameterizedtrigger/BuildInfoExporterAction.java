@@ -152,23 +152,23 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     // Note: this will only indicate the last project in the list that is ran
     env.put(JOB_NAME_VARIABLE, lastReference.projectName.replaceAll("[^a-zA-Z0-9]+", "_"));
     //all projects triggered.
-    // this should not include projects that donot have a build item.
-    String sanatizedProjectList = getProjectListString(",");
-    env.put(ALL_JOBS_NAME_VARIABLE, sanatizedProjectList);
+    // this should not include projects that don't have a build item.
+    String sanitizedProjectList = getProjectListString(",");
+    env.put(ALL_JOBS_NAME_VARIABLE, sanitizedProjectList);
 
     for (String project : getProjectsWithBuilds()) {
       // for each project add the following variables once
       // all buildnumbers, lastbuildnumber
       // all Run results, last build result
-      String sanatizedBuildName = project.replaceAll("[^a-zA-Z0-9]+", "_");
+      String sanitizedBuildName = project.replaceAll("[^a-zA-Z0-9]+", "_");
       List<BuildReference> refs = getBuildRefs(project);
 
-      env.put(ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, getBuildNumbersString(refs, ","));
-      env.put(BUILD_RUN_COUNT_PREFIX + sanatizedBuildName, Integer.toString(refs.size()));
+      env.put(ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanitizedBuildName, getBuildNumbersString(refs, ","));
+      env.put(BUILD_RUN_COUNT_PREFIX + sanitizedBuildName, Integer.toString(refs.size()));
       for (BuildReference br : refs) {
         if (br.buildNumber != 0) {
-          String tiggeredBuildRunResultKey = BUILD_RESULT_VARIABLE_PREFIX + sanatizedBuildName + RUN + Integer.toString(br.buildNumber);
-          env.put(tiggeredBuildRunResultKey, br.buildResult.toString());
+          String triggeredBuildRunResultKey = BUILD_RESULT_VARIABLE_PREFIX + sanitizedBuildName + RUN + Integer.toString(br.buildNumber);
+          env.put(triggeredBuildRunResultKey, br.buildResult.toString());
         }
       }
       BuildReference lastBuild = null;
@@ -179,8 +179,8 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
         break;
       }
       if (lastBuild != null) {
-        env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanatizedBuildName, Integer.toString(lastBuild.buildNumber));
-        env.put(BUILD_RESULT_VARIABLE_PREFIX + sanatizedBuildName, lastBuild.buildResult.toString());
+        env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanitizedBuildName, Integer.toString(lastBuild.buildNumber));
+        env.put(BUILD_RESULT_VARIABLE_PREFIX + sanitizedBuildName, lastBuild.buildResult.toString());
       }
     }
   }

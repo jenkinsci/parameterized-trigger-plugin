@@ -8,7 +8,7 @@
 
     <p>
     What you specify here gets expanded by variables of the triggering build, which allows
-    you to dynamically control the subset of the triggerred job. For example, if you trigger job BAR
+    you to dynamically control the subset of the triggered job. For example, if you trigger job BAR
     from FOO with <tt>label=="${TARGET}"</tt> in the filter, and if FOO defines the <tt>TARGET</tt> variable
     and FOO #1 sets <tt>TARGET</tt> to be <tt>linux</tt>, then the triggered BAR #3 will only select the subset
     of combinations where <tt>label=="linux"</tt> holds true.

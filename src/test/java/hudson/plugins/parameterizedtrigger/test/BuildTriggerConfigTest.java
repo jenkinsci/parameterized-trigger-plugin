@@ -236,8 +236,8 @@ public class BuildTriggerConfigTest {
         // Create project with downstream trigger
         final FreeStyleProject downstreamProject = r.createFreeStyleProject("downstreamProject");
         final FreeStyleProject upstreamProject = r.createFreeStyleProject("upstreamProject");
-        final BlockableBuildTriggerConfig triggerConfg = createConfig("downstreamProject");
-        addParameterizedTrigger(upstreamProject, triggerConfg);
+        final BlockableBuildTriggerConfig triggerConfig = createConfig("downstreamProject");
+        addParameterizedTrigger(upstreamProject, triggerConfig);
 
         // Setup upstream project security
         Map<Permission,Set<String>> permissions = new HashMap<Permission,Set<String>>();
@@ -250,7 +250,7 @@ public class BuildTriggerConfigTest {
         ACL.impersonate(user.impersonate(), new Runnable() {
             @Override
             public void run() {
-                SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
+                SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
                 assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
@@ -261,7 +261,7 @@ public class BuildTriggerConfigTest {
         ACL.impersonate(user.impersonate(), new Runnable() {
             @Override
             public void run() {
-                SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
+                SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
                 assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }

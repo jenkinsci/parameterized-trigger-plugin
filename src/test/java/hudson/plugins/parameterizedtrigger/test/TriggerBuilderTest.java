@@ -347,10 +347,10 @@ public class TriggerBuilderTest {
          * the build is configured with a TriggerBuilder which will block waiting for
          * 6 other projects to complete.
          *
-         * To allow this to run with no jobs being queued we need to have enogh exectors for all builds
+         * To allow this to run with no jobs being queued we need to have enough executors for all builds
          * That is 1 + 4 + (4*6) = 29
-         * The minimun number of executors needed to allow test to run with queued builds would be
-         * 1 + 4 + 1 = 5 that is one exector for all of the builds that start others and
+         * The minimum number of executors needed to allow test to run with queued builds would be
+         * 1 + 4 + 1 = 5 that is one executor for all of the builds that start others and
          * and also a free executor to allow the queue to progress
          *
          * Set as 50 for first case.
