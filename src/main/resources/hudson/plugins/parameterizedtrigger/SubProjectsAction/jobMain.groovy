@@ -2,9 +2,7 @@ package hudson.plugins.parameterizedtrigger.SubProjectsAction
 
 import hudson.Functions
 
-def f=namespace(lib.FormTagLib)
 def j=namespace(lib.JenkinsTagLib)
-def l=namespace(lib.LayoutTagLib)
 
 def actions = my.subProjectActions
 if (!actions.empty) {

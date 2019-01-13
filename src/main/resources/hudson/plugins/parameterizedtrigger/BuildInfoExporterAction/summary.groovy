@@ -1,9 +1,5 @@
 package hudson.plugins.parameterizedtrigger.BuildInfoExporterAction;
 
-def f=namespace(lib.FormTagLib)
-def j=namespace(lib.JenkinsTagLib)
-def l=namespace(lib.LayoutTagLib)
-
 def builds = my.triggeredBuilds
 if(builds.size() > 0) {
 	h2("Subproject Builds");
