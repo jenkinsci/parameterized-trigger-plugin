@@ -329,7 +329,7 @@ public class RenameJobTest {
     }
     
     /**
-     * {@link r.jenkins.model.Items#computeRelativeNamesAfterRenaming(String, String, String, r.jenkins.model.ItemGroup)} has a bug
+     * {@link hudson.model.Items#computeRelativeNamesAfterRenaming(String, String, String, hudson.model.ItemGroup)} has a bug
      * that renaming names that contains the target name as prefix.
      * E.g. renaming ProjectB to ProjectB-renamed results in renaming ProjectB2 to ProjectB-renamed2.
      * This is fixed in Jenkins 1.530.
