@@ -76,9 +76,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
                             if ($setLocation!=null) {
                                 try {
                                     $setLocation.invoke(fv,parameterName);
-                                } catch (IllegalAccessException e) {
-                                    // be defensive as the core might change
-                                } catch (InvocationTargetException e) {
+                                } catch (IllegalAccessException | InvocationTargetException e) {
                                     // be defensive as the core might change
                                 }
                             }

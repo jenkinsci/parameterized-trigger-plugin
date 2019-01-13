@@ -314,8 +314,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 EnvVars env = null;
                 try {
                     env = build != null ? build.getEnvironment() : null;
-                } catch (IOException e) {
-                } catch (InterruptedException e) {
+                } catch (IOException | InterruptedException e) {
                 }
 
                 unresolvedProjectName = env != null ? env.expand(unresolvedProjectName) : unresolvedProjectName;
