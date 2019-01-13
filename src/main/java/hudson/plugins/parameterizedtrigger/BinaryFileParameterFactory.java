@@ -9,7 +9,6 @@ import hudson.model.FileParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
-import hudson.util.IOException2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.File;
@@ -86,7 +85,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
                 }
             }
         } catch (IOException ex) {
-            throw new IOException2("Failed to compute binary file parameters from "+getFilePattern(),ex);
+            throw new IOException("Failed to compute binary file parameters from " + getFilePattern(), ex);
         }
 
         return result;
