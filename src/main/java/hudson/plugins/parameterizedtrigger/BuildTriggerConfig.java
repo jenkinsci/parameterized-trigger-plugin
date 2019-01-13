@@ -568,7 +568,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 return null;
             }
                    
-            return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[queueActions.size()]));
+            return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[0]));
         }
 
         // Trigger is not compatible with un-parameterized jobs

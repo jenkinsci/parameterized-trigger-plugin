@@ -84,7 +84,7 @@ public class ParameterizedTriggerUtils {
             params.put(param.getName(), param);
         for (ParameterValue param : overlay.getParameters())
             params.put(param.getName(), param);
-        return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
+        return new ParametersAction(params.values().toArray(new ParameterValue[0]));
     }
 
 }
