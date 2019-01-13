@@ -116,7 +116,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                     }
 
                     // Present the undefined project(s) in error message
-                    StringBuffer missingProject = new StringBuffer();
+                    StringBuilder missingProject = new StringBuilder();
                     for (String projectName : unsolvedProjectNames) {
                         missingProject.append(" > ");
                         missingProject.append(projectName);
