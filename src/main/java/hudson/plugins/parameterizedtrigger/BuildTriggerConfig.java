@@ -729,13 +729,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
 
         public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
-            return Hudson.getInstance().<AbstractBuildParameters,
-              Descriptor<AbstractBuildParameters>>getDescriptorList(AbstractBuildParameters.class);
+            return Hudson.getInstance().getDescriptorList(AbstractBuildParameters.class);
         }
 
         public List<Descriptor<AbstractBuildParameterFactory>> getBuilderConfigFactoryDescriptors() {
-            return Hudson.getInstance().<AbstractBuildParameterFactory,
-              Descriptor<AbstractBuildParameterFactory>>getDescriptorList(AbstractBuildParameterFactory.class);
+            return Hudson.getInstance().getDescriptorList(AbstractBuildParameterFactory.class);
         }
 
         @Restricted(DoNotUse.class)

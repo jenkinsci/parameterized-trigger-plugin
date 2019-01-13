@@ -234,7 +234,7 @@ public class TriggerBuilderTest {
 
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
         ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
-        List<AbstractBuildParameters> emptyList = Collections.<AbstractBuildParameters>emptyList();
+        List<AbstractBuildParameters> emptyList = Collections.emptyList();
 
         BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig("project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
 
