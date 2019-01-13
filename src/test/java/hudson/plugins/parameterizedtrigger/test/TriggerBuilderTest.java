@@ -288,7 +288,7 @@ public class TriggerBuilderTest {
     /** Verify that workflow build can be triggered */
     @Test
     public void testTriggerWithWorkflow() throws Exception {
-        WorkflowJob p = (WorkflowJob) r.createProject(WorkflowJob.class, "project1");
+        WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
         p.setDefinition(new CpsFlowDefinition("println('hello')"));
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
@@ -305,7 +305,7 @@ public class TriggerBuilderTest {
     @Issue("JENKINS-30040")
     @Test
     public void testGetProjectsList() throws Exception {
-        WorkflowJob p = (WorkflowJob) r.createProject(WorkflowJob.class, "project1");
+        WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
         p.setDefinition(new CpsFlowDefinition("println('hello')"));
         Project<?, ?> p2 = r.createFreeStyleProject("project2");
 
@@ -325,7 +325,7 @@ public class TriggerBuilderTest {
     @Test
     public void testTriggerWithWorkflowMixedTypes() throws Exception {
         r.createFreeStyleProject("project1");
-        WorkflowJob p = (WorkflowJob) r.createProject(WorkflowJob.class, "project2");
+        WorkflowJob p = r.createProject(WorkflowJob.class, "project2");
         p.setDefinition(new CpsFlowDefinition("println('hello')"));
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");

@@ -230,7 +230,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         if (!subProjectData.getUnresolved().isEmpty()) {
 
-            AbstractBuild currentBuild = (AbstractBuild)context.getLastBuild();
+            AbstractBuild currentBuild = context.getLastBuild();
 
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
@@ -246,13 +246,13 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
             // check the last build
             resolveProject(currentBuild, subProjectData);
-            currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
+            currentBuild = currentBuild.getPreviousBuild();
 
             int backTrackCount = 0;
             // as long we have more builds to examine we continue,
             while (currentBuild != null && backTrackCount < BACK_TRACK) {
                 resolveProject(currentBuild, subProjectData);
-                currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
+                currentBuild = currentBuild.getPreviousBuild();
                 backTrackCount++;
             }
 
