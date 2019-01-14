@@ -55,6 +55,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.ArrayList;
@@ -67,9 +68,6 @@ import java.util.Map;
 import java.util.Set;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.context.SecurityContext;
-
-import org.jvnet.hudson.test.Bug;
-import org.jvnet.hudson.test.Issue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -222,7 +220,7 @@ public class BuildTriggerConfigTest {
         r.assertLogContains("GOOBER", workflowRun);
     }
 
-    @Bug(31727)
+    @Issue("JENKINS-31727")
     @Test
     public void testShouldNotFailOnDiscoverWithoutReadPermission() throws Exception {
         // Setup global security

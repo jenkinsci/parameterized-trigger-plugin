@@ -41,7 +41,6 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.test.Bug;
 
 import hudson.matrix.TextAxis;
 import hudson.matrix.MatrixProject;
@@ -339,7 +338,7 @@ public class TriggerBuilderTest {
         assertNotNull(p.getLastBuild());
     }
 
-    @Bug(14278)
+    @Issue("JENKINS-14278")
     @Test
     public void testBlockingTriggerWithMatrixProject() throws Exception {
 
@@ -398,7 +397,7 @@ public class TriggerBuilderTest {
         }
     }
 
-    @Bug(17751)
+    @Issue("JENKINS-17751")
     @Test
     public void testTriggerFromPromotion() throws Exception {
         assertNotNull("promoted-builds must be installed.", Jenkins.getInstance().getPlugin("promoted-builds"));
