@@ -25,7 +25,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.AbstractProject;
-import hudson.model.Cause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Job;
@@ -126,7 +126,7 @@ public class BuildTriggerConfigTest {
         subProject1.setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 dynamic and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 0, 1, 0, 1);
@@ -151,7 +151,7 @@ public class BuildTriggerConfigTest {
         subProject1.setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 fixed and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 1, 0, 0, 1);
@@ -210,7 +210,7 @@ public class BuildTriggerConfigTest {
         subProject1.setQuietPeriod(0);
         subProject1.addProperty(new ParametersDefinitionProperty(definition));
 
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Check all builds triggered correctly
         assertEquals(1, workflowProject.getBuilds().size());
@@ -286,7 +286,7 @@ public class BuildTriggerConfigTest {
         r.createFreeStyleProject("subproject2").setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 fixed and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 1, 1, 0, 0);
@@ -311,14 +311,14 @@ public class BuildTriggerConfigTest {
         r.createFreeStyleProject("subproject2").setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Remove one trigger
         masterConfig = createConfig("subproject1");
         addParameterizedTrigger(masterProject, masterConfig);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 fixed and 1 triggered project
         validateOutcome(masterProject, masterConfig, 1, 0, 1, 0);

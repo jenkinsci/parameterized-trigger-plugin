@@ -27,6 +27,7 @@ import com.google.common.collect.ArrayListMultimap;
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -518,7 +519,7 @@ public class TriggerBuilderTest {
 
         upstream.getBuildersList().add(triggerBuilder);
 
-        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new Cause.UserCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
+        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new UserIdCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
         r.assertBuildStatusSuccess(upstreamBuild);
         r.waitUntilNoActivity();
         FreeStyleBuild downstream1Build = downstream1.getLastBuild();
