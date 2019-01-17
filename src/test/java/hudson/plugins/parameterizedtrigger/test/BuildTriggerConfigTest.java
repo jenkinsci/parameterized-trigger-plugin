@@ -160,7 +160,7 @@ public class BuildTriggerConfigTest {
     public void testGetProjectListWithWorkflow() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
         WorkflowJob p = r.createProject(WorkflowJob.class, "workflowproject");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
         // Trigger a normal and workflow project
         BlockableBuildTriggerConfig masterConfig = createConfig("subproject1, workflowproject");
@@ -185,7 +185,7 @@ public class BuildTriggerConfigTest {
     public void testBuildWithWorkflowProjects() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
         WorkflowJob workflowProject = r.createProject(WorkflowJob.class, "workflowproject");
-        workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }"));
+        workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }", false));
         // SECURITY-170: must define parameters in subjobs
         List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
         definition.add(new StringParameterDefinition("myParam","myParam"));

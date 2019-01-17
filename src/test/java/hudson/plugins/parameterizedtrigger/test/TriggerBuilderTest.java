@@ -289,7 +289,7 @@ public class TriggerBuilderTest {
     @Test
     public void testTriggerWithWorkflow() throws Exception {
         WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
@@ -306,7 +306,7 @@ public class TriggerBuilderTest {
     @Test
     public void testGetProjectsList() throws Exception {
         WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
         Project<?, ?> p2 = r.createFreeStyleProject("project2");
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
@@ -326,7 +326,7 @@ public class TriggerBuilderTest {
     public void testTriggerWithWorkflowMixedTypes() throws Exception {
         r.createFreeStyleProject("project1");
         WorkflowJob p = r.createProject(WorkflowJob.class, "project2");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1, project2"));
