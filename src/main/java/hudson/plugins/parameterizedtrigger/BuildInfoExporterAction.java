@@ -76,7 +76,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
     if (action == null) {
       action = new BuildInfoExporterAction(triggeredProject, buildNumber, parentBuild, buildResult);
-      parentBuild.getActions().add(action);
+      parentBuild.addAction(action);
     } else {
       action.addBuildReference(triggeredProject, buildNumber, buildResult);
     }
@@ -88,7 +88,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     if (action == null) {
 
       action = new BuildInfoExporterAction(new BuildReference(triggeredProject));
-      parentBuild.getActions().add(action);
+      parentBuild.addAction(action);
     } else {
       action.addBuildReference(new BuildReference(triggeredProject));
     }
