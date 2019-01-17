@@ -225,7 +225,8 @@ public class RenameJobTest {
                 ResultCondition.ALWAYS,
                 true,
                 null,
-                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
+                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters()),
+                false
         )));
         
         r.jenkins.rebuildDependencyGraph();
@@ -283,7 +284,8 @@ public class RenameJobTest {
                 ResultCondition.ALWAYS,
                 true,
                 null,
-                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
+                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters()),
+                false
         )));
         
         r.jenkins.rebuildDependencyGraph();
@@ -347,7 +349,8 @@ public class RenameJobTest {
                 ResultCondition.ALWAYS,
                 true,
                 null,
-                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters())
+                Arrays.asList((AbstractBuildParameters)new CurrentBuildParameters()),
+                false
         )));
         
         r.jenkins.rebuildDependencyGraph();

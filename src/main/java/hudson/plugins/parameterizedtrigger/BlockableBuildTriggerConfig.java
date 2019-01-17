@@ -39,7 +39,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
 
     @DataBoundConstructor
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameterFactory> configFactories,List<AbstractBuildParameters> configs) {
-        super(projects, ResultCondition.ALWAYS, false, configFactories, configs);
+        super(projects, ResultCondition.ALWAYS, false, configFactories, configs, false);
         this.block = block;
     }
 

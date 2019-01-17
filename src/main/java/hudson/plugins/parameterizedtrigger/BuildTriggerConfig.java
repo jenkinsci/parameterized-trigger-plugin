@@ -99,18 +99,18 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
-        this(projects, condition, triggerWithNoParameters, null, configs);
+        this(projects, condition, triggerWithNoParameters, null, configs, false);
     }
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
+		this(projects, condition, false, null, Arrays.asList(configs), false);
 	}
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
             List<AbstractBuildParameterFactory> configFactories,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
+		this(projects, condition, false, configFactories, Arrays.asList(configs), false);
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
