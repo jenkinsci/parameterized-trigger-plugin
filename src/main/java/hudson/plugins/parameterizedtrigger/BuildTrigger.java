@@ -10,7 +10,6 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
-import hudson.model.DependecyDeclarer;
 import hudson.model.DependencyGraph;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
@@ -20,6 +19,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import jenkins.model.DependencyDeclarer;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class BuildTrigger extends Notifier implements DependecyDeclarer {
+public class BuildTrigger extends Notifier implements DependencyDeclarer {
 
 	private final ArrayList<BuildTriggerConfig> configs;
 
