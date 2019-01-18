@@ -84,9 +84,9 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
         EnvVars envVars = build.getEnvironment(listener);
 
-        long fromNum = Long.valueOf(envVars.expand(from));
-        long toNum = Long.valueOf(envVars.expand(to));
-        long stepNum = Long.valueOf(envVars.expand(step));
+        long fromNum = Long.parseLong(envVars.expand(from));
+        long toNum = Long.parseLong(envVars.expand(to));
+        long stepNum = Long.parseLong(envVars.expand(step));
 
         ArrayList<AbstractBuildParameters> params = Lists.newArrayList();
         int upDown = Long.signum(toNum - fromNum);
@@ -99,7 +99,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             } else if (upDown * stepNum < 0) {
                 validationFail.failCheck(listener);
             } else {
-                for (Long i = fromNum; upDown * i <= upDown * toNum; i += stepNum) {
+                for (long i = fromNum; upDown * i <= upDown * toNum; i += stepNum) {
                     params.add(getParameterForCount(i));
                 }
             }
@@ -141,7 +141,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
 
         private boolean isNumber(String value) {
             try {
-                Long.valueOf(value);
+                Long.parseLong(value);
             } catch (NumberFormatException e) {
                 return false;
             }
