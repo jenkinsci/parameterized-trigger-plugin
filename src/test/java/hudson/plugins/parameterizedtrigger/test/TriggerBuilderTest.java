@@ -46,13 +46,13 @@ import hudson.matrix.TextAxis;
 import hudson.matrix.MatrixProject;
 import hudson.matrix.MatrixRun;
 import hudson.matrix.AxisList;
+import hudson.model.queue.QueueTaskFuture;
 
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
@@ -91,11 +91,11 @@ public class TriggerBuilderTest {
         when(config.getProjects(any(EnvVars.class))).thenReturn(disabledJob.getName());
         when(config.getBlock()).thenReturn(new BlockingBehaviour(Result.FAILURE, Result.FAILURE, Result.FAILURE));
 
-        final ArrayListMultimap<Job, Future<Run>> futures = ArrayListMultimap.create();
+        final ArrayListMultimap<Job, QueueTaskFuture<AbstractBuild>> futures = ArrayListMultimap.create();
         when(config.perform3(any(AbstractBuild.class),
                 Mockito.any(Launcher.class),
                 Mockito.any(BuildListener.class))).thenReturn(futures);
-        // Then project is disabled scheduler returns null instead of Future<Run> object
+        // Then project is disabled scheduler returns null instead of QueueTaskFuture<Run> object
         futures.put(disabledJob, null);
 
         final List<Job> jobs = new ArrayList<Job>();
@@ -134,11 +134,17 @@ public class TriggerBuilderTest {
         triggerProject.scheduleBuild2(0).get();
 
         assertLines(triggerProject.getLastBuild(),
+                "project1 #1 started.",
                 "project1 #1 completed. Result was SUCCESS",
+                "project2 #1 started.",
                 "project2 #1 completed. Result was SUCCESS",
+                "project3 #1 started.",
                 "project3 #1 completed. Result was SUCCESS",
+                "project4 #1 started.",
                 "project4 #1 completed. Result was SUCCESS",
+                "project5 #1 started.",
                 "project5 #1 completed. Result was SUCCESS",
+                "project6 #1 started.",
                 "project6 #1 completed. Result was SUCCESS");
     }
 
@@ -171,8 +177,11 @@ public class TriggerBuilderTest {
 
         triggerProject.scheduleBuild2(0).get();
         assertLines(triggerProject.getLastBuild(),
+            "project1 #1 started.",
             "project1 #1 completed. Result was SUCCESS",
+            "project2 #1 started.",
             "project2 #1 completed. Result was SUCCESS",
+            "project3 #1 started.",
             "project3 #1 completed. Result was SUCCESS");
     }
 
@@ -234,14 +243,23 @@ public class TriggerBuilderTest {
         triggerProject.scheduleBuild2(0).get();
 
         assertLines(triggerProject.getLastBuild(),
+                "project1 #1 started.",
                 "project1 #1 completed. Result was SUCCESS",
+                "project1 #2 started.",
                 "project1 #2 completed. Result was SUCCESS",
+                "project1 #3 started.",
                 "project1 #3 completed. Result was SUCCESS",
+                "project2 #1 started.",
                 "project2 #1 completed. Result was SUCCESS",
+                "project2 #2 started.",
                 "project2 #2 completed. Result was SUCCESS",
+                "project2 #3 started.",
                 "project2 #3 completed. Result was SUCCESS",
+                "project3 #1 started.",
                 "project3 #1 completed. Result was SUCCESS",
+                "project3 #2 started.",
                 "project3 #2 completed. Result was SUCCESS",
+                "project3 #3 started.",
                 "project3 #3 completed. Result was SUCCESS");
     }
 
