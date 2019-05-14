@@ -27,13 +27,13 @@ public class NodeParameters extends AbstractBuildParameters{
 
 	@Override
 	public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-		Node node = build.getBuiltOn();
+		String nodeName = build.getBuiltOnStr();
 		Label nodeLabel;
 		// master does not return a node name so add it explicitly.
-		if(node == null) {
+		if(nodeName == null || nodeName == "") {
 			nodeLabel = Jenkins.getInstance().getSelfLabel();
 		} else {
-			nodeLabel = node.getSelfLabel();
+			nodeLabel = Label.get(nodeName);
 		}
 		listener.getLogger().println("Returning node parameter for " + nodeLabel.getDisplayName());
 		return new NodeAction(nodeLabel);
