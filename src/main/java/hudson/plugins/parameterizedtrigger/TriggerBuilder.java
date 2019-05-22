@@ -42,16 +42,19 @@ import hudson.tasks.Builder;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.User;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.util.IOException2;
 import jenkins.model.DependencyDeclarer;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
+import java.lang.RuntimeException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * {@link Builder} that triggers other projects and optionally waits for their completion.
@@ -90,7 +93,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
 
         try {
             for (BlockableBuildTriggerConfig config : configs) {
-                ListMultimap<Job, Future<Run>> futures = config.perform3(build, launcher, listener);
+                ListMultimap<Job, QueueTaskFuture<AbstractBuild>> futures = config.perform3(build, launcher, listener);
                 // Only contains resolved projects
                 List<Job> projectList = config.getJobs(build.getRootBuild().getProject().getParent(), env);
 
@@ -140,16 +143,19 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                     + " or the configuration has not been saved yet.");
                             continue;
                         }
-                        for (Future<Run> future : futures.get(p)) {
+                        for (QueueTaskFuture<AbstractBuild> future : futures.get(p)) {
                             try {
                                 if (future != null ) {
                                     listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                    Run b = future.get();
-                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + b.getUrl(), b.getFullDisplayName()) + " completed. Result was " + b.getResult());
-                                    BuildInfoExporterAction.addBuildInfoExporterAction(build, b.getParent().getFullName(), b.getNumber(), b.getResult());
+                                    Run startedRun = future.waitForStart();
+                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + startedRun.getUrl(), startedRun.getFullDisplayName()) + " started.");
 
-                                    if (buildStepResult && config.getBlock().mapBuildStepResult(b.getResult())) {
-                                        build.setResult(config.getBlock().mapBuildResult(b.getResult()));
+                                    Run completedRun = future.get();
+                                    listener.getLogger().println(HyperlinkNote.encodeTo('/' + completedRun.getUrl(), completedRun.getFullDisplayName()) + " completed. Result was " + completedRun.getResult());
+                                    BuildInfoExporterAction.addBuildInfoExporterAction(build, completedRun.getParent().getFullName(), completedRun.getNumber(), completedRun.getResult());
+
+                                    if (buildStepResult && config.getBlock().mapBuildStepResult(completedRun.getResult())) {
+                                        build.setResult(config.getBlock().mapBuildResult(completedRun.getResult()));
                                     } else {
                                         buildStepResult = false;
                                     }

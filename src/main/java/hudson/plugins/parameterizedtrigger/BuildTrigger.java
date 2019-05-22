@@ -15,6 +15,7 @@ import hudson.model.DependencyGraph;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Job;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -104,8 +105,8 @@ public class BuildTrigger extends Notifier implements DependecyDeclarer {
 			for (BuildTriggerConfig config : configs) {
 				if (!alreadyFired.contains(config)) {
 					//config.perform(build, launcher, listener);
-					List<Future<AbstractBuild>> futures = config.perform(build, launcher, listener);
-					for (Future future : futures) {
+					List<QueueTaskFuture<AbstractBuild>> futures = config.perform(build, launcher, listener);
+					for (QueueTaskFuture future : futures) {
 						AbstractBuild abstractBuild = null;
 						try {
 							abstractBuild = (AbstractBuild) future.get();
