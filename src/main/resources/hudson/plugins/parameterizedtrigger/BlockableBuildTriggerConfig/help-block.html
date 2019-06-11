@@ -26,17 +26,17 @@
   When activating this option, triggered builds will be run synchronously. The
   result of the current build step or the current build can then be controlled
   using the three following options:<br/><ul>
-  <li><b>Fail this build step if the triggered build is worse or equal to</b>:
+  <li><b>Fail this build step if the triggered build is worse than or equal to</b>:
   This option takes precedence over the two following ones if its value is not
   <b>never</b>. In that case, the result of the current build step (that is,
   success or failure) is based on the result of the triggered builds. If the
   condition defined for at least one of the triggered build is met, then the
   build step will be considered as failed.</li>
-  <li><b>Mark this build as <em>failed</em> if the triggered build is worse or equal to</b>:
+  <li><b>Mark this build as <em>failed</em> if the triggered build is worse than or equal to</b>:
   This option takes precedence over the next one if its value is not set to
   <b>never</b>. In that case, the current build will be considered as failed
   based on the result of the triggered builds and the value of the option.</li>
-  <li><b>Mark this build as <em>unstable</em> if the triggered build is worse or equal to</b>:
+  <li><b>Mark this build as <em>unstable</em> if the triggered build is worse than or equal to</b>:
   This option is taken into account if its value is not <b>never</b>. In that
   case, the build will be considered as unstable based on the result of the
   triggered builds and the value of this option.</li>
