@@ -15,7 +15,7 @@ import java.util.List;
  * @author Alan Harder
  */
 public class ParameterizedDependency extends Dependency {
-	private BuildTriggerConfig config;
+	private final BuildTriggerConfig config;
 
 	public ParameterizedDependency(AbstractProject upstream, AbstractProject downstream,
 			BuildTriggerConfig config) {

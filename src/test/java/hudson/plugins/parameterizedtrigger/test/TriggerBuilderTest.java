@@ -27,6 +27,7 @@ import com.google.common.collect.ArrayListMultimap;
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
@@ -40,7 +41,6 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.test.Bug;
 
 import hudson.matrix.TextAxis;
 import hudson.matrix.MatrixProject;
@@ -234,7 +234,7 @@ public class TriggerBuilderTest {
 
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
         ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
-        List<AbstractBuildParameters> emptyList = Collections.<AbstractBuildParameters>emptyList();
+        List<AbstractBuildParameters> emptyList = Collections.emptyList();
 
         BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig("project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
 
@@ -288,8 +288,8 @@ public class TriggerBuilderTest {
     /** Verify that workflow build can be triggered */
     @Test
     public void testTriggerWithWorkflow() throws Exception {
-        WorkflowJob p = (WorkflowJob) r.createProject(WorkflowJob.class, "project1");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
@@ -305,8 +305,8 @@ public class TriggerBuilderTest {
     @Issue("JENKINS-30040")
     @Test
     public void testGetProjectsList() throws Exception {
-        WorkflowJob p = (WorkflowJob) r.createProject(WorkflowJob.class, "project1");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
         Project<?, ?> p2 = r.createFreeStyleProject("project2");
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
@@ -325,8 +325,8 @@ public class TriggerBuilderTest {
     @Test
     public void testTriggerWithWorkflowMixedTypes() throws Exception {
         r.createFreeStyleProject("project1");
-        WorkflowJob p = (WorkflowJob) r.createProject(WorkflowJob.class, "project2");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        WorkflowJob p = r.createProject(WorkflowJob.class, "project2");
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1, project2"));
@@ -338,7 +338,7 @@ public class TriggerBuilderTest {
         assertNotNull(p.getLastBuild());
     }
 
-    @Bug(14278)
+    @Issue("JENKINS-14278")
     @Test
     public void testBlockingTriggerWithMatrixProject() throws Exception {
 
@@ -347,10 +347,10 @@ public class TriggerBuilderTest {
          * the build is configured with a TriggerBuilder which will block waiting for
          * 6 other projects to complete.
          *
-         * To allow this to run with no jobs being queued we need to have enogh exectors for all builds
+         * To allow this to run with no jobs being queued we need to have enough executors for all builds
          * That is 1 + 4 + (4*6) = 29
-         * The minimun number of executors needed to allow test to run with queued builds would be
-         * 1 + 4 + 1 = 5 that is one exector for all of the builds that start others and
+         * The minimum number of executors needed to allow test to run with queued builds would be
+         * 1 + 4 + 1 = 5 that is one executor for all of the builds that start others and
          * and also a free executor to allow the queue to progress
          *
          * Set as 50 for first case.
@@ -397,7 +397,7 @@ public class TriggerBuilderTest {
         }
     }
 
-    @Bug(17751)
+    @Issue("JENKINS-17751")
     @Test
     public void testTriggerFromPromotion() throws Exception {
         assertNotNull("promoted-builds must be installed.", Jenkins.getInstance().getPlugin("promoted-builds"));
@@ -518,7 +518,7 @@ public class TriggerBuilderTest {
 
         upstream.getBuildersList().add(triggerBuilder);
 
-        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new Cause.UserCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
+        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new UserIdCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
         r.assertBuildStatusSuccess(upstreamBuild);
         r.waitUntilNoActivity();
         FreeStyleBuild downstream1Build = downstream1.getLastBuild();

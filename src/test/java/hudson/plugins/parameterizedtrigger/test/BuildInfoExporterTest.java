@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
-import hudson.model.Cause.UserCause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Project;
@@ -86,7 +86,7 @@ public class BuildInfoExporterTest {
     projectB.updateNextBuildNumber(3);
 
     int expectedBuildNumber = projectB.getNextBuildNumber();
-    projectA.scheduleBuild2(0, new UserCause()).get();
+    projectA.scheduleBuild2(0, new UserIdCause()).get();
 
     Run buildB1 = projectB.getBuildByNumber(expectedBuildNumber);
     EnvVars envVars = builder.getEnvVars();
@@ -105,7 +105,7 @@ public class BuildInfoExporterTest {
     assertThat(projectB.getNextBuildNumber(), is(not(expectedBuildNumber)));
 
     expectedBuildNumber = projectB.getNextBuildNumber();
-    AbstractBuild<?, ?> buildA2 = projectA.scheduleBuild2(0, new UserCause()).get();
+    AbstractBuild<?, ?> buildA2 = projectA.scheduleBuild2(0, new UserIdCause()).get();
     envVars = builder.getEnvVars();
 
     assertThat(envVars, notNullValue());
@@ -140,7 +140,7 @@ public void test_oddchars() throws Exception {
     projectB.updateNextBuildNumber(3);
 
     int expectedBuildNumber = projectB.getNextBuildNumber();
-    projectA.scheduleBuild2(0, new UserCause()).get();
+    projectA.scheduleBuild2(0, new UserIdCause()).get();
 
     EnvVars envVars = builder.getEnvVars();
     //System.out.println("envVars: " + envVars);
@@ -154,7 +154,7 @@ public void test_oddchars() throws Exception {
     assertThat(projectB.getNextBuildNumber(), is(not(expectedBuildNumber)));
 
     expectedBuildNumber = projectB.getNextBuildNumber();
-    projectA.scheduleBuild2(0, new UserCause()).get();
+    projectA.scheduleBuild2(0, new UserIdCause()).get();
     envVars = builder.getEnvVars();
 
     assertThat(envVars, notNullValue());
@@ -191,7 +191,7 @@ public void test_oddchars() throws Exception {
     int firstExpectedBuildNumberB = projectB.getNextBuildNumber();
     int firstExpectedBuildNumberC = projectC.getNextBuildNumber();
 
-    projectA.scheduleBuild2(0, new UserCause()).get();
+    projectA.scheduleBuild2(0, new UserIdCause()).get();
     r.waitUntilNoActivity();
 
     EnvVars envVars = builder.getEnvVars();
@@ -257,7 +257,7 @@ public void test_oddchars() throws Exception {
 
     int expectedBuildNumber = projectB.getNextBuildNumber();
     int expectedBuildNumberC = projectC.getNextBuildNumber();
-    projectA.scheduleBuild2(0, new UserCause()).get();
+    projectA.scheduleBuild2(0, new UserIdCause()).get();
     r.waitUntilNoActivity();
 
     Run buildB1 = projectB.getBuildByNumber(expectedBuildNumber);

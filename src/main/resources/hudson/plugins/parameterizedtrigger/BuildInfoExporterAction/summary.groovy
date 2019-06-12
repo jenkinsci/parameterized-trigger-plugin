@@ -1,12 +1,8 @@
-package hudson.plugins.parameterizedtrigger.BuildInfoExporterAction;
-
-def f=namespace(lib.FormTagLib)
-def j=namespace(lib.JenkinsTagLib)
-def l=namespace(lib.LayoutTagLib)
+package hudson.plugins.parameterizedtrigger.BuildInfoExporterAction
 
 def builds = my.triggeredBuilds
 if(builds.size() > 0) {
-	h2("Subproject Builds");
+	h2("Subproject Builds")
 
 	ul(style:"list-style-type: none;") {
 		for (item in builds) {
@@ -28,7 +24,7 @@ if(builds.size() > 0) {
 
 def projects = my.triggeredProjects
 if (projects.size() > 0) {
-	h2("Subprojects triggered but not blocked for");
+	h2("Subprojects triggered but not blocked for")
 
 	ul(style:"list-style-type: none;") {
 		for (item in projects) {

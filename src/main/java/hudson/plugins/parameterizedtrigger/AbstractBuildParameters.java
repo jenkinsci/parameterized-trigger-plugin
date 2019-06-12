@@ -11,8 +11,6 @@ import hudson.model.Queue.Task;
 import hudson.model.TaskListener;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Extension point to produce an {@link Action} to invoke child projects with.

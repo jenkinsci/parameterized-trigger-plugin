@@ -16,8 +16,8 @@ import java.util.List;
  */
 public class SubProjectsAction implements Action {
 
-    private AbstractProject<?,?> project;
-    private List<BlockableBuildTriggerConfig> configs;
+    private final AbstractProject<?,?> project;
+    private final List<BlockableBuildTriggerConfig> configs;
 
     public SubProjectsAction(AbstractProject<?,?> project, List<BlockableBuildTriggerConfig> configs) {
         this.project = project;

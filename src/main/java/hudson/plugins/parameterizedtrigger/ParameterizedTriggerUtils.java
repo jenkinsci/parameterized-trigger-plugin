@@ -60,11 +60,8 @@ public class ParameterizedTriggerUtils {
      * @throws IOException
      */
     public static String readFileToString(FilePath f, String encoding) throws IOException, InterruptedException {
-        InputStream in = f.read();
-        try {
+        try (InputStream in = f.read()) {
             return IOUtils.toString(in, encoding);
-        } finally {
-            in.close();
         }
     }
     
@@ -76,11 +73,8 @@ public class ParameterizedTriggerUtils {
      * @throws IOException
      */
     public static String readFileToString(VirtualFile f) throws IOException, InterruptedException {
-        InputStream in = f.open();
-        try {
+        try (InputStream in = f.open()) {
             return IOUtils.toString(in);
-        } finally {
-            in.close();
         }
     }
     
@@ -90,7 +84,7 @@ public class ParameterizedTriggerUtils {
             params.put(param.getName(), param);
         for (ParameterValue param : overlay.getParameters())
             params.put(param.getName(), param);
-        return new ParametersAction(params.values().toArray(new ParameterValue[params.size()]));
+        return new ParametersAction(params.values().toArray(new ParameterValue[0]));
     }
 
 }

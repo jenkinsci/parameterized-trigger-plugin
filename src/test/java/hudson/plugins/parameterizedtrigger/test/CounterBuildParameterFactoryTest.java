@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import hudson.EnvVars;
-import hudson.model.Cause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
@@ -55,7 +55,7 @@ public class CounterBuildParameterFactoryTest {
         projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
 
-        projectA.scheduleBuild2(0, new Cause.UserCause()).get();
+        projectA.scheduleBuild2(0, new UserIdCause()).get();
         r.waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(2, builds.size());
@@ -93,7 +93,7 @@ public class CounterBuildParameterFactoryTest {
         projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
 
-        projectA.scheduleBuild2(0, new Cause.UserCause()).get();
+        projectA.scheduleBuild2(0, new UserIdCause()).get();
         r.waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(6, builds.size());

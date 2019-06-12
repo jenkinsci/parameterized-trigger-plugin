@@ -45,7 +45,6 @@ import hudson.model.ParametersAction;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
-import hudson.model.Result;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.model.labels.LabelExpression;
@@ -64,7 +63,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.Bug;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SingleFileSCM;
 import org.jvnet.hudson.test.ExtractResourceSCM;
@@ -790,7 +789,7 @@ public class FileBuildTriggerConfigTest {
         }
     }
     
-    @Bug(22705)
+    @Issue("JENKINS-22705")
     @Test
     public void testMatrixBuildsConfiguration() throws Exception {
         FreeStyleProject downstream = r.createFreeStyleProject();
@@ -879,7 +878,7 @@ public class FileBuildTriggerConfigTest {
         }
     }
     
-    @Bug(22229)
+    @Issue("JENKINS-22229")
     @Test
     public void testAbsolutePathWithoutWorkspace() throws Exception {
         // Though it is rather a problem with ws-cleanup-plugin, 

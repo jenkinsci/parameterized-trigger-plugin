@@ -45,7 +45,7 @@ public class SubversionRevisionBuildParameters extends AbstractBuildParameters {
 			infos.addAll(tagAction.getTags().keySet());
 		}
 
-		if(includeUpstreamParameters == true) {
+		if (includeUpstreamParameters) {
 			if (revisionAction == null ) {
 				listener.getLogger().println(
 				        Plugin.LOG_TAG + " no RevisionParameterAction found -- project did not have SVN parameters passed to it?");

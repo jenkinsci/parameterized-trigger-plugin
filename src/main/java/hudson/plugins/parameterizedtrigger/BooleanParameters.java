@@ -42,8 +42,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
  */
 public class BooleanParameters extends AbstractBuildParameters {
 
-	private List<BooleanParameterConfig> configs; 
-	
+	private final List<BooleanParameterConfig> configs;
+
 	@DataBoundConstructor
 	public BooleanParameters(List <BooleanParameterConfig> configs ){
 		this.configs = configs;
