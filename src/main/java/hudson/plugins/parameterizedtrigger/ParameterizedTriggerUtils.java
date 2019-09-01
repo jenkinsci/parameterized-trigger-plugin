@@ -40,6 +40,8 @@ import jenkins.util.VirtualFile;
  * Common utility methods.
  */
 public class ParameterizedTriggerUtils {
+    public static final String DISABLE_ACTION_VIEWS_KEY = "ptp.disableActionViews";
+
     /**
      * Load properties from string.
      *
