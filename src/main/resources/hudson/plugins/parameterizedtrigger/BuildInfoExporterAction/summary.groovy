@@ -29,7 +29,6 @@ if (projects.size() > 0) {
 	ul(style:"list-style-type: none;") {
 		for (item in projects) {
 			li {
-				print "${item}"
 				if (item != null) {
 					a(href:"${rootURL}/${item.url}", class:"model-link") {
 						text(item.displayName)
