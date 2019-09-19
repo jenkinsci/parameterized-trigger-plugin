@@ -1,5 +1,11 @@
 package hudson.plugins.parameterizedtrigger.BuildInfoExporterAction
 
+import static hudson.plugins.parameterizedtrigger.ParameterizedTriggerUtils.DISABLE_ACTION_VIEWS_KEY
+
+if (System.getProperty(DISABLE_ACTION_VIEWS_KEY) != null) {
+	return
+}
+
 def builds = my.triggeredBuilds
 if(builds.size() > 0) {
 	h2("Subproject Builds")
