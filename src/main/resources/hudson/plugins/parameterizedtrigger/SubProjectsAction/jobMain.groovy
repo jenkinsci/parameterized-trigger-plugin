@@ -2,9 +2,13 @@ package hudson.plugins.parameterizedtrigger.SubProjectsAction
 
 import hudson.Functions
 
-def f=namespace(lib.FormTagLib)
+import static hudson.plugins.parameterizedtrigger.ParameterizedTriggerUtils.DISABLE_ACTION_VIEWS_KEY
+
+if (System.getProperty(DISABLE_ACTION_VIEWS_KEY) != null) {
+    return
+}
+
 def j=namespace(lib.JenkinsTagLib)
-def l=namespace(lib.LayoutTagLib)
 
 def actions = my.subProjectActions
 if (!actions.empty) {

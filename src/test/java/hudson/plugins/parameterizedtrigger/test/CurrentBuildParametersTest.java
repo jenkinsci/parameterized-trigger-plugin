@@ -23,7 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.model.Cause.UserCause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.ParametersAction;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
@@ -73,7 +73,7 @@ public class CurrentBuildParametersTest {
         projectB.addProperty(new ParametersDefinitionProperty(definition));
 		r.jenkins.rebuildDependencyGraph();
 
-		projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
+		projectA.scheduleBuild2(0, new UserIdCause(), new ParametersAction(
 			new StringParameterValue("KEY", "value"))).get();
 		r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
@@ -131,7 +131,7 @@ public class CurrentBuildParametersTest {
 		projectB.setQuietPeriod(1);
 		r.jenkins.rebuildDependencyGraph();
 
-		projectA.scheduleBuild2(0, new UserCause()).get();
+		projectA.scheduleBuild2(0, new UserIdCause()).get();
 		assertEquals(pWithoutParameters, r.jenkins.getQueue().contains(projectB));
 		List<String> log = projectA.getLastBuild().getLog(20);
 		for (String string : log) {
@@ -160,7 +160,7 @@ public class CurrentBuildParametersTest {
 		projectB.setQuietPeriod(1);
 		r.jenkins.rebuildDependencyGraph();
 
-		projectA.scheduleBuild2(0, new UserCause()).get();
+		projectA.scheduleBuild2(0, new UserIdCause()).get();
 		assertTrue(r.jenkins.getQueue().contains(projectB));
 		List<String> log = projectA.getLastBuild().getLog(20);
 		for (String string : log) {

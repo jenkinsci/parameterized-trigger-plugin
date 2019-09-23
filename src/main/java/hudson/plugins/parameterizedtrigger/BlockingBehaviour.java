@@ -28,9 +28,7 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.model.AbstractDescribableImpl;
 import org.apache.commons.lang.StringUtils;
 import hudson.Extension;
-import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Result;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -76,10 +74,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
      * @return {@code false} if the triggering build step has to fail, {@code true} otherwise
      */
     public boolean mapBuildStepResult(Result r) {
-        if (buildStepFailureThreshold!=null && r.isWorseOrEqualTo(buildStepFailureThreshold)) {
-            return false;
-        }
-        return true;
+        return buildStepFailureThreshold == null || !r.isWorseOrEqualTo(buildStepFailureThreshold);
     }
 
     /**

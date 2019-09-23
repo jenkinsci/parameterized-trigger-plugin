@@ -130,12 +130,12 @@ public class NodeParametersTest {
 		// should have two builds of projectB
 		assertEquals(2, projectB.getBuilds().size());
 
-		AbstractBuild buildB = (AbstractBuild)projectB.getBuildByNumber(firstBuildNumber);
+		AbstractBuild buildB = projectB.getBuildByNumber(firstBuildNumber);
 		assertNotNull("ProjectB failed to build", buildB);
 		assertEquals(slave0, buildB.getBuiltOn());
 
 		// get the second build of projectB
-		AbstractBuild buildB2 = (AbstractBuild)buildB.getNextBuild();
+		AbstractBuild buildB2 = buildB.getNextBuild();
 		assertNotNull("ProjectB failed to build second time", buildB2);
 		assertEquals(slave2, buildB2.getBuiltOn());
 

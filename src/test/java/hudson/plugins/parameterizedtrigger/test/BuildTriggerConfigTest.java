@@ -25,7 +25,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.model.AbstractProject;
-import hudson.model.Cause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleProject;
 import hudson.model.Item;
 import hudson.model.Job;
@@ -55,6 +55,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.ArrayList;
@@ -67,9 +68,6 @@ import java.util.Map;
 import java.util.Set;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.context.SecurityContext;
-
-import org.jvnet.hudson.test.Bug;
-import org.jvnet.hudson.test.Issue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -126,7 +124,7 @@ public class BuildTriggerConfigTest {
         subProject1.setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 dynamic and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 0, 1, 0, 1);
@@ -151,7 +149,7 @@ public class BuildTriggerConfigTest {
         subProject1.setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 fixed and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 1, 0, 0, 1);
@@ -162,7 +160,7 @@ public class BuildTriggerConfigTest {
     public void testGetProjectListWithWorkflow() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
         WorkflowJob p = r.createProject(WorkflowJob.class, "workflowproject");
-        p.setDefinition(new CpsFlowDefinition("println('hello')"));
+        p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
         // Trigger a normal and workflow project
         BlockableBuildTriggerConfig masterConfig = createConfig("subproject1, workflowproject");
@@ -187,7 +185,7 @@ public class BuildTriggerConfigTest {
     public void testBuildWithWorkflowProjects() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
         WorkflowJob workflowProject = r.createProject(WorkflowJob.class, "workflowproject");
-        workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }"));
+        workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }", false));
         // SECURITY-170: must define parameters in subjobs
         List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
         definition.add(new StringParameterDefinition("myParam","myParam"));
@@ -210,7 +208,7 @@ public class BuildTriggerConfigTest {
         subProject1.setQuietPeriod(0);
         subProject1.addProperty(new ParametersDefinitionProperty(definition));
 
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Check all builds triggered correctly
         assertEquals(1, workflowProject.getBuilds().size());
@@ -222,7 +220,7 @@ public class BuildTriggerConfigTest {
         r.assertLogContains("GOOBER", workflowRun);
     }
 
-    @Bug(31727)
+    @Issue("JENKINS-31727")
     @Test
     public void testShouldNotFailOnDiscoverWithoutReadPermission() throws Exception {
         // Setup global security
@@ -236,8 +234,8 @@ public class BuildTriggerConfigTest {
         // Create project with downstream trigger
         final FreeStyleProject downstreamProject = r.createFreeStyleProject("downstreamProject");
         final FreeStyleProject upstreamProject = r.createFreeStyleProject("upstreamProject");
-        final BlockableBuildTriggerConfig triggerConfg = createConfig("downstreamProject");
-        addParameterizedTrigger(upstreamProject, triggerConfg);
+        final BlockableBuildTriggerConfig triggerConfig = createConfig("downstreamProject");
+        addParameterizedTrigger(upstreamProject, triggerConfig);
 
         // Setup upstream project security
         Map<Permission,Set<String>> permissions = new HashMap<Permission,Set<String>>();
@@ -250,7 +248,7 @@ public class BuildTriggerConfigTest {
         ACL.impersonate(user.impersonate(), new Runnable() {
             @Override
             public void run() {
-                SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
+                SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
                 assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
@@ -261,7 +259,7 @@ public class BuildTriggerConfigTest {
         ACL.impersonate(user.impersonate(), new Runnable() {
             @Override
             public void run() {
-                SubProjectData projectInfo = triggerConfg.getProjectInfo(upstreamProject);
+                SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
                 assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
@@ -286,7 +284,7 @@ public class BuildTriggerConfigTest {
         r.createFreeStyleProject("subproject2").setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 fixed and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 1, 1, 0, 0);
@@ -311,14 +309,14 @@ public class BuildTriggerConfigTest {
         r.createFreeStyleProject("subproject2").setQuietPeriod(0);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Remove one trigger
         masterConfig = createConfig("subproject1");
         addParameterizedTrigger(masterProject, masterConfig);
 
         r.jenkins.rebuildDependencyGraph();
-        masterProject.scheduleBuild2(0, new Cause.UserCause()).get();
+        masterProject.scheduleBuild2(0, new UserIdCause()).get();
 
         // Expects 1 fixed and 1 triggered project
         validateOutcome(masterProject, masterConfig, 1, 0, 1, 0);

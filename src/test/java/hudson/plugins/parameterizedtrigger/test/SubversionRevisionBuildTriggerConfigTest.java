@@ -1,6 +1,6 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import hudson.model.Cause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Queue;
@@ -41,7 +41,7 @@ public class SubversionRevisionBuildTriggerConfigTest {
 						new SubversionRevisionBuildParameters())));
 		r.jenkins.rebuildDependencyGraph();
 
-		FreeStyleBuild b1 = p1.scheduleBuild2(0, new Cause.UserCause()).get();
+		FreeStyleBuild b1 = p1.scheduleBuild2(0, new UserIdCause()).get();
 		Queue.Item q = r.jenkins.getQueue().getItem(p2);
 		assertNotNull("p2 should be in queue (quiet period): " + JenkinsRule.getLog(b1), q);
 		q.getFuture().get();

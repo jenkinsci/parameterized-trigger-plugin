@@ -1,12 +1,14 @@
-package hudson.plugins.parameterizedtrigger.BuildInfoExporterAction;
+package hudson.plugins.parameterizedtrigger.BuildInfoExporterAction
 
-def f=namespace(lib.FormTagLib)
-def j=namespace(lib.JenkinsTagLib)
-def l=namespace(lib.LayoutTagLib)
+import static hudson.plugins.parameterizedtrigger.ParameterizedTriggerUtils.DISABLE_ACTION_VIEWS_KEY
+
+if (System.getProperty(DISABLE_ACTION_VIEWS_KEY) != null) {
+	return
+}
 
 def builds = my.triggeredBuilds
 if(builds.size() > 0) {
-	h2("Subproject Builds");
+	h2("Subproject Builds")
 
 	ul(style:"list-style-type: none;") {
 		for (item in builds) {
@@ -28,12 +30,11 @@ if(builds.size() > 0) {
 
 def projects = my.triggeredProjects
 if (projects.size() > 0) {
-	h2("Subprojects triggered but not blocked for");
+	h2("Subprojects triggered but not blocked for")
 
 	ul(style:"list-style-type: none;") {
 		for (item in projects) {
 			li {
-				print "${item}"
 				if (item != null) {
 					a(href:"${rootURL}/${item.url}", class:"model-link") {
 						text(item.displayName)

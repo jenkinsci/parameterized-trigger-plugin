@@ -192,7 +192,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testNoFilesNoParms() throws Exception {
+    public void testNoFilesNoParams() throws Exception {
 
         //create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();

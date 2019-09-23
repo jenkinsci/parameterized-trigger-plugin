@@ -22,7 +22,6 @@ import hudson.model.TaskListener;
 import hudson.model.TextParameterValue;
 import hudson.util.FormValidation;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;

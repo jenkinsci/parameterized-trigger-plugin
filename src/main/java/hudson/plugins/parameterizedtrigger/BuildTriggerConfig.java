@@ -17,7 +17,6 @@ import hudson.model.CauseAction;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
 import hudson.model.Items;
@@ -32,7 +31,6 @@ import hudson.plugins.promoted_builds.Promotion;
 import hudson.security.ACL;
 import hudson.tasks.Messages;
 import hudson.Util;
-import hudson.model.User;
 import hudson.util.FormValidation;
 import hudson.util.VersionNumber;
 
@@ -74,8 +72,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
 	private String projects;
 	private final ResultCondition condition;
-	private boolean triggerWithNoParameters;
-        private boolean triggerFromChildProjects;
+	private final boolean triggerWithNoParameters;
+	private final boolean triggerFromChildProjects;
 
     public BuildTriggerConfig(String projects, ResultCondition condition, boolean triggerWithNoParameters, 
             List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs, boolean triggerFromChildProjects) {
@@ -101,18 +99,18 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     
     public BuildTriggerConfig(String projects, ResultCondition condition,
             boolean triggerWithNoParameters, List<AbstractBuildParameters> configs) {
-        this(projects, condition, triggerWithNoParameters, null, configs);
+        this(projects, condition, triggerWithNoParameters, null, configs, false);
     }
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, null, Arrays.asList(configs));
+		this(projects, condition, false, null, Arrays.asList(configs), false);
 	}
 
 	public BuildTriggerConfig(String projects, ResultCondition condition,
             List<AbstractBuildParameterFactory> configFactories,
 			AbstractBuildParameters... configs) {
-		this(projects, condition, false, configFactories, Arrays.asList(configs));
+		this(projects, condition, false, configFactories, Arrays.asList(configs), false);
 	}
 
 	public List<AbstractBuildParameters> getConfigs() {
@@ -231,7 +229,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
         if (!subProjectData.getUnresolved().isEmpty()) {
 
-            AbstractBuild currentBuild = (AbstractBuild)context.getLastBuild();
+            AbstractBuild currentBuild = context.getLastBuild();
 
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
@@ -247,13 +245,13 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
             // check the last build
             resolveProject(currentBuild, subProjectData);
-            currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
+            currentBuild = currentBuild.getPreviousBuild();
 
             int backTrackCount = 0;
             // as long we have more builds to examine we continue,
             while (currentBuild != null && backTrackCount < BACK_TRACK) {
                 resolveProject(currentBuild, subProjectData);
-                currentBuild = (AbstractBuild)currentBuild.getPreviousBuild();
+                currentBuild = currentBuild.getPreviousBuild();
                 backTrackCount++;
             }
 
@@ -315,8 +313,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 EnvVars env = null;
                 try {
                     env = build != null ? build.getEnvironment() : null;
-                } catch (IOException e) {
-                } catch (InterruptedException e) {
+                } catch (IOException | InterruptedException e) {
                 }
 
                 unresolvedProjectName = env != null ? env.expand(unresolvedProjectName) : unresolvedProjectName;
@@ -570,7 +567,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 return null;
             }
                    
-            return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[queueActions.size()]));
+            return parameterizedJobMixIn.scheduleBuild2(quietPeriod, queueActions.toArray(new Action[0]));
         }
 
         // Trigger is not compatible with un-parameterized jobs
@@ -714,7 +711,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     public Descriptor<BuildTriggerConfig> getDescriptor() {
-        return Hudson.getInstance().getDescriptorOrDie(getClass());
+        return Jenkins.getInstance().getDescriptorOrDie(getClass());
     }
 
     @Override
@@ -731,13 +728,11 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         }
 
         public List<Descriptor<AbstractBuildParameters>> getBuilderConfigDescriptors() {
-            return Hudson.getInstance().<AbstractBuildParameters,
-              Descriptor<AbstractBuildParameters>>getDescriptorList(AbstractBuildParameters.class);
+            return Jenkins.getInstance().getDescriptorList(AbstractBuildParameters.class);
         }
 
         public List<Descriptor<AbstractBuildParameterFactory>> getBuilderConfigFactoryDescriptors() {
-            return Hudson.getInstance().<AbstractBuildParameterFactory,
-              Descriptor<AbstractBuildParameterFactory>>getDescriptorList(AbstractBuildParameterFactory.class);
+            return Jenkins.getInstance().getDescriptorList(AbstractBuildParameterFactory.class);
         }
 
         @Restricted(DoNotUse.class)

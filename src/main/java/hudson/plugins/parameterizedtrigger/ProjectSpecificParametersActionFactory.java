@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.Job;
 import hudson.model.ParametersAction;
@@ -11,7 +10,7 @@ import java.util.Arrays;
 
 public class ProjectSpecificParametersActionFactory {
 
-    List<ITransformProjectParametersAction> transforms;
+    private final List<ITransformProjectParametersAction> transforms;
 
     public ProjectSpecificParametersActionFactory(ITransformProjectParametersAction... transforms) {
         super();

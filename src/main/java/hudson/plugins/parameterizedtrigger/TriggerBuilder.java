@@ -43,7 +43,6 @@ import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.User;
 import hudson.model.queue.QueueTaskFuture;
-import hudson.util.IOException2;
 import jenkins.model.DependencyDeclarer;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -116,7 +115,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                     }
 
                     // Present the undefined project(s) in error message
-                    StringBuffer missingProject = new StringBuffer();
+                    StringBuilder missingProject = new StringBuilder();
                     for (String projectName : unsolvedProjectNames) {
                         missingProject.append(" > ");
                         missingProject.append(projectName);
@@ -170,7 +169,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                 }
             }
         } catch (ExecutionException e) {
-            throw new IOException2(e); // can't happen, I think.
+            throw new IOException(e); // can't happen, I think.
         }
 
         return buildStepResult;

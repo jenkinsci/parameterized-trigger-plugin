@@ -24,7 +24,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
 import hudson.EnvVars;
-import hudson.model.Cause.UserCause;
+import hudson.model.Cause.UserIdCause;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
@@ -75,7 +75,7 @@ public class DefaultParametersTest {
             System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
             
 
-            String log = JenkinsRule.getLog((Run)projectA.scheduleBuild2(0, new UserCause(),
+            String log = JenkinsRule.getLog((Run)projectA.scheduleBuild2(0, new UserIdCause(),
 			    new ParametersAction(new StringParameterValue("KEY3", "value3"))).get());
             Queue.Item q = r.jenkins.getQueue().getItem(projectB);
             assertNotNull("projectB should be triggered: " + log, q);
@@ -85,7 +85,7 @@ public class DefaultParametersTest {
             assertEquals("value2", builder.getEnvVars().get("KEY2"));
             assertEquals("value3", builder.getEnvVars().get("KEY3"));
 
-            projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(new StringParameterValue("key1", "value3"))).get();
+            projectA.scheduleBuild2(0, new UserIdCause(), new ParametersAction(new StringParameterValue("key1", "value3"))).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
             assertEquals("value3", builder.getEnvVars().get("KEY1"));
             assertEquals("value2", builder.getEnvVars().get("KEY2"));
@@ -119,7 +119,7 @@ public class DefaultParametersTest {
             //System.setProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME, "true");
             System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
 
-            Run run = (Run)projectA.scheduleBuild2(0, new UserCause(), new ParametersAction(
+            Run run = (Run)projectA.scheduleBuild2(0, new UserIdCause(), new ParametersAction(
                 new StringParameterValue("BAR", "foo"),
                 new StringParameterValue("BAZ", "override-me"))).get();
             Queue.Item q = r.jenkins.getQueue().getItem(projectB);

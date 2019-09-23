@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class DynamicBuildAction implements RunAction2 {
 
-    private Map<String, Integer> buildsMap;
+    private final Map<String, Integer> buildsMap;
 
     public DynamicBuildAction(Map<String, Integer> buildsMap) {
         this.buildsMap = buildsMap;

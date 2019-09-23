@@ -9,15 +9,12 @@ import hudson.model.FileParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
-import hudson.util.IOException2;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -78,9 +75,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
                             if ($setLocation!=null) {
                                 try {
                                     $setLocation.invoke(fv,parameterName);
-                                } catch (IllegalAccessException e) {
-                                    // be defensive as the core might change
-                                } catch (InvocationTargetException e) {
+                                } catch (IllegalAccessException | InvocationTargetException e) {
                                     // be defensive as the core might change
                                 }
                             }
@@ -90,7 +85,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
                 }
             }
         } catch (IOException ex) {
-            throw new IOException2("Failed to compute binary file parameters from "+getFilePattern(),ex);
+            throw new IOException("Failed to compute binary file parameters from " + getFilePattern(), ex);
         }
 
         return result;

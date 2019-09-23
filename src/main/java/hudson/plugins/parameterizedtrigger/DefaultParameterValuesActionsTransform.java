@@ -12,7 +12,7 @@ import java.util.ArrayList;
  */
 public class DefaultParameterValuesActionsTransform implements ITransformProjectParametersAction {
     public ParametersAction transformParametersAction(ParametersAction a, Job<?,?> project) {
-        return ParameterizedTriggerUtils.mergeParameters(getDefaultParameters(project), (ParametersAction)a);
+        return ParameterizedTriggerUtils.mergeParameters(getDefaultParameters(project), a);
     }
 
     private static ParametersAction getDefaultParameters(Job<?,?> project) {
