@@ -19,7 +19,6 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
     private ResultCondition condition;
     private boolean triggerWithNoParameters;
     private boolean includeCurrentParameters;
-    private String batchCondition;
     
     public Object readResolve() {
     	List<AbstractBuildParameters> configs = new ArrayList<AbstractBuildParameters>();
