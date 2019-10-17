@@ -29,7 +29,6 @@ import hudson.model.queue.QueueTaskFuture;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.plugins.promoted_builds.Promotion;
 import hudson.security.ACL;
-import hudson.tasks.Messages;
 import hudson.Util;
 import hudson.util.FormValidation;
 import hudson.util.VersionNumber;

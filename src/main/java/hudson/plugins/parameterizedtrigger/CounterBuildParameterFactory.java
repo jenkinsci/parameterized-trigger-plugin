@@ -133,7 +133,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             // be empty or a number.
             String valueWithoutVariables = Util.replaceMacro(value, EMPTY_STRING_VARIABLE_RESOLVER);
             if (StringUtils.isNotEmpty(valueWithoutVariables) && !isNumber(valueWithoutVariables)) {
-                return FormValidation.warning(hudson.model.Messages.Hudson_NotANumber());
+                return FormValidation.warning(Messages.Hudson_NotANumber());
             } else {
                 return FormValidation.validateRequired(value);
             }
