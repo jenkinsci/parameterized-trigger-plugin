@@ -524,7 +524,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 // This cannot be done for PromotionCause#PromotionCause is in a package scope.
                 // return new PromotionCause(build, promotion.getTarget());
 
-                return new UpstreamCause((Run<?,?>)promotion.getTarget());
+                return new UpstreamCause((Run<?,?>)promotion.getTargetBuild());
             }
         }
         return new UpstreamCause(build);
