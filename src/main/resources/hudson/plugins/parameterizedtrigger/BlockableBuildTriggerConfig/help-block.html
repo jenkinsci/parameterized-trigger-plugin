@@ -26,37 +26,37 @@
   When activating this option, triggered builds will be run synchronously. The
   result of the current build step or the current build can then be controlled
   using the three following options:<br/><ul>
-  <li><b>Fail this build step if the triggered build is worse or equal to</b>:
+  <li><b>Fail this build step if the triggered build is worse than or equal to</b>:
   This option takes precedence over the two following ones if its value is not
   <b>never</b>. In that case, the result of the current build step (that is,
   success or failure) is based on the result of the triggered builds. If the
   condition defined for at least one of the triggered build is met, then the
   build step will be considered as failed.</li>
-  <li><b>Mark this build as failure if the triggered build is worse or equal to</b>:
+  <li><b>Mark this build as <em>failed</em> if the triggered build is worse than or equal to</b>:
   This option takes precedence over the next one if its value is not set to
   <b>never</b>. In that case, the current build will be considered as failed
   based on the result of the triggered builds and the value of the option.</li>
-  <li><b>Mark this build as unstable if the triggered build is worse or equal to</b>:
+  <li><b>Mark this build as <em>unstable</em> if the triggered build is worse than or equal to</b>:
   This option is taken into account if its value is not <b>never</b>. In that
   case, the build will be considered as unstable based on the result of the
   triggered builds and the value of this option.</li>
   </ul>
-  With this option enabled the builds for the projects triggered are available as 
-  Env variables for future build steps<br/>
+  With this option enabled the builds for the projects triggered are available as
+  Env variables for future build steps:<br/>
   <ul>
-  <li><b>LAST_TRIGGERED_JOB_NAME</b>="Last project started"</li>
-  <li><b>TRIGGERED_JOB_NAMES</b>="Comma separated list of all triggered projects"</li>
-  <li><b>TRIGGERED_BUILD_NUMBER_&lt;project name&gt;</b>="Last build number 
+  <li><b>LAST_TRIGGERED_JOB_NAME</b>: "Last project started"</li>
+  <li><b>TRIGGERED_JOB_NAMES</b>: "Comma separated list of all triggered projects"</li>
+  <li><b>TRIGGERED_BUILD_NUMBER_&lt;project name&gt;</b>: "Last build number
   triggered"</li>
-  <li><b>TRIGGERED_BUILD_NUMBERS_&lt;project name&gt;</b>="Comma separated 
+  <li><b>TRIGGERED_BUILD_NUMBERS_&lt;project name&gt;</b>: "Comma separated
   list of build numbers triggered"</li>
-  <li><b>TRIGGERED_BUILD_RESULT_&lt;project name&gt;</b>="Last triggered build 
+  <li><b>TRIGGERED_BUILD_RESULT_&lt;project name&gt;</b>: "Last triggered build
   result of project"</li>
-  <li><b>TRIGGERED_BUILD_RESULT_&lt;project name&gt;_RUN_&lt;build number&gt;</b>=
+  <li><b>TRIGGERED_BUILD_RESULT_&lt;project name&gt;_RUN_&lt;build number&gt;</b>:
   "Result of triggered build for build number"</li>
-  <li><b>TRIGGERED_BUILD_RUN_COUNT_&lt;project name&gt;</b>=
+  <li><b>TRIGGERED_BUILD_RUN_COUNT_&lt;project name&gt;</b>:
   "Number of builds triggered for the project"</li>
   </ul>
-  All Project names have characters not a-zA-Z or 0-9 replaced by 
-  _(multiple characters are condensed into a single _).
+  All Project names have characters other than a-zA-Z and 0-9 are replaced by
+  "<tt>_</tt>" (multiple characters are condensed into a single "<tt>_</tt>").
 </div>

@@ -40,7 +40,7 @@ THE SOFTWARE.
     <f:hetero-list name="configFactories" hasHeader="true"
                    descriptors="${descriptor.getBuilderConfigFactoryDescriptors()}"
                    items="${instance.configFactories}"
-                   addCaption="${%Add ParameterFactories}"
+                   addCaption="${%Add Parameter Factories}"
     />
   </f:block>
 </j:jelly>
