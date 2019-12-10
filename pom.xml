@@ -20,7 +20,7 @@
     <packaging>hpi</packaging>
     <version>2.35.3-SNAPSHOT</version>
     <name>Jenkins Parameterized Trigger plugin</name>
-    <url>https://wiki.jenkins.io/display/JENKINS/Parameterized+Trigger+Plugin</url>
+    <url>https://github.com/jenkinsci/parameterized-trigger-plugin</url>
 
     <developers>
         <developer>
