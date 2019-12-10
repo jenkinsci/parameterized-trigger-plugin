@@ -22,17 +22,6 @@
     <name>Jenkins Parameterized Trigger plugin</name>
     <url>https://github.com/jenkinsci/parameterized-trigger-plugin</url>
 
-    <developers>
-        <developer>
-            <id>huybrechts</id>
-            <name>Tom Huybrechts</name>
-        </developer>
-      <developer>
-          <id>kohsuke</id>
-          <name>Kohsuke Kawaguchi</name>
-      </developer>
-    </developers>
-
     <dependencies>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
