@@ -1,6 +1,10 @@
 Parameterized Trigger Plugin
 ============================
 
+[![Jenkins Plugin](https://img.shields.io/jenkins/plugin/v/parameterized-trigger.svg)](https://plugins.jenkins.io/parameterized-trigger)
+[![GitHub release](https://img.shields.io/github/release/jenkinsci/parameterized-trigger-plugin.svg?label=changelog)](https://github.com/jenkinsci/parameterized-trigger-plugin/releases/latest)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/parameterized-trigger.svg?color=blue)](https://plugins.jenkins.io/parameterized-trigger)
+
 This plugin lets you trigger new builds when your build has completed,
 with various ways of specifying parameters for the new build.
 
@@ -24,12 +28,10 @@ The parameter section is itself pluggable, and other plugins can contribute othe
 This triggering mechanism can be used both as a post-build step or as a build step, in which case you can also block for the completion of the triggered builds.
 This lets you create a "function call" like semantics.
 
-**\*\*\* YOU MUST DEFINE THE PARAMETER IN DOWNSTREAM JOBS VIA  "This
-project is parameterized". For example, if job1 passes ABC=123 to job2
-then in job2 mark the job as "**This project is parameterized**" and
-"Add Parameter" named "ABC". \*\*\***
+| WARNING: You must define the parameter in downstream jobs via the _This project is parameterized_ property. For example, if _job1_ passes `ABC=123` to _job2_ then in _job2_ mark the job as _This project is parameterized_ and add a parameter named `ABC`. See [this advisory](https://jenkins.io/blog/2016/05/11/security-update/) for more information |
+| --- |
 
-#### Usage as a Build step
+ #### Usage as a Build step
 
 When using the _Trigger/Call builds on another project_ item.  
 If the trigger is configured with the "Block until the triggered projects finish their builds" enabled, the following Environment variables are made available for further build steps.
