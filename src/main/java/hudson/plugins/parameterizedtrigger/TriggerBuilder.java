@@ -48,12 +48,9 @@ import org.kohsuke.accmod.Restricted;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
-import java.lang.RuntimeException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * {@link Builder} that triggers other projects and optionally waits for their completion.
