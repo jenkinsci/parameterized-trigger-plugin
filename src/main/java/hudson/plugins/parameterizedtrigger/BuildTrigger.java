@@ -119,14 +119,14 @@ public class BuildTrigger extends Notifier implements DependencyDeclarer {
 					}
 
 					String[] projects = config.getProjects(build.getEnvironment(listener)).split(",");
-					String[] vars = config.getProjects().split(",");
+					//String[] vars = config.getProjects().split(",");
 					for (int i = 0; i < projects.length; i++) {
-						if (vars[i].trim().contains("$")) {
-							AbstractBuild abstractBuild = downstreamMap.get(projects[i]);
-							if (null != abstractBuild) {
-								listener.getLogger().println(makeLogEntry(projects[i].trim()));
-								buildMap.put(abstractBuild.getProject().getFullName(), abstractBuild.getNumber());
-							}
+					//	if (vars[i].trim().contains("$")) {
+						AbstractBuild abstractBuild = downstreamMap.get(projects[i]);
+						if (null != abstractBuild) {
+						listener.getLogger().println(makeLogEntry(projects[i].trim()));
+						buildMap.put(abstractBuild.getProject().getFullName(), abstractBuild.getNumber());
+					//		}
 						}
 					}
 
