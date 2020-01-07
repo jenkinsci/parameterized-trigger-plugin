@@ -24,7 +24,7 @@
 
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractProject;
+import hudson.model.Job;
 
 import java.util.Comparator;
 import java.util.Set;
@@ -44,15 +44,15 @@ import java.util.TreeSet;
  */
 public class SubProjectData {
 
-    private final Comparator customComparator = new Comparator<AbstractProject>() {
-        public int compare(AbstractProject abstractProject1, AbstractProject abstractProject2) {
-            return abstractProject1.getFullName().compareTo(abstractProject2.getFullName());
+    private final Comparator<Job> customComparator = new Comparator<Job>() {
+        public int compare(Job job1, Job job2) {
+            return job1.getFullName().compareTo(job2.getFullName());
         }
     };
 
-    private final Set<AbstractProject> dynamic = new TreeSet<>(customComparator);
-    private final Set<AbstractProject> fixed = new TreeSet<>(customComparator);
-    private final Set<AbstractProject> triggered = new TreeSet<>(customComparator);
+    private final Set<Job> dynamic = new TreeSet<>(customComparator);
+    private final Set<Job> fixed = new TreeSet<>(customComparator);
+    private final Set<Job> triggered = new TreeSet<>(customComparator);
     private final Set<String> unresolved = new TreeSet<>();
 
     /**
@@ -60,7 +60,7 @@ public class SubProjectData {
      *
      * @return  A set reserved for dynamically configured sub project
      */
-    public Set<AbstractProject> getDynamic() {
+    public Set<Job> getDynamic() {
         return dynamic;
     }
 
@@ -69,7 +69,7 @@ public class SubProjectData {
      *
      * @return  A set reserved for fixed configured sub project
      */
-    public Set<AbstractProject> getFixed() {
+    public Set<Job> getFixed() {
         return fixed;
     }
 
@@ -78,7 +78,7 @@ public class SubProjectData {
      *
      * @return  A set reserved for triggered sub project
      */
-    public Set<AbstractProject> getTriggered() {
+    public Set<Job> getTriggered() {
         return triggered;
     }
 
