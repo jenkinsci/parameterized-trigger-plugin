@@ -304,8 +304,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             String unresolvedProjectName = unsolvedProjectIterator.next();
             Set<Job> destinationSet = subProjectData.getFixed();
 
-            LOGGER.info("Resolving: "+ unresolvedProjectName);
-
             // expand variables if applicable
             if (unresolvedProjectName.contains("$")) {
 
