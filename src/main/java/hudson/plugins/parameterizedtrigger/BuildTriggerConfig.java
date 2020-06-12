@@ -29,7 +29,6 @@ import hudson.model.queue.QueueTaskFuture;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters.DontTriggerException;
 import hudson.plugins.promoted_builds.Promotion;
 import hudson.security.ACL;
-import hudson.tasks.Messages;
 import hudson.Util;
 import hudson.util.FormValidation;
 import hudson.util.VersionNumber;
@@ -524,7 +523,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 // This cannot be done for PromotionCause#PromotionCause is in a package scope.
                 // return new PromotionCause(build, promotion.getTarget());
 
-                return new UpstreamCause((Run<?,?>)promotion.getTarget());
+                return new UpstreamCause((Run<?,?>)promotion.getTargetBuild());
             }
         }
         return new UpstreamCause(build);

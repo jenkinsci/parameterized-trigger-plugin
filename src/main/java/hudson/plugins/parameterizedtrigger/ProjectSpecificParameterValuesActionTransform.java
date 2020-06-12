@@ -79,7 +79,9 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
 
             if(canConvert(def, pv)) {
                 try {
-                    return ((SimpleParameterDefinition)def).createValue(((StringParameterValue)pv).value);
+                    StringParameterValue spv = (StringParameterValue) pv;
+                    Object value = (spv).getValue();
+                    return ((SimpleParameterDefinition)def).createValue((String)value);
                 } catch (RuntimeException e) {
                     if (System.getProperty("hudson.plugins.parameterizedtrigger.ProjectSpecificParametersActionFactory.compatibility_mode","false").equals("true")) {
                         String buildName = getCurrentBuildName();
