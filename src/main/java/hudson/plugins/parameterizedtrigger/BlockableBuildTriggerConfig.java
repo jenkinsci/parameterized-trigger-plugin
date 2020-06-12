@@ -9,7 +9,6 @@ import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Job;
 import hudson.model.Node;
-import hudson.model.Run;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -22,7 +21,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Future;
 
 /**
  * {@link BuildTriggerConfig} that supports blocking of the execution.
