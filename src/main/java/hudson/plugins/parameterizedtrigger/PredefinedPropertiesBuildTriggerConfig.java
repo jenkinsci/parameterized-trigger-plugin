@@ -22,7 +22,7 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
     private String batchCondition;
     
     public Object readResolve() {
-    	List<AbstractBuildParameters> configs = new ArrayList<AbstractBuildParameters>();
+    	List<AbstractBuildParameters> configs = new ArrayList<>();
     	if (includeCurrentParameters) {
     		configs.add(new CurrentBuildParameters());
     	}

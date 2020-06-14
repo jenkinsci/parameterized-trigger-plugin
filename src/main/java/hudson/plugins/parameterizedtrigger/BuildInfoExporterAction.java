@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @ExportedBean
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
@@ -64,7 +65,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     public BuildInfoExporterAction(BuildReference buildRef) {
         super();
 
-        this.builds = new ArrayList<BuildReference>();
+        this.builds = new ArrayList<>();
         addBuild(buildRef);
         lastReference = buildRef;
     }
@@ -189,7 +190,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     }
 
     private List<BuildReference> getBuildRefs(String project) {
-        List<BuildReference> refs = new ArrayList<BuildReference>();
+        List<BuildReference> refs = new ArrayList<>();
         for (BuildReference br : builds) {
             if (br.projectName.equals(project)) refs.add(br);
         }
@@ -206,11 +207,11 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     @Exported(visibility = 1)
     public List<AbstractBuild<?, ?>> getTriggeredBuilds() {
 
-      List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
+      List<AbstractBuild<?, ?>> builds = new ArrayList<>();
 
       for (BuildReference br : this.builds) {
           AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-                Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
+                Jenkins.get().getItemByFullName(br.projectName, AbstractProject.class);
           if (br.buildNumber != 0) {
               builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
           }
@@ -227,12 +228,12 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
    */
   @Exported(visibility = 1)
   public List<AbstractProject<?, ?>> getTriggeredProjects() {
-    List<AbstractProject<?, ?>> projects = new ArrayList<AbstractProject<?, ?>>();
+    List<AbstractProject<?, ?>> projects = new ArrayList<>();
 
     for (BuildReference br : this.builds) {
         if (br.buildNumber == 0) {
             AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-                    Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
+                    Jenkins.get().getItemByFullName(br.projectName, AbstractProject.class);
             projects.add(project);
         }
     }
@@ -250,7 +251,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
       this.lastReference = new BuildReference(this.buildName, this.buildNumber, Result.NOT_BUILT);
     }
     if (this.builds == null) {
-      this.builds = new ArrayList<BuildReference>();
+      this.builds = new ArrayList<>();
     }
     if (this.buildRefs != null) {
         for (List<BuildReference> buildReferences : buildRefs.values()) {

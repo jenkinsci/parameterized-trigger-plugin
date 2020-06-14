@@ -42,7 +42,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 		Properties p = ParameterizedTriggerUtils.loadProperties(getProperties());
 
-		List<ParameterValue> values = new ArrayList<ParameterValue>();
+		List<ParameterValue> values = new ArrayList<>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
 			// support multi-line parameters correctly
 			String s = entry.getValue().toString();

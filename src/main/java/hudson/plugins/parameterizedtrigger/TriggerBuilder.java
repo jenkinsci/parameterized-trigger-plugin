@@ -63,7 +63,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
 
     @DataBoundConstructor
     public TriggerBuilder(List<BlockableBuildTriggerConfig> configs) {
-        this.configs = new ArrayList<BlockableBuildTriggerConfig>(Util.fixNull(configs));
+        this.configs = new ArrayList<>(Util.fixNull(configs));
     }
 
     public TriggerBuilder(BlockableBuildTriggerConfig... configs) {
@@ -103,7 +103,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                     int nbrOfResolved = tokenizer.countTokens()-projectList.size();
 
                     // Identify the unresolved project(s)
-                    Set<String> unsolvedProjectNames = new TreeSet<String>();
+                    Set<String> unsolvedProjectNames = new TreeSet<>();
                     while (tokenizer.hasMoreTokens()) {
                         unsolvedProjectNames.add(tokenizer.nextToken().trim());
                     }

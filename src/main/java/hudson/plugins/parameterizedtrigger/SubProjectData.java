@@ -50,10 +50,10 @@ public class SubProjectData {
         }
     };
 
-    private final Set<AbstractProject> dynamic = new TreeSet<AbstractProject>(customComparator);
-    private final Set<AbstractProject> fixed = new TreeSet<AbstractProject>(customComparator);
-    private final Set<AbstractProject> triggered = new TreeSet<AbstractProject>(customComparator);
-    private final Set<String> unresolved = new TreeSet<String>();
+    private final Set<AbstractProject> dynamic = new TreeSet<>(customComparator);
+    private final Set<AbstractProject> fixed = new TreeSet<>(customComparator);
+    private final Set<AbstractProject> triggered = new TreeSet<>(customComparator);
+    private final Set<String> unresolved = new TreeSet<>();
 
     /**
      * A set intended to hold dynamically configured sub project

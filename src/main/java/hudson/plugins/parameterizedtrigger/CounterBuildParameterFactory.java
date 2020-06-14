@@ -1,7 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
@@ -88,7 +87,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
         long toNum = Long.parseLong(envVars.expand(to));
         long stepNum = Long.parseLong(envVars.expand(step));
 
-        ArrayList<AbstractBuildParameters> params = Lists.newArrayList();
+        List<AbstractBuildParameters> params = new ArrayList();
         int upDown = Long.signum(toNum - fromNum);
 
         if (upDown == 0) {

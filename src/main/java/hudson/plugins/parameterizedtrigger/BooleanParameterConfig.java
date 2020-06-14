@@ -52,7 +52,7 @@ public class BooleanParameterConfig implements Describable<BooleanParameterConfi
 	}
 
 	public Descriptor<BooleanParameterConfig> getDescriptor() {
-		return Jenkins.getInstance().getDescriptorOrDie(getClass());
+		return Jenkins.get().getDescriptorOrDie(getClass());
 	}
 	
 	

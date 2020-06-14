@@ -30,7 +30,7 @@ public class CurrentBuildParameters extends AbstractBuildParameters {
 			listener.getLogger().println(Plugin.LOG_TAG + " Current build has no parameters.");
 			return null;
 		} else {
-			List<ParameterValue> values = new ArrayList<ParameterValue>(action.getParameters().size());
+			List<ParameterValue> values = new ArrayList<>(action.getParameters().size());
 			for (ParameterValue value : action.getParameters())
 				// FileParameterValue is currently not reusable, so omit these:
 				if (!(value instanceof FileParameterValue))

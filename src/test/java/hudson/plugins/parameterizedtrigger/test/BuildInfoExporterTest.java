@@ -69,7 +69,7 @@ public class BuildInfoExporterTest {
     @Test
     public void test() throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("projectB", neverFail, buildParameters);
@@ -121,7 +121,7 @@ public class BuildInfoExporterTest {
     @Test
     public void test_oddchars() throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
 
@@ -175,8 +175,8 @@ public class BuildInfoExporterTest {
                 new TriggerBuilder(
                 new BlockableBuildTriggerConfig(testNameResult + "," + testNameResult2,
                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
-                Collections.<AbstractBuildParameters>emptyList())));
+                ImmutableList.of(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
+                Collections.emptyList())));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         projectA.getBuildersList().add(builder);
@@ -234,7 +234,7 @@ public class BuildInfoExporterTest {
     @Test
     public void testNonBlocking() throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("projectB", neverFail, buildParameters);
@@ -269,12 +269,12 @@ public class BuildInfoExporterTest {
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildB1.getResult().toString()));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber), buildB1.getResult().toString()));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + expectedBuildNumber, buildB1.getResult().toString()));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
         // check that we don't see entries for projectC
         assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_NUMBER_projectC", Integer.toString(expectedBuildNumberC))));
-        assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + Integer.toString(expectedBuildNumberC), buildC1.getResult().toString())));
+        assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + expectedBuildNumberC, buildC1.getResult().toString())));
 
     }
   

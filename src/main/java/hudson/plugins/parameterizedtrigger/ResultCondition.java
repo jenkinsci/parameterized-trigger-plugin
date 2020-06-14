@@ -40,7 +40,7 @@ public enum ResultCondition {
 		}
 	};
 
-	private ResultCondition(String displayName) {
+	ResultCondition(String displayName) {
 		this.displayName = displayName;
 	}
 

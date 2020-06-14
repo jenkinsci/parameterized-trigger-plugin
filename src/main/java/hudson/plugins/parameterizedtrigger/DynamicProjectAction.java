@@ -17,7 +17,7 @@ public class DynamicProjectAction implements Action {
     }
 
     public List<String> getProjects() {
-        List<String> projects = new ArrayList<String>();
+        List<String> projects = new ArrayList<>();
         for (BuildTriggerConfig config : configs) {
             for (String project : config.getProjects().split(",")) {
                 if (project.trim().contains("$")) {

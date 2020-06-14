@@ -23,7 +23,7 @@ public class DefaultParameterValuesActionsTransform implements ITransformProject
             return new ParametersAction();
         }
 
-        List<ParameterValue> parameters = new ArrayList<ParameterValue>();
+        List<ParameterValue> parameters = new ArrayList<>();
         for (ParameterDefinition pd : property.getParameterDefinitions()) {
             ParameterValue param = pd.getDefaultParameterValue();
             if (param != null) {
