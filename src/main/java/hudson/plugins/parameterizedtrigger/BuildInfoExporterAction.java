@@ -30,160 +30,163 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.EnvironmentContributingAction;
 import hudson.model.Result;
+import jenkins.model.Jenkins;
+import org.kohsuke.stapler.export.Exported;
+import org.kohsuke.stapler.export.ExportedBean;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import jenkins.model.Jenkins;
-import org.kohsuke.stapler.export.Exported;
-import org.kohsuke.stapler.export.ExportedBean;
 
 @ExportedBean
 public class BuildInfoExporterAction implements EnvironmentContributingAction {
 
-  public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
-  public static final String ALL_JOBS_NAME_VARIABLE = "TRIGGERED_JOB_NAMES";
-  public static final String BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBER_";
-  public static final String ALL_BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBERS_";
-  public static final String BUILD_RESULT_VARIABLE_PREFIX = "TRIGGERED_BUILD_RESULT_";
-  public static final String BUILD_RUN_COUNT_PREFIX = "TRIGGERED_BUILD_RUN_COUNT_";
-  public static final String RUN = "_RUN_";
-  //now unused as part of map
-  private transient String buildName;
-  private transient int buildNumber;
-  
-  // used in version =< 2.21.
-  // this is now migrated to this.builds.
-  private transient Map<String, List<BuildReference>> buildRefs;
+    public static final String JOB_NAME_VARIABLE = "LAST_TRIGGERED_JOB_NAME";
+    public static final String ALL_JOBS_NAME_VARIABLE = "TRIGGERED_JOB_NAMES";
+    public static final String BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBER_";
+    public static final String ALL_BUILD_NUMBER_VARIABLE_PREFIX = "TRIGGERED_BUILD_NUMBERS_";
+    public static final String BUILD_RESULT_VARIABLE_PREFIX = "TRIGGERED_BUILD_RESULT_";
+    public static final String BUILD_RUN_COUNT_PREFIX = "TRIGGERED_BUILD_RUN_COUNT_";
+    public static final String RUN = "_RUN_";
+    //now unused as part of map
+    private transient String buildName;
+    private transient int buildNumber;
 
-  private List<BuildReference> builds;
-  private BuildReference lastReference;
+    // used in version =< 2.21.
+    // this is now migrated to this.builds.
+    private transient Map<String, List<BuildReference>> buildRefs;
 
-  public BuildInfoExporterAction(BuildReference buildRef) {
-    super();
+    private List<BuildReference> builds;
+    private BuildReference lastReference;
 
-    this.builds = new ArrayList<BuildReference>();
-    addBuild(buildRef);
-    lastReference = buildRef;
-  }
+    public BuildInfoExporterAction(BuildReference buildRef) {
+        super();
 
-  public BuildInfoExporterAction(String buildName, int buildNumber, AbstractBuild<?, ?> parentBuild, Result buildResult) {
-    this(new BuildReference(buildName, buildNumber, buildResult));
-  }
-
-  static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, String triggeredProject, int buildNumber, Result buildResult) {
-    BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
-    if (action == null) {
-      action = new BuildInfoExporterAction(triggeredProject, buildNumber, parentBuild, buildResult);
-      parentBuild.addAction(action);
-    } else {
-      action.addBuildReference(triggeredProject, buildNumber, buildResult);
-    }
-    return action;
-  }
-
-  static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, String triggeredProject) {
-    BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
-    if (action == null) {
-
-      action = new BuildInfoExporterAction(new BuildReference(triggeredProject));
-      parentBuild.addAction(action);
-    } else {
-      action.addBuildReference(new BuildReference(triggeredProject));
-    }
-    return action;
-  }
-
-  private void addBuild(BuildReference br) {
-    this.builds.add(br);
-
-    if (br.buildNumber != 0) {
-      this.lastReference = br;
-    }
-  }
-
-  public void addBuildReference(String triggeredProject, int buildNumber, Result buildResult) {
-    BuildReference buildRef = new BuildReference(triggeredProject, buildNumber, buildResult);
-    addBuild(buildRef);
-  }
-
-  public void addBuildReference(BuildReference buildRef) {
-    addBuild(buildRef);
-  }
-
-  public static class BuildReference {
-
-    public final String projectName;
-    public final int buildNumber;
-    public final Result buildResult;
-
-    public BuildReference(String projectName, int buildNumber, Result buildResult) {
-      this.projectName = projectName;
-      this.buildNumber = buildNumber;
-      this.buildResult = buildResult;
+        this.builds = new ArrayList<BuildReference>();
+        addBuild(buildRef);
+        lastReference = buildRef;
     }
 
-    public BuildReference(final String projectName) {
-      this.projectName = projectName;
-      this.buildNumber = 0;
-      this.buildResult = Result.NOT_BUILT;
+    public BuildInfoExporterAction(String buildName, int buildNumber, AbstractBuild<?, ?> parentBuild, Result buildResult) {
+        this(new BuildReference(buildName, buildNumber, buildResult));
     }
-  }
 
-  @Override
-  public String getIconFileName() {
-    return null;
-  }
+    static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, String triggeredProject, int buildNumber, Result buildResult) {
+        BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
+        if (action == null) {
+            action = new BuildInfoExporterAction(triggeredProject, buildNumber, parentBuild, buildResult);
+            parentBuild.addAction(action);
+        } else {
+            action.addBuildReference(triggeredProject, buildNumber, buildResult);
+        }
+        return action;
+    }
 
-  @Override
-  public String getDisplayName() {
-    return null;
-  }
+    static BuildInfoExporterAction addBuildInfoExporterAction(AbstractBuild<?, ?> parentBuild, String triggeredProject) {
+        BuildInfoExporterAction action = parentBuild.getAction(BuildInfoExporterAction.class);
+        if (action == null) {
+            action = new BuildInfoExporterAction(new BuildReference(triggeredProject));
+            parentBuild.addAction(action);
+        } else {
+            action.addBuildReference(new BuildReference(triggeredProject));
+        }
+        return action;
+    }
 
-  @Override
-  public String getUrlName() {
-    return null;
-  }
+    private void addBuild(BuildReference br) {
+        this.builds.add(br);
 
-  @Override
-  public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
-
-    // Note: this will only indicate the last project in the list that is ran
-    env.put(JOB_NAME_VARIABLE, lastReference.projectName.replaceAll("[^a-zA-Z0-9]+", "_"));
-    //all projects triggered.
-    // this should not include projects that don't have a build item.
-    String sanitizedProjectList = getProjectListString(",");
-    env.put(ALL_JOBS_NAME_VARIABLE, sanitizedProjectList);
-
-    for (String project : getProjectsWithBuilds()) {
-      // for each project add the following variables once
-      // all buildnumbers, lastbuildnumber
-      // all Run results, last build result
-      String sanitizedBuildName = project.replaceAll("[^a-zA-Z0-9]+", "_");
-      List<BuildReference> refs = getBuildRefs(project);
-
-      env.put(ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanitizedBuildName, getBuildNumbersString(refs, ","));
-      env.put(BUILD_RUN_COUNT_PREFIX + sanitizedBuildName, Integer.toString(refs.size()));
-      for (BuildReference br : refs) {
         if (br.buildNumber != 0) {
-          String triggeredBuildRunResultKey = BUILD_RESULT_VARIABLE_PREFIX + sanitizedBuildName + RUN + Integer.toString(br.buildNumber);
-          env.put(triggeredBuildRunResultKey, br.buildResult.toString());
+            this.lastReference = br;
         }
-      }
-      BuildReference lastBuild = null;
-      for (int i = (refs.size()); i > 0; i--) {
-        if (refs.get(i - 1).buildNumber != 0) {
-          lastBuild = refs.get(i - 1);
+    }
+
+    public void addBuildReference(String triggeredProject, int buildNumber, Result buildResult) {
+        BuildReference buildRef = new BuildReference(triggeredProject, buildNumber, buildResult);
+        addBuild(buildRef);
+    }
+
+    public void addBuildReference(BuildReference buildRef) {
+        addBuild(buildRef);
+    }
+
+    public static class BuildReference {
+
+        public final String projectName;
+        public final int buildNumber;
+        public final Result buildResult;
+
+        public BuildReference(String projectName, int buildNumber, Result buildResult) {
+            this.projectName = projectName;
+            this.buildNumber = buildNumber;
+            this.buildResult = buildResult;
         }
-        break;
-      }
-      if (lastBuild != null) {
-        env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanitizedBuildName, Integer.toString(lastBuild.buildNumber));
-        env.put(BUILD_RESULT_VARIABLE_PREFIX + sanitizedBuildName, lastBuild.buildResult.toString());
+
+        public BuildReference(final String projectName) {
+            this.projectName = projectName;
+            this.buildNumber = 0;
+            this.buildResult = Result.NOT_BUILT;
+        }
+    }
+
+    @Override
+    public String getIconFileName()
+    {
+      return null;
+    }
+
+    @Override
+    public String getDisplayName()
+    {
+      return null;
+    }
+
+    @Override
+    public String getUrlName()
+    {
+      return null;
+    }
+
+    @Override
+    public void buildEnvVars(AbstractBuild<?, ?> build, EnvVars env) {
+
+      // Note: this will only indicate the last project in the list that is ran
+      env.put(JOB_NAME_VARIABLE, lastReference.projectName.replaceAll("[^a-zA-Z0-9]+", "_"));
+      //all projects triggered.
+      // this should not include projects that don't have a build item.
+      String sanitizedProjectList = getProjectListString(",");
+      env.put(ALL_JOBS_NAME_VARIABLE, sanitizedProjectList);
+
+      for (String project : getProjectsWithBuilds()) {
+        // for each project add the following variables once
+        // all buildnumbers, lastbuildnumber
+        // all Run results, last build result
+        String sanitizedBuildName = project.replaceAll("[^a-zA-Z0-9]+", "_");
+        List<BuildReference> refs = getBuildRefs(project);
+
+        env.put(ALL_BUILD_NUMBER_VARIABLE_PREFIX + sanitizedBuildName, getBuildNumbersString(refs, ","));
+        env.put(BUILD_RUN_COUNT_PREFIX + sanitizedBuildName, Integer.toString(refs.size()));
+        for (BuildReference br : refs) {
+          if (br.buildNumber != 0) {
+            String triggeredBuildRunResultKey = BUILD_RESULT_VARIABLE_PREFIX + sanitizedBuildName + RUN + Integer.toString(br.buildNumber);
+            env.put(triggeredBuildRunResultKey, br.buildResult.toString());
+          }
+        }
+        BuildReference lastBuild = null;
+        for (int i = (refs.size()); i > 0; i--) {
+          if (refs.get(i - 1).buildNumber != 0) {
+            lastBuild = refs.get(i - 1);
+          }
+          break;
+        }
+        if (lastBuild != null) {
+          env.put(BUILD_NUMBER_VARIABLE_PREFIX + sanitizedBuildName, Integer.toString(lastBuild.buildNumber));
+          env.put(BUILD_RESULT_VARIABLE_PREFIX + sanitizedBuildName, lastBuild.buildResult.toString());
+        }
       }
     }
-  }
 
     private List<BuildReference> getBuildRefs(String project) {
         List<BuildReference> refs = new ArrayList<BuildReference>();
@@ -193,27 +196,27 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
         return refs;
     }
 
-  /**
-   * Gets all the builds triggered from this one, filters out the items that
-   * were non blocking, which we don't have a builds for. Used in the UI for see
-   * Summary.groovy
-   *
-   * @return a list of builds that are triggered by this build. May contains null if a project or a build is deleted.
-   */
-  @Exported(visibility = 1)
-  public List<AbstractBuild<?, ?>> getTriggeredBuilds() {
+    /**
+     * Gets all the builds triggered from this one, filters out the items that
+     * were non blocking, which we don't have a builds for. Used in the UI for see
+     * Summary.groovy
+     *
+     * @return a list of builds that are triggered by this build. May contains null if a project or a build is deleted.
+     */
+    @Exported(visibility = 1)
+    public List<AbstractBuild<?, ?>> getTriggeredBuilds() {
 
-    List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
+      List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
 
-    for (BuildReference br : this.builds) {
-        AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
-              Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
-        if (br.buildNumber != 0) {
-            builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
-        }
+      for (BuildReference br : this.builds) {
+          AbstractProject<?, ? extends AbstractBuild<?, ?>> project =
+                Jenkins.getInstance().getItemByFullName(br.projectName, AbstractProject.class);
+          if (br.buildNumber != 0) {
+              builds.add((project != null)?project.getBuildByNumber(br.buildNumber):null);
+          }
+      }
+      return builds;
     }
-    return builds;
-  }
 
   /**
    * Gets all the projects that triggered from this one which were non blocking,
