@@ -9,10 +9,10 @@ import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.Descriptor;
 import hudson.model.Label;
-import hudson.model.Node;
 import hudson.model.TaskListener;
 import java.io.IOException;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -30,8 +30,8 @@ public class NodeParameters extends AbstractBuildParameters{
 		String nodeName = build.getBuiltOnStr();
 		Label nodeLabel;
 		// master does not return a node name so add it explicitly.
-		if(nodeName == null || nodeName == "") {
-			nodeLabel = Jenkins.getInstance().getSelfLabel();
+		if( StringUtils.isEmpty( nodeName ) ) {
+			nodeLabel = Jenkins.get().getSelfLabel();
 		} else {
 			nodeLabel = Label.get(nodeName);
 		}

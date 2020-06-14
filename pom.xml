@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.50</version>
+        <version>4.2</version>
         <relativePath />
     </parent>
 
@@ -42,7 +42,6 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>matrix-project</artifactId>
-            <version>1.14</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -82,13 +81,11 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-job</artifactId>
-            <version>2.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-cps</artifactId>
-            <version>2.27</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -100,43 +97,38 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-basic-steps</artifactId>
-            <version>2.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-durable-task-step</artifactId>
-            <version>2.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-support</artifactId>
-            <version>2.13</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>
             <artifactId>workflow-step-api</artifactId>
-            <version>2.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>org.jenkins-ci.plugins</groupId>
           <artifactId>matrix-auth</artifactId>
-	      <version>1.4</version>
-	      <scope>test</scope>
-              <exclusions>
+          <version>1.4</version>
+	        <scope>test</scope>
+            <exclusions>
                 <exclusion>
-                    <groupId>org.jenkins-ci.plugins.icon-shim</groupId>
-                    <artifactId>icon-set</artifactId>
+                  <groupId>org.jenkins-ci.plugins.icon-shim</groupId>
+                  <artifactId>icon-set</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
            <groupId>org.mockito</groupId>
            <artifactId>mockito-core</artifactId>
-           <version>1.8.5</version>
           <scope>test</scope>
           <exclusions>
             <exclusion>
@@ -148,7 +140,6 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>script-security</artifactId>
-            <version>1.54</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -157,6 +148,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.jenkins.tools.bom</groupId>
+                <artifactId>bom-2.176.x</artifactId>
+                <version>9</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <scm>
         <connection>scm:git:git://github.com/jenkinsci/parameterized-trigger-plugin.git</connection>
@@ -180,7 +183,8 @@
 
     <properties>
         <java.level>8</java.level>
-        <findbugs.failOnError>false</findbugs.failOnError>
+        <jenkins.version>2.176.4</jenkins.version>
+        <spotbugs.failOnError>false</spotbugs.failOnError>
     </properties>
 </project>
 
