@@ -39,7 +39,7 @@ public class BuildTrigger extends Notifier implements DependencyDeclarer {
 
     @DataBoundConstructor
 	public BuildTrigger(List<BuildTriggerConfig> configs) {
-		this.configs = new ArrayList<BuildTriggerConfig>(Util.fixNull(configs));
+		this.configs = new ArrayList<>(Util.fixNull(configs));
 	}
 
 	public BuildTrigger(BuildTriggerConfig... configs) {
@@ -67,11 +67,11 @@ public class BuildTrigger extends Notifier implements DependencyDeclarer {
 
 	@Override @SuppressWarnings("deprecation")
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-		Map<String, AbstractBuild> downstreamMap = new HashMap<String, AbstractBuild>();
-		Map<String, Integer> buildMap = new HashMap<String, Integer>();
+		Map<String, AbstractBuild> downstreamMap = new HashMap<>();
+		Map<String, Integer> buildMap = new HashMap<>();
 		boolean hasEnvVariables = false;
 
-		HashSet<BuildTriggerConfig> alreadyFired = new HashSet<BuildTriggerConfig>();
+		HashSet<BuildTriggerConfig> alreadyFired = new HashSet<>();
 
 		// If this project has non-abstract projects, we need to fire them
 		for (BuildTriggerConfig config : configs) {
@@ -140,7 +140,7 @@ public class BuildTrigger extends Notifier implements DependencyDeclarer {
 
 	private String makeLogEntry(String name) {
 		String url = name;
-		url = Jenkins.getInstance().getRootUrl() + "job/" + url.replaceAll("/", "/job/");
+		url = Jenkins.get().getRootUrl() + "job/" + url.replaceAll("/", "/job/");
 		name = name.replaceAll("/", " » ");
 		String link = ModelHyperlinkNote.encodeTo(url, name);
 		StringBuilder sb = new StringBuilder();
@@ -160,19 +160,19 @@ public class BuildTrigger extends Notifier implements DependencyDeclarer {
 		for (BuildTriggerConfig config : configs) {
 			List<AbstractProject> projectList = config.getProjectList(owner.getParent(), null);
 			for (AbstractProject project : projectList) {
-                            if (config.isTriggerFromChildProjects() && owner instanceof ItemGroup) {
-                                ItemGroup<Item> parent = (ItemGroup) owner;
-                                for (Item item : parent.getItems()) {
-                                    if(item instanceof AbstractProject){
-                                        AbstractProject child = (AbstractProject) item;
-                                        ParameterizedDependency.add(child, project, config, graph);
-                                    }
-                                }
-                            }
-                            else{	
-                                ParameterizedDependency.add(owner, project, config, graph);
+				if (config.isTriggerFromChildProjects() && owner instanceof ItemGroup) {
+					ItemGroup<Item> parent = (ItemGroup) owner;
+					for (Item item : parent.getItems()) {
+						if(item instanceof AbstractProject){
+							AbstractProject child = (AbstractProject) item;
+							ParameterizedDependency.add(child, project, config, graph);
+						}
+					}
+				}
+				else{
+					ParameterizedDependency.add(owner, project, config, graph);
 
-                            }
+				}
 			}
 		}
 	}

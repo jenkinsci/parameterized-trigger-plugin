@@ -34,6 +34,8 @@ import hudson.model.TaskListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -51,11 +53,12 @@ public class BooleanParameters extends AbstractBuildParameters {
 
 	@Override
 	public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-		
-		List<ParameterValue> values = new ArrayList<ParameterValue>();
-		for (BooleanParameterConfig config : configs) {
-			values.add(new BooleanParameterValue(config.getName(), config.getValue()));
-		}
+
+		List<ParameterValue> values = configs
+			.stream()
+			.map( config -> new BooleanParameterValue(config.getName(), config.getValue()) )
+			.collect( Collectors.toList() );
+
 		return new ParametersAction(values);
 	}
 

@@ -81,7 +81,7 @@ public class ParameterizedTriggerUtils {
     }
     
     public static ParametersAction mergeParameters(ParametersAction base, ParametersAction overlay) {
-        LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<String,ParameterValue>();
+        LinkedHashMap<String,ParameterValue> params = new LinkedHashMap<>();
         for (ParameterValue param : base.getParameters())
             params.put(param.getName(), param);
         for (ParameterValue param : overlay.getParameters())

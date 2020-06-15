@@ -3,7 +3,6 @@ package hudson.plugins.parameterizedtrigger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -168,7 +167,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      *      If the user has no {@link Item#READ} permission, the job won't be added to the list.
      */
     public List<Job> getJobs(ItemGroup context, EnvVars env) {
-        List<Job> projectList = new ArrayList<Job>();
+        List<Job> projectList = new ArrayList<>();
         projectList.addAll(readableItemsFromNameList(context, getProjects(env), Job.class));
         return projectList;
     }
@@ -270,9 +269,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      */
     private static <T extends Item> List<T> readableItemsFromNameList(
             ItemGroup context, @Nonnull String list, @Nonnull Class<T> type) {
-        Jenkins hudson = Jenkins.getInstance();
+        Jenkins hudson = Jenkins.get();
 
-        List<T> r = new ArrayList<T>();
+        List<T> r = new ArrayList<>();
         StringTokenizer tokens = new StringTokenizer(list,",");
         while(tokens.hasMoreTokens()) {
             String fullName = tokens.nextToken().trim();
@@ -318,7 +317,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 destinationSet = subProjectData.getDynamic();
             }
 
-            final Jenkins jenkins = Jenkins.getInstance();
+            final Jenkins jenkins = Jenkins.get();
             AbstractProject resolvedProject = null;
             try {
                 resolvedProject = jenkins == null ? null :
@@ -346,7 +345,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
     List<Action> getBaseActions(Collection<AbstractBuildParameters> configs, AbstractBuild<?,?> build, TaskListener listener)
             throws IOException, InterruptedException, DontTriggerException {
-		List<Action> actions = new ArrayList<Action>();
+		List<Action> actions = new ArrayList<>();
 		ParametersAction params = null;
 		for (AbstractBuildParameters config : configs) {
 			Action a = config.getAction(build, listener);
@@ -362,14 +361,14 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 	}
 
     List<Action> getBuildActions(List<Action> baseActions, Job<?,?> project) {
-            List<Action> actions = new ArrayList<Action>(baseActions);
+        List<Action> actions = new ArrayList<>(baseActions);
 
-            ProjectSpecificParametersActionFactory transformer = new ProjectSpecificParametersActionFactory(
-                    new ProjectSpecificParameterValuesActionTransform(),
-                    new DefaultParameterValuesActionsTransform()
-            );
+        ProjectSpecificParametersActionFactory transformer = new ProjectSpecificParametersActionFactory(
+                new ProjectSpecificParameterValuesActionTransform(),
+                new DefaultParameterValuesActionsTransform()
+        );
 
-            return transformer.getProjectSpecificBuildActions(actions, project);
+        return transformer.getProjectSpecificBuildActions(actions, project);
     }
 
     /**
@@ -384,7 +383,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         try {
 			if (condition.isMet(build.getResult())) {
                 QueueTaskFuture future = null;
-                List<QueueTaskFuture<AbstractBuild>> futures = new ArrayList<QueueTaskFuture<AbstractBuild>>();
+                List<QueueTaskFuture<AbstractBuild>> futures = new ArrayList<>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
                     List<Action> actions = getBaseActions(
@@ -479,13 +478,13 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      */
     private List<List<AbstractBuildParameters>> getDynamicBuildParameters(AbstractBuild<?,?> build, BuildListener listener) throws DontTriggerException, IOException, InterruptedException {
         if (configFactories == null || configFactories.isEmpty()) {
-            return ImmutableList.<List<AbstractBuildParameters>>of(ImmutableList.<AbstractBuildParameters>of());
+            return ImmutableList.of(ImmutableList.of());
         } else {
             // this code is building the combinations of all AbstractBuildParameters reported from all factories
-            List<List<AbstractBuildParameters>> dynamicBuildParameters = Lists.newArrayList();
-            dynamicBuildParameters.add(Collections.<AbstractBuildParameters>emptyList());
+            List<List<AbstractBuildParameters>> dynamicBuildParameters = new ArrayList();
+            dynamicBuildParameters.add(Collections.emptyList());
             for (AbstractBuildParameterFactory configFactory : configFactories) {
-                List<List<AbstractBuildParameters>> newDynParameters = Lists.newArrayList();
+                List<List<AbstractBuildParameters>> newDynParameters = new ArrayList();
                 List<AbstractBuildParameters> factoryParameters = configFactory.getParameters(build, listener);
                 // if factory returns 0 parameters we need to skip assigning newDynParameters to dynamicBuildParameters as we would add invalid list
                 if(factoryParameters.size() > 0) {
@@ -544,7 +543,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         // TODO Once it's in core (since 1.621) and LTS is out, switch to use new ParameterizedJobMixIn convenience method
         // From https://github.com/jenkinsci/jenkins/pull/1771
         Cause cause = createUpstreamCause(build);
-        List<Action> queueActions = new ArrayList<Action>(list);
+        List<Action> queueActions = new ArrayList<>(list);
         if (cause != null) {
             queueActions.add(new CauseAction(cause));
         }
@@ -642,7 +641,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             return Items.computeRelativeNamesAfterRenaming(oldFullName, newFullName, relativeNames, context);
         }
         StringTokenizer tokens = new StringTokenizer(relativeNames,",");
-        List<String> newValue = new ArrayList<String>();
+        List<String> newValue = new ArrayList<>();
         while(tokens.hasMoreTokens()) {
             String relativeName = tokens.nextToken().trim();
             String canonicalName = Items.getCanonicalName(context, relativeName);
@@ -694,9 +693,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
 
     public boolean onDeleted(ItemGroup context, String oldName) {
-        List<String> newNames = new ArrayList<String>();
+        List<String> newNames = new ArrayList<>();
         StringTokenizer tokens = new StringTokenizer(projects,",");
-        List<String> newValue = new ArrayList<String>();
+        List<String> newValue = new ArrayList<>();
         while (tokens.hasMoreTokens()) {
             String relativeName = tokens.nextToken().trim();
             String fullName = Items.getCanonicalName(context, relativeName);
@@ -758,9 +757,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                     return FormValidation.error("Blank project name in the list");
                 }
 
-                Item item = Jenkins.getInstance().getItem(projectName,project,Item.class); // only works after version 1.410
+                Item item = Jenkins.get().getItem(projectName,project,Item.class); // only works after version 1.410
                 if(item==null){
-                    Item nearest = Items.findNearest(Job.class, projectName, Jenkins.getInstance());
+                    Item nearest = Items.findNearest(Job.class, projectName, Jenkins.get());
                     String alternative = nearest != null ? nearest.getRelativeNameFrom(project) : "?";
                     return FormValidation.error(Messages.BuildTrigger_NoSuchProject(projectName, alternative));
                 }
@@ -796,7 +795,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
          */
         public AutoCompletionCandidates doAutoCompleteProjects(@QueryParameter String value, @AncestorInPath ItemGroup context) {
             AutoCompletionCandidates candidates = new AutoCompletionCandidates();
-            List<Job> jobs = Jenkins.getInstance().getAllItems(Job.class);
+            List<Job> jobs = Jenkins.get().getAllItems(Job.class);
             for (Job job: jobs) {
                 String relativeName = job.getRelativeNameFrom(context);
                 if (relativeName.startsWith(value)) {

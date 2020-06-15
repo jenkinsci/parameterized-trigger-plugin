@@ -40,7 +40,7 @@ public class Plugin extends hudson.Plugin {
                 String full = isEmpty(context.getFullName()) ? "" : context.getFullName() + '/';
                 String fullOldName = full + oldName;
                 String fullNewName = full + newName;
-                for (Project<?,?> p : Jenkins.getInstance().getAllItems(Project.class)) {
+                for (Project<?,?> p : Jenkins.get().getAllItems(Project.class)) {
                     boolean changed = false;
                     //iterate over post build triggers
                     BuildTrigger bt = p.getPublishersList().get(BuildTrigger.class);
@@ -174,7 +174,7 @@ public class Plugin extends hudson.Plugin {
         }
         
         public static boolean isConditionalBuildStepInstalled(){
-            final hudson.Plugin plugin = Jenkins.getInstance().getPlugin("conditional-buildstep");
+            final hudson.Plugin plugin = Jenkins.get().getPlugin("conditional-buildstep");
             return plugin != null && plugin.getWrapper().isActive();
         }
 }

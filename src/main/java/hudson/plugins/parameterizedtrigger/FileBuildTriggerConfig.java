@@ -22,7 +22,7 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
     private boolean batchCondition;
 	
     public Object readResolve() {
-    	List<AbstractBuildParameters> configs = new ArrayList<AbstractBuildParameters>();
+    	List<AbstractBuildParameters> configs = new ArrayList<>();
     	if (includeCurrentParameters) {
     		configs.add(new CurrentBuildParameters());
     	}

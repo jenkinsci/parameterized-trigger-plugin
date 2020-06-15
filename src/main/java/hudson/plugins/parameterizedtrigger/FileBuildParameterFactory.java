@@ -4,7 +4,6 @@
  */
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.Lists;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Util;
@@ -19,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -102,7 +102,7 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
     @Override
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
 
-        List<AbstractBuildParameters> result = Lists.newArrayList();
+        List<AbstractBuildParameters> result = new ArrayList();
 
         try {
             FilePath workspace = getWorkspace(build);

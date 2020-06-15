@@ -102,7 +102,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 		for (int i = 0; i < allFiles.length; i++)
 			trimmedFiles[i] = allFiles[i].trim();
 
-		List<ParameterValue> values = new ArrayList<ParameterValue>();
+		List<ParameterValue> values = new ArrayList<>();
 
 		// builds to scan.
 		Collection<? extends AbstractBuild<?,?>> targetBuilds = getTargetBuilds(build);
@@ -115,7 +115,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
 	}
 	
 	private List<ParameterValue> extractAllValues(AbstractBuild<?,?> build, TaskListener listener, String[] allFiles) throws IOException, InterruptedException, DontTriggerException {
-		List<ParameterValue> values = new ArrayList<ParameterValue>();
+		List<ParameterValue> values = new ArrayList<>();
 		EnvVars env = getEnvironment(build, listener);
 		for(String file:allFiles) {
 			String s = null;

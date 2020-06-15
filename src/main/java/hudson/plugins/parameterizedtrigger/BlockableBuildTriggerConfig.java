@@ -89,7 +89,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     public Collection<Node> getNodes() {
-        return Jenkins.getInstance().getLabel("asrt").getNodes();
+        return Jenkins.get().getLabel("asrt").getNodes();
     }
 
     @Extension

@@ -33,7 +33,7 @@ public class DynamicBuildAction implements RunAction2 {
     }
 
     public List<AbstractBuild<?, ?>> getBuilds() {
-        List<AbstractBuild<?, ?>> builds = new ArrayList<AbstractBuild<?, ?>>();
+        List<AbstractBuild<?, ?>> builds = new ArrayList<>();
         Jenkins j = Jenkins.getInstance();
         for (Map.Entry<String, Integer> entry : buildsMap.entrySet()) {
             Job<?, ?> job = j.getItemByFullName(entry.getKey(), Job.class);

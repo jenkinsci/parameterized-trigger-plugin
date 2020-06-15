@@ -28,7 +28,7 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
         Map<String, ParameterDefinition> parameterDefinitions = 
             getParameterDefinitionsMap(project);
 
-        List<ParameterValue> params = new ArrayList<ParameterValue>();
+        List<ParameterValue> params = new ArrayList<>();
         for (ParameterValue param : a.getParameters()) {
             params.add(convertToDefinedType(parameterDefinitions, param));
         }
@@ -38,7 +38,7 @@ public class ProjectSpecificParameterValuesActionTransform implements ITransform
     }
 
     private static Map<String, ParameterDefinition> getParameterDefinitionsMap(Job<?,?> project) {
-        HashMap<String, ParameterDefinition> m = new HashMap<String, ParameterDefinition>();
+        HashMap<String, ParameterDefinition> m = new HashMap<>();
 
         ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
 

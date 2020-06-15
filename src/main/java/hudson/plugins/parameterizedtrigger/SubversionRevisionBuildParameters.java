@@ -22,7 +22,7 @@ public class SubversionRevisionBuildParameters extends AbstractBuildParameters {
             this(false);
 	}
         
-        @DataBoundConstructor
+	@DataBoundConstructor
 	public SubversionRevisionBuildParameters(boolean includeUpstreamParameters ) {
             this.includeUpstreamParameters = includeUpstreamParameters;
 	}
@@ -36,7 +36,7 @@ public class SubversionRevisionBuildParameters extends AbstractBuildParameters {
 		SubversionTagAction tagAction =	build.getAction(SubversionTagAction.class);
 		RevisionParameterAction revisionAction = build.getAction(RevisionParameterAction.class);
 
-		List<SvnInfo> infos = new ArrayList<SvnInfo>();
+		List<SvnInfo> infos = new ArrayList<>();
 
 		if (tagAction == null ) {
 			listener.getLogger().println(

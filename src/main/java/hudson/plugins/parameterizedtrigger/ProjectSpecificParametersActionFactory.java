@@ -18,7 +18,7 @@ public class ProjectSpecificParametersActionFactory {
     }
 
     public final List<Action> getProjectSpecificBuildActions(List<Action> baseActions, Job<?,?> project) {
-        List<Action> actions = new ArrayList<Action>();
+        List<Action> actions = new ArrayList<>();
         ParametersAction pa = getParametersAction(baseActions);
 
         // Copy everything except the ParametersAction
