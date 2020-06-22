@@ -231,10 +231,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             // If we don't have any build there's no point to trying to resolved dynamic projects
             if (currentBuild == null) {
                 // But we can still get statically defined project
-                subProjectData.getFixed().addAll(readableItemsFromNameList(context.getParent(), projects, AbstractProject.class));
+                subProjectData.getFixed().addAll(readableItemsFromNameList(context.getParent(), projects, Job.class));
                 
                 // Remove them from unsolved
-                for (AbstractProject staticProject : subProjectData.getFixed()) {
+                for (Job staticProject : subProjectData.getFixed()) {
                     subProjectData.getUnresolved().remove(staticProject.getFullName());
                 }
                 return;
@@ -302,7 +302,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         while (unsolvedProjectIterator.hasNext()) {
 
             String unresolvedProjectName = unsolvedProjectIterator.next();
-            Set<AbstractProject> destinationSet = subProjectData.getFixed();
+            Set<Job> destinationSet = subProjectData.getFixed();
 
             // expand variables if applicable
             if (unresolvedProjectName.contains("$")) {
@@ -318,10 +318,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             }
 
             final Jenkins jenkins = Jenkins.get();
-            AbstractProject resolvedProject = null;
+            Job resolvedProject = null;
             try {
                 resolvedProject = jenkins == null ? null :
-                        jenkins.getItem(unresolvedProjectName, build.getProject().getParent(), AbstractProject.class);
+                        jenkins.getItem(unresolvedProjectName, build.getProject().getParent(), Job.class);
             } catch (AccessDeniedException ex) {
                 // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
             }
@@ -695,7 +695,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     public boolean onDeleted(ItemGroup context, String oldName) {
         List<String> newNames = new ArrayList<>();
         StringTokenizer tokens = new StringTokenizer(projects,",");
-        List<String> newValue = new ArrayList<>();
         while (tokens.hasMoreTokens()) {
             String relativeName = tokens.nextToken().trim();
             String fullName = Items.getCanonicalName(context, relativeName);

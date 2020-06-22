@@ -179,6 +179,7 @@ public class BuildTriggerConfigTest {
         assertEquals(1, projects.size());
         assertFalse("Projects should NOT include workflow job", projects.contains(p));
         assertTrue("Projects should include non-workflow job", projects.contains(subProject1));
+        validateOutcome(masterProject, masterConfig, 2, 0, 0, 0);
     }
 
     @Test
