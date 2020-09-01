@@ -43,12 +43,12 @@ import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.SubProjectData;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.security.AuthorizationMatrixProperty;
 import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import hudson.util.FormValidation;
 import jenkins.model.Jenkins;
-import org.acegisecurity.context.SecurityContextHolder;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -67,7 +67,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
-import org.acegisecurity.context.SecurityContext;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -377,12 +376,9 @@ public class BuildTriggerConfigTest {
 
         // Just returns OK if no permission
         r.jenkins.setAuthorizationStrategy(new ProjectMatrixAuthorizationStrategy());
-        SecurityContext orig = ACL.impersonate(Jenkins.ANONYMOUS);
-        try {
+        try (ACLContext ctx = ACL.as(Jenkins.ANONYMOUS)) {
             assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, "").kind);
             assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "").kind);
-        } finally {
-            SecurityContextHolder.setContext(orig);
         }
 
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());

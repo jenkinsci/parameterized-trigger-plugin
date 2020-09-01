@@ -278,8 +278,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             T item = null;
             try {
                 item = hudson.getItem(fullName, context, type);
-            } catch (AccessDeniedException ex) {
-                // Ignore, item won't be added to the resulting list
+            } catch (RuntimeException x) {
+                if (x.getClass().getSimpleName().startsWith("AccessDeniedException")) {
+                    // Ignore, item won't be added to the resulting list
+                } else {
+                    throw x;
+                }
             }
             if(item!=null)
                 r.add(item);
@@ -322,8 +326,12 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             try {
                 resolvedProject = jenkins == null ? null :
                         jenkins.getItem(unresolvedProjectName, build.getProject().getParent(), Job.class);
-            } catch (AccessDeniedException ex) {
-                // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
+            } catch (RuntimeException x) {
+                if (x.getClass().getSimpleName().startsWith("AccessDeniedException")) {
+                    // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
+                } else {
+                    throw x;
+                }
             }
             if (resolvedProject != null) {
                 destinationSet.add(resolvedProject);
