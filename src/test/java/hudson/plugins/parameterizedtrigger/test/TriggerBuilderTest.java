@@ -26,6 +26,7 @@ package hudson.plugins.parameterizedtrigger.test;
 import com.google.common.collect.ArrayListMultimap;
 import hudson.EnvVars;
 import hudson.Launcher;
+import hudson.Plugin;
 import hudson.model.*;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.Cause.UpstreamCause;
@@ -39,6 +40,7 @@ import hudson.plugins.promoted_builds.PromotionProcess;
 import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -400,7 +402,8 @@ public class TriggerBuilderTest {
     @Issue("JENKINS-17751")
     @Test
     public void testTriggerFromPromotion() throws Exception {
-        assertNotNull("promoted-builds must be installed.", Jenkins.getInstance().getPlugin("promoted-builds"));
+        Plugin plugin = Jenkins.get().getPlugin( "promoted-builds");
+        Assume.assumeTrue(plugin!=null);
         // Test combination with PromotedBuilds.
         // Assert that the original build can be tracked from triggered build.
         // The configuration is as following:
