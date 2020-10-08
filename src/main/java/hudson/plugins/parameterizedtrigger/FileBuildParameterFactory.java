@@ -4,6 +4,7 @@
  */
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Util;
@@ -102,11 +103,13 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
     @Override
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
 
+        EnvVars env = build.getEnvironment(listener);
+
         List<AbstractBuildParameters> result = new ArrayList();
 
         try {
             FilePath workspace = getWorkspace(build);
-            FilePath[] files = workspace.list(getFilePattern());
+            FilePath[] files = workspace.list(env.expand(getFilePattern()));
             if(files.length == 0) {
                 noFilesFoundAction.failCheck(listener);
             } else {
