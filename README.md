@@ -8,7 +8,9 @@ Parameterized Trigger Plugin
 This plugin lets you trigger new builds when your build has completed,
 with various ways of specifying parameters for the new build.
 
-  
+These new builds appear as "Subprojects" in the Jenkins UI when you
+are looking at a project that triggers them.
+
 You can add multiple configurations: each has a list of projects to trigger, a condition for when to trigger them 
 (based on the result of the current build), and a parameters section.
 
