@@ -86,7 +86,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
     public Result mapBuildResult(Result r) {
         if (failureThreshold!=null && r.isWorseOrEqualTo(failureThreshold))   return FAILURE;
         if (unstableThreshold!=null && r.isWorseOrEqualTo(unstableThreshold))  return UNSTABLE;
-        return SUCCESS;
+        return null;
     }
 
     @Extension
