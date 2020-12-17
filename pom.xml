@@ -153,10 +153,15 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.176.x</artifactId>
-        <version>9</version>
+        <artifactId>bom-2.263.x</artifactId>
+        <version>19</version>
         <scope>import</scope>
         <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>2.4.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -187,7 +192,7 @@
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
-    <jenkins.version>2.176.4</jenkins.version>
+    <jenkins.version>2.270</jenkins.version>
     <spotbugs.failOnError>false</spotbugs.failOnError>
   </properties>
 </project>
