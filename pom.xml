@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.7</version>
+    <version>4.15</version>
     <relativePath />
   </parent>
 
@@ -117,7 +117,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>matrix-auth</artifactId>
-      <version>2.6.4</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
@@ -144,7 +143,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>token-macro</artifactId>
-      <version>2.12</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -154,7 +152,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.263.x</artifactId>
-        <version>19</version>
+        <version>20</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
