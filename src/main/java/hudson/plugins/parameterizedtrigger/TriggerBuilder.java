@@ -35,6 +35,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.DependencyGraph;
+import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
@@ -133,9 +134,11 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                     for (Job p : projectList) {
                         //handle non-buildable projects
                         if(!config.canBeScheduled(p)){
+                            User user = User.current();
+                            String userName = user != null ? ModelHyperlinkNote.encodeTo(user) : "unknown";
                             listener.getLogger().println("Skipping " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) + 
                                     ". The project is either disabled,"
-                                    + " or the authenticated user " + ModelHyperlinkNote.encodeTo(User.current()) + " has no Item.BUILD permissions,"
+                                    + " or the authenticated user " + userName + " has no Item.BUILD permissions,"
                                     + " or the configuration has not been saved yet.");
                             continue;
                         }
@@ -150,8 +153,9 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                     listener.getLogger().println(HyperlinkNote.encodeTo('/' + completedRun.getUrl(), completedRun.getFullDisplayName()) + " completed. Result was " + completedRun.getResult());
                                     BuildInfoExporterAction.addBuildInfoExporterAction(build, completedRun.getParent().getFullName(), completedRun.getNumber(), completedRun.getResult());
 
-                                    if (buildStepResult && config.getBlock().mapBuildStepResult(completedRun.getResult())) {
-                                        build.setResult(config.getBlock().mapBuildResult(completedRun.getResult()));
+                                    Result r = config.getBlock().mapBuildResult(completedRun.getResult());
+                                    if (buildStepResult && config.getBlock().mapBuildStepResult(completedRun.getResult()) && r != null) {
+                                        build.setResult(r);
                                     } else {
                                         buildStepResult = false;
                                     }
