@@ -153,9 +153,11 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                     listener.getLogger().println(HyperlinkNote.encodeTo('/' + completedRun.getUrl(), completedRun.getFullDisplayName()) + " completed. Result was " + completedRun.getResult());
                                     BuildInfoExporterAction.addBuildInfoExporterAction(build, completedRun.getParent().getFullName(), completedRun.getNumber(), completedRun.getResult());
 
-                                    Result r = config.getBlock().mapBuildResult(completedRun.getResult());
-                                    if (buildStepResult && config.getBlock().mapBuildStepResult(completedRun.getResult()) && r != null) {
-                                        build.setResult(r);
+                                    if (buildStepResult && config.getBlock().mapBuildStepResult(completedRun.getResult())) {
+                                        Result r = config.getBlock().mapBuildResult(completedRun.getResult());
+                                        if (r != null) {
+                                            build.setResult(r);
+                                        }
                                     } else {
                                         buildStepResult = false;
                                     }
