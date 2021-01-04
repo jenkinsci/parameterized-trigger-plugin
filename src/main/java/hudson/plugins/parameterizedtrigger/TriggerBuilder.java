@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 /**
  * {@link Builder} that triggers other projects and optionally waits for their completion.
@@ -59,6 +60,8 @@ import java.util.concurrent.ExecutionException;
  * @author Kohsuke Kawaguchi
  */
 public class TriggerBuilder extends Builder implements DependencyDeclarer {
+
+    private static final Logger LOGGER = Logger.getLogger(TriggerBuilder.class.getName());
 
     private final ArrayList<BlockableBuildTriggerConfig> configs;
 
@@ -157,6 +160,8 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                         Result r = config.getBlock().mapBuildResult(completedRun.getResult());
                                         if (r != null) {
                                             build.setResult(r);
+                                        } else {
+                                            LOGGER.warning("Attempting to use the result of unfinished build " + completedRun.toString());
                                         }
                                     } else {
                                         buildStepResult = false;
