@@ -54,11 +54,14 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
     @Override
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
         List<AbstractBuildParameters> result = Lists.newArrayList();
-
+        FilePath workspace = build.getWorkspace();
+        if (workspace == null) {
+            throw new IOException("Failed to get workspace");
+        }
         try {
             // save them into the master because FileParameterValue might need files after the slave workspace have disappeared/reused
             FilePath target = new FilePath(build.getRootDir()).child("parameter-files");
-            int n = build.getWorkspace().copyRecursiveTo(getFilePattern(), target);
+            int n = workspace.copyRecursiveTo(getFilePattern(), target);
 
             if (n==0) {
                 noFilesFoundAction.failCheck(listener);

@@ -32,6 +32,7 @@ import hudson.model.Descriptor;
 import hudson.model.Result;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import javax.annotation.CheckForNull;
 import java.util.Arrays;
 import java.util.List;
 
@@ -83,6 +84,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
      * @param r the {@link Result} of the triggered build to map
      * @return the result of the triggering build
      */
+    @CheckForNull
     public Result mapBuildResult(Result r) {
         if (failureThreshold!=null && r.isWorseOrEqualTo(failureThreshold))   return FAILURE;
         if (unstableThreshold!=null && r.isWorseOrEqualTo(unstableThreshold))  return UNSTABLE;

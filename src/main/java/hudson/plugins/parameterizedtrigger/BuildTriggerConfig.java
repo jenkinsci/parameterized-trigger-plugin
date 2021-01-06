@@ -321,21 +321,21 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 destinationSet = subProjectData.getDynamic();
             }
 
-            final Jenkins jenkins = Jenkins.get();
-            Job resolvedProject = null;
-            try {
-                resolvedProject = jenkins == null ? null :
-                        jenkins.getItem(unresolvedProjectName, build.getProject().getParent(), Job.class);
-            } catch (RuntimeException x) {
-                if (x.getClass().getSimpleName().startsWith("AccessDeniedException")) {
-                    // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
-                } else {
-                    throw x;
+            if (build != null) {
+                Job resolvedProject = null;
+                try {
+                    resolvedProject = Jenkins.get().getItem(unresolvedProjectName, build.getProject().getParent(), Job.class);
+                } catch (RuntimeException x) {
+                    if (x.getClass().getSimpleName().startsWith("AccessDeniedException")) {
+                        // Permission check failure (DISCOVER w/o READ) => we leave the job unresolved
+                    } else {
+                        throw x;
+                    }
                 }
-            }
-            if (resolvedProject != null) {
-                destinationSet.add(resolvedProject);
-                unsolvedProjectIterator.remove();
+                if (resolvedProject != null) {
+                    destinationSet.add(resolvedProject);
+                    unsolvedProjectIterator.remove();
+                }
             }
         }
 
@@ -645,9 +645,6 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @return
      */
     private static String computeRelativeNamesAfterRenaming(String oldFullName, String newFullName, String relativeNames, ItemGroup<?> context) {
-        if(!Jenkins.getVersion().isOlderThan(new VersionNumber("1.530"))) {
-            return Items.computeRelativeNamesAfterRenaming(oldFullName, newFullName, relativeNames, context);
-        }
         StringTokenizer tokens = new StringTokenizer(relativeNames,",");
         List<String> newValue = new ArrayList<>();
         while(tokens.hasMoreTokens()) {
