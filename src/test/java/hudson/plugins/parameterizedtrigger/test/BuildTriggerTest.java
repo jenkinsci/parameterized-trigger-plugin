@@ -17,6 +17,7 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Run;
 import hudson.model.StringParameterDefinition;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
@@ -34,7 +35,9 @@ import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.Test;
 import hudson.tasks.Builder;
+import java.util.logging.Level;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.LoggerRule;
 
 /**
  *
@@ -44,6 +47,9 @@ public class BuildTriggerTest {
     
     @Rule
     public JenkinsRule r = new JenkinsRule();
+
+    @Rule
+    public LoggerRule logging = new LoggerRule().record(Run.class, Level.FINE);
     
     @Test
     public void testParentProjectTrigger() throws Exception{
