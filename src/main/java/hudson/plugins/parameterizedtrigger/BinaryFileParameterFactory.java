@@ -59,7 +59,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
             throw new IOException("Failed to get workspace");
         }
         try {
-            // save them into the master because FileParameterValue might need files after the slave workspace have disappeared/reused
+            // save them into the master because FileParameterValue might need files after the agent workspace have disappeared/reused
             FilePath target = new FilePath(build.getRootDir()).child("parameter-files");
             int n = workspace.copyRecursiveTo(getFilePattern(), target);
 

@@ -363,7 +363,7 @@ public class FileBuildTriggerConfigTest {
     
     @Test
     public void testMatrixBuildsOnSameNodes() throws Exception {
-        // all builds runs on master.
+        // all builds runs on controller.
         // upstream matrix projects creates properties files in each builds.
         MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("childname", "child1", "child2")));

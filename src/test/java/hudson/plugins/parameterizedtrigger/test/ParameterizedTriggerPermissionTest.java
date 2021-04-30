@@ -105,7 +105,7 @@ public class ParameterizedTriggerPermissionTest {
     }
     
     public void shouldBeUnableToTriggerWithoutPermissions(boolean useBuildStep) throws Exception {        
-        // Create master project
+        // Create controller project
         FreeStyleProject masterProject = createProjectWithPermissions("project", "foo", Arrays.asList(Item.BUILD));
         
         if (useBuildStep) {
