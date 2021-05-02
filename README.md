@@ -14,7 +14,7 @@ are looking at a project that triggers them.
 You can add multiple configurations: each has a list of projects to trigger, a condition for when to trigger them 
 (based on the result of the current build), and a parameters section.
 
-There is also a Parameterized Remote Trigger Plugin in case you want to trigger a build on a different/remote Jenkins Master.
+There is also a Parameterized Remote Trigger Plugin in case you want to trigger a build on a different/remote Jenkins Controller.
 
 The parameters section can contain a combination of one or more of the following:
 
