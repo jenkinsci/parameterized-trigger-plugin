@@ -23,8 +23,6 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause.UserIdCause;
@@ -33,7 +31,6 @@ import hudson.model.FreeStyleProject;
 import hudson.model.Project;
 import hudson.model.Result;
 import hudson.model.Run;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
@@ -48,6 +45,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
@@ -57,6 +56,7 @@ import static org.junit.Assert.assertNotNull;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.recipes.LocalData;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -65,6 +65,8 @@ public class BuildInfoExporterTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
+    
+    @Rule public BuildWatcher buildWatcher = new BuildWatcher();
 
     @Test
     public void test() throws Exception {
@@ -175,7 +177,7 @@ public class BuildInfoExporterTest {
                 new TriggerBuilder(
                 new BlockableBuildTriggerConfig(testNameResult + "," + testNameResult2,
                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                ImmutableList.of(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
+                Arrays.asList(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
                 Collections.emptyList())));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
@@ -353,14 +355,12 @@ public class BuildInfoExporterTest {
           //  downstream1#2
           //  downstream2#1
 
-          assertEquals(
-              Sets.newHashSet(
-                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
+          Set<Run<?,?>> expected = new HashSet<>();
+          expected.addAll(Arrays.asList(r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
                       r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
-                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
-              ),
-              new HashSet<AbstractBuild<?,?>>(action.getTriggeredBuilds())
-          );
+                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)));
+          
+          assertEquals(expected, new HashSet<>(action.getTriggeredBuilds()));
 
           EnvVars env = new EnvVars();
           action.buildEnvVars(b, env);
@@ -383,13 +383,12 @@ public class BuildInfoExporterTest {
           //  downstream1#2
           //  downstream2#1
 
-          assertEquals(
-              Sets.newHashSet(
-                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
+          Set<Run<?,?>> expected = new HashSet<>();
+          expected.addAll(Arrays.asList(r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
                       r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
-                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)
-              ),
-              new HashSet<AbstractBuild<?,?>>(action.getTriggeredBuilds())
+                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)));
+
+          assertEquals(expected, new HashSet<>(action.getTriggeredBuilds())
           );
 
           EnvVars env = new EnvVars();

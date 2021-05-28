@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.ImmutableList;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +62,7 @@ public class BuildTrigger extends Notifier implements DependencyDeclarer {
 
 	@Override
 	public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
-		return ImmutableList.of(new DynamicProjectAction(configs));
+		return Collections.singletonList(new DynamicProjectAction(configs));
 	}
 
 	@Override @SuppressWarnings("deprecation")

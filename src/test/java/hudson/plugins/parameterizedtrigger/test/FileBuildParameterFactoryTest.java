@@ -23,10 +23,6 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -55,7 +51,9 @@ import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.io.IOException;
@@ -78,8 +76,7 @@ public class FileBuildParameterFactoryTest {
         TriggerBuilder tBuilder = new TriggerBuilder(
                                 new BlockableBuildTriggerConfig(project.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                                ImmutableList.<AbstractBuildParameterFactory>of(
-                                    new FileBuildParameterFactory("*.txt", encoding, action)),
+                                Arrays.asList(new FileBuildParameterFactory("*.txt", encoding, action)),
                                 Collections.<AbstractBuildParameters>emptyList()));
         return tBuilder;
     }
@@ -116,13 +113,13 @@ public class FileBuildParameterFactoryTest {
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(1, builds.size());
 
-        Set<String> values = Sets.newHashSet();
+        Set<String> values = new HashSet<>();
         for (FreeStyleBuild build : builds) {
             EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
             assertTrue(buildEnvVar.containsKey("TEST"));
             values.add(buildEnvVar.get("TEST"));
         }
-        assertEquals(ImmutableSet.of("hello_abc"), values);
+        assertEquals(Collections.singleton("hello_abc"), values);
 
     }
 
@@ -159,13 +156,13 @@ public class FileBuildParameterFactoryTest {
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(2, builds.size());
 
-        Set<String> values = Sets.newHashSet();
+        Set<String> values = new HashSet<>();
         for (FreeStyleBuild build : builds) {
             EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
             assertTrue(buildEnvVar.containsKey("TEST"));
             values.add(buildEnvVar.get("TEST"));
         }
-        assertEquals(ImmutableSet.of("hello_abc","hello_xyz"), values);
+        assertEquals(new HashSet<>(Arrays.asList("hello_abc","hello_xyz")), values);
 
     }
 

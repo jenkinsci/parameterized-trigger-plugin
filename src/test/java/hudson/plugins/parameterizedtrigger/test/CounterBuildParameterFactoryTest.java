@@ -1,8 +1,5 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import hudson.EnvVars;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleBuild;
@@ -11,7 +8,6 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
 import hudson.model.StringParameterDefinition;
 import hudson.model.Result;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
@@ -23,7 +19,9 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -43,7 +41,7 @@ public class CounterBuildParameterFactoryTest {
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                                ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT")),
+                                Collections.singletonList(new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT")),
                                 Collections.<AbstractBuildParameters>emptyList())));
 
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -59,13 +57,13 @@ public class CounterBuildParameterFactoryTest {
         r.waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(2, builds.size());
-        Set<String> values = Sets.newHashSet();
+        Set<String> values = new HashSet<>();
         for (FreeStyleBuild build : builds) {
             EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
             assertTrue(buildEnvVar.containsKey("TEST"));
             values.add(buildEnvVar.get("TEST"));
         }
-        assertEquals(ImmutableSet.of("COUNT0","COUNT1"), values);
+        assertEquals(new HashSet<>(Arrays.asList("COUNT0","COUNT1")), values);
     }
 
     @Test
@@ -76,7 +74,7 @@ public class CounterBuildParameterFactoryTest {
                 new TriggerBuilder(
                         new BlockableBuildTriggerConfig(projectB.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                                ImmutableList.<AbstractBuildParameterFactory>of(
+                                Arrays.asList(
                                         new CounterBuildParameterFactory("0","1","1", "TEST=COUNT$COUNT"),
                                         new CounterBuildParameterFactory("0","2","1", "NEWTEST=COUNT$COUNT")
                                         ),
@@ -97,8 +95,8 @@ public class CounterBuildParameterFactoryTest {
         r.waitUntilNoActivity();
         List<FreeStyleBuild> builds = projectB.getBuilds();
         assertEquals(6, builds.size());
-        Set<String> values = Sets.newHashSet();
-        Set<String> newValues = Sets.newHashSet();
+        Set<String> values = new HashSet<>();
+        Set<String> newValues = new HashSet<>();
         for (FreeStyleBuild build : builds) {
             EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
             assertTrue(buildEnvVar.containsKey("TEST"));
@@ -106,8 +104,8 @@ public class CounterBuildParameterFactoryTest {
             values.add(buildEnvVar.get("TEST"));
             newValues.add(buildEnvVar.get("NEWTEST"));
         }
-        assertEquals(ImmutableSet.of("COUNT0","COUNT1"), values);
-        assertEquals(ImmutableSet.of("COUNT0", "COUNT1", "COUNT2"), newValues);
+        assertEquals(new HashSet<>(Arrays.asList("COUNT0","COUNT1")), values);
+        assertEquals(new HashSet<>(Arrays.asList("COUNT0", "COUNT1", "COUNT2")), newValues);
     }
 
 }

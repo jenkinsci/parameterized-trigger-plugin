@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.Lists;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
@@ -15,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -53,7 +53,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
 
     @Override
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
-        List<AbstractBuildParameters> result = Lists.newArrayList();
+        List<AbstractBuildParameters> result = new ArrayList<>();
         FilePath workspace = build.getWorkspace();
         if (workspace == null) {
             throw new IOException("Failed to get workspace");
