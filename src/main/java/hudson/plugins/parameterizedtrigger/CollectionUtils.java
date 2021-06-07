@@ -16,14 +16,13 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 final class CollectionUtils {
 
     static <T> List<T> immutableList(Collection<T> collection1, Collection<T> collection2) {
-        List<T> list = new ArrayList<>(collection1);
+        List<T> list = new ArrayList<>(collection1.size() + collection2.size());
+        list.addAll(collection1);
         list.addAll(collection2);
         return Collections.unmodifiableList(list);
     }
 
     static <T> List<T> immutableList(Collection<T> collection, @SuppressWarnings("unchecked") T... ts) {
-        List<T> list = new ArrayList<>(collection);
-        list.addAll(Arrays.asList(ts));
-        return Collections.unmodifiableList(list);
+        return immutableList(collection, Arrays.asList(ts));
     }
 }
