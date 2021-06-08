@@ -177,7 +177,7 @@ public class BuildInfoExporterTest {
                 new TriggerBuilder(
                 new BlockableBuildTriggerConfig(testNameResult + "," + testNameResult2,
                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                Arrays.asList(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
+                Collections.singletonList(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
                 Collections.emptyList())));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();

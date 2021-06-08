@@ -35,7 +35,6 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
 import hudson.model.StringParameterDefinition;
 import hudson.model.Result;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
@@ -76,7 +75,7 @@ public class FileBuildParameterFactoryTest {
         TriggerBuilder tBuilder = new TriggerBuilder(
                                 new BlockableBuildTriggerConfig(project.getName(),
                                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                                Arrays.asList(new FileBuildParameterFactory("*.txt", encoding, action)),
+                                Collections.singletonList(new FileBuildParameterFactory("*.txt", encoding, action)),
                                 Collections.<AbstractBuildParameters>emptyList()));
         return tBuilder;
     }
