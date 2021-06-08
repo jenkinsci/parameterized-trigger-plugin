@@ -1,8 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -26,8 +23,6 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -38,7 +33,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jenkins.util.VirtualFile;
 
 public class FileBuildParameters extends AbstractBuildParameters {
@@ -165,26 +161,23 @@ public class FileBuildParameters extends AbstractBuildParameters {
 
 	private Collection<? extends AbstractBuild<?, ?>> getTargetBuilds(AbstractBuild<?, ?> build) {
 		if ((build instanceof MatrixBuild) && isUseMatrixChild()) {
-			return Collections2.filter(
-				isOnlyExactRuns()?((MatrixBuild)build).getExactRuns():((MatrixBuild)build).getRuns(),
-				new Predicate<MatrixRun>() {
-					public boolean apply(@Nullable MatrixRun run) {
-						if (run == null) {
-							return false;
-						}
-						if (StringUtils.isBlank(getCombinationFilter())) {
-							// no combination filter stands for all children.
-							return true;
-						}
-						Combination c = run.getParent().getCombination();
-						AxisList axes = run.getParent().getParent().getAxes();
-						
-						return c.evalGroovyExpression(axes, getCombinationFilter());
-					}
+			Stream<MatrixRun> buildsStream = isOnlyExactRuns() ? ((MatrixBuild) build).getExactRuns().stream() : ((MatrixBuild) build).getRuns().stream();
+			return buildsStream.filter(run -> {
+				if (run == null) {
+					return false;
 				}
-			);
+				if (StringUtils.isBlank(getCombinationFilter())) {
+					// no combination filter stands for all children.
+					return true;
+				}
+				Combination c = run.getParent().getCombination();
+				AxisList axes = run.getParent().getParent().getAxes();
+
+				return c.evalGroovyExpression(axes, getCombinationFilter());
+			}).collect(Collectors.toList());
+
 		} else {
-			return Arrays.<AbstractBuild<?,?>>asList(build);
+			return Arrays.<AbstractBuild<?, ?>>asList(build);
 		}
 	}
 

@@ -1,9 +1,8 @@
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.ImmutableList;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
-
+import java.util.Collections;
 import java.util.List;
 /**
  * Action added Projects to track what projects are
@@ -47,7 +46,7 @@ public class SubProjectsAction implements Action {
         if (isFirst()) {
             return project.getActions(SubProjectsAction.class);
         }
-        return ImmutableList.of();
+        return Collections.emptyList();
     }
 
     public AbstractProject<?,?> getProject() {

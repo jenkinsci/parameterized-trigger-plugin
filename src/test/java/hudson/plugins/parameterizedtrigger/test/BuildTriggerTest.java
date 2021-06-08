@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import com.google.common.collect.Lists;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -110,7 +109,7 @@ public class BuildTriggerTest {
 
         String project1 = downstreamBuild1.getCause(Cause.UpstreamCause.class).getUpstreamProject();
         String project2 = downstreamBuild2.getCause(Cause.UpstreamCause.class).getUpstreamProject();
-        ArrayList<MatrixConfiguration> configurations = Lists.newArrayList(upstream.getItems());
+        ArrayList<MatrixConfiguration> configurations = new ArrayList<>(upstream.getItems());
         Collections.sort(configurations, new MatrixConfigurationSorterTestImpl());
         assertEquals("Build should be triggered by matrix project.", configurations.get(0).getFullName(), project1);
         assertEquals("Build should be triggered by matrix project.", configurations.get(1).getFullName(), project2);

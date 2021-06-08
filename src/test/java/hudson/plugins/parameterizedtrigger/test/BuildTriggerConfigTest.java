@@ -54,6 +54,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -80,6 +81,9 @@ public class BuildTriggerConfigTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
+    
+    @Rule
+    public BuildWatcher buildWatcher = new BuildWatcher();
 
     private BlockableBuildTriggerConfig createConfig(String projectToTrigger){
         List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();

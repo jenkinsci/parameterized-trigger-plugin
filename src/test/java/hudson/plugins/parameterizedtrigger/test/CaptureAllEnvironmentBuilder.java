@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import com.google.common.collect.Maps;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -12,13 +11,14 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author wolfs
  */
 public class CaptureAllEnvironmentBuilder extends Builder {
-    private final Map<String,EnvVars> envVars = Maps.newHashMap();
+    private final Map<String,EnvVars> envVars = new HashMap<>();
 
 	public Map<String, EnvVars> getEnvVars() {
 		return envVars;

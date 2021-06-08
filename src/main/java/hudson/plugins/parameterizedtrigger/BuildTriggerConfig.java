@@ -1,7 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import hudson.EnvVars;
 import hudson.Extension;
@@ -394,8 +393,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 List<QueueTaskFuture<AbstractBuild>> futures = new ArrayList<>();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
-                    List<Action> actions = getBaseActions(
-                            ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(),
+                    List<AbstractBuildParameters> buildParams = new ArrayList<>(configs);
+                    buildParams.addAll(addConfigs);
+                    buildParams = Collections.unmodifiableList(buildParams);
+                    List<Action> actions = getBaseActions(buildParams,
                             build, listener);
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
@@ -459,7 +460,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 ListMultimap<Job, QueueTaskFuture<AbstractBuild>> futures = ArrayListMultimap.create();
 
                 for (List<AbstractBuildParameters> addConfigs : getDynamicBuildParameters(build, listener)) {
-                    List<Action> actions = getBaseActions(ImmutableList.<AbstractBuildParameters>builder().addAll(configs).addAll(addConfigs).build(), build, listener);
+                    List<Action> actions = getBaseActions(CollectionUtils.immutableList(configs, addConfigs), build, listener);
                     for (Job project : getJobs(build.getRootBuild().getProject().getParent(), env)) {
                         List<Action> list = getBuildActions(actions, project);
 
@@ -486,7 +487,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      */
     private List<List<AbstractBuildParameters>> getDynamicBuildParameters(AbstractBuild<?,?> build, BuildListener listener) throws DontTriggerException, IOException, InterruptedException {
         if (configFactories == null || configFactories.isEmpty()) {
-            return ImmutableList.of(ImmutableList.of());
+            return Collections.singletonList(Collections.emptyList());
         } else {
             // this code is building the combinations of all AbstractBuildParameters reported from all factories
             List<List<AbstractBuildParameters>> dynamicBuildParameters = new ArrayList();
@@ -498,11 +499,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 if(factoryParameters.size() > 0) {
                     for (AbstractBuildParameters config : factoryParameters) {
                         for (List<AbstractBuildParameters> dynamicBuildParameter : dynamicBuildParameters) {
-                            newDynParameters.add(
-                                    ImmutableList.<AbstractBuildParameters>builder()
-                                            .addAll(dynamicBuildParameter)
-                                            .add(config)
-                                            .build());
+                            newDynParameters.add(CollectionUtils.immutableList(dynamicBuildParameter, config));
                         }
                     }
                     dynamicBuildParameters = newDynParameters;

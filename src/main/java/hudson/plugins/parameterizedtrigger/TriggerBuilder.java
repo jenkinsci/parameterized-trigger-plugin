@@ -25,7 +25,6 @@
 
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import hudson.*;
 import hudson.console.HyperlinkNote;
@@ -199,7 +198,7 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
 
     @Override
     public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
-        return ImmutableList.of(new SubProjectsAction(project, configs));
+        return Collections.singletonList(new SubProjectsAction(project, configs));
     }
 
     private boolean canDeclare(AbstractProject owner) {

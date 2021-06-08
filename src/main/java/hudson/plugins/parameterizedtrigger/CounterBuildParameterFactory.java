@@ -1,6 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import com.google.common.collect.ImmutableMap;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
@@ -14,6 +13,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -107,7 +107,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     }
 
     private PredefinedBuildParameters getParameterForCount(Long i) {
-        String stringWithCount = Util.replaceMacro(paramExpr, ImmutableMap.of("COUNT", i.toString()));
+        String stringWithCount = Util.replaceMacro(paramExpr, Collections.singletonMap("COUNT", i.toString()));
         return new PredefinedBuildParameters(stringWithCount);
     }
 

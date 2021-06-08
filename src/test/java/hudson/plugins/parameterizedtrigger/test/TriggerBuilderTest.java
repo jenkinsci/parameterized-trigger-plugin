@@ -59,8 +59,6 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.IOException;
 
-import com.google.common.collect.ImmutableList;
-
 import java.lang.System;
 
 import jenkins.model.Jenkins;
@@ -235,7 +233,7 @@ public class TriggerBuilderTest {
         Project<?,?> triggerProject = r.createFreeStyleProject();
 
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
-        ImmutableList<AbstractBuildParameterFactory> buildParameter = ImmutableList.<AbstractBuildParameterFactory>of(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
+        List<AbstractBuildParameterFactory> buildParameter = Collections.singletonList(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
         List<AbstractBuildParameters> emptyList = Collections.emptyList();
 
         BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig("project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
