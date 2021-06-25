@@ -34,23 +34,29 @@ import hudson.model.queue.SubTask;
 import java.util.List;
 
 /**
- * {@link Action} that restricts the job to a particular node 
+ * {@link Action} that restricts the job to a particular node
  * when a project is scheduled
  * Will cause a unique build for each different node if a job is already queued.
- * 
+ *
  * @author Chris Johnson
  */
 public class NodeAction extends InvisibleAction implements LabelAssignmentAction, Queue.QueueAction, BuildBadgeAction {
 	private final Label nodeLabel;
-	
+
 	public NodeAction(Label nodeLabel) {
 		this.nodeLabel = nodeLabel;
 	}
 
 	public Label getAssignedLabel(SubTask task) {
-		return nodeLabel;
+		if (nodeLabel != null) {
+			// Ensure that we are returning the canonical Label for this expression,
+			// according to the Jenkins instance.
+			return Label.get(nodeLabel.getName());
+		} else {
+			return nodeLabel;
+		}
 	}
-	
+
 	public boolean shouldSchedule(List<Action> actions) {
 		// see if there is already a matching action with same node
 		for (NodeAction other:Util.filter(actions, NodeAction.class)) {
