@@ -2,6 +2,7 @@
  * The MIT License
  *
  * Copyright (c) 2004-2010, Sun Microsystems, Inc., Kohsuke Kawaguchi
+ * Copyright (c) 2018 Motorola Solutions, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +28,14 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersAction;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.ParameterValue;
 import hudson.model.PasswordParameterDefinition;
 import hudson.model.PasswordParameterValue;
 import hudson.model.Project;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
+import hudson.model.TextParameterDefinition;
+import hudson.model.TextParameterValue;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
@@ -44,6 +48,7 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 
@@ -54,33 +59,33 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
+
     @Test
-	public void test() throws Exception {
+    public void test() throws Exception {
 
-		Project projectA = r.createFreeStyleProject("projectA");
-		String properties = "KEY=value";
-		projectA.getPublishersList().add(
-				new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
-						new PredefinedBuildParameters(properties))));
+        Project projectA = r.createFreeStyleProject("projectA");
+        String properties = "KEY=value";
+        projectA.getPublishersList().add(
+                new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS,
+                        new PredefinedBuildParameters(properties))));
 
-		CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
-		Project projectB = r.createFreeStyleProject("projectB");
-		projectB.getBuildersList().add(builder);
-		projectB.setQuietPeriod(1);
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        Project projectB = r.createFreeStyleProject("projectB");
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
         // SECURITY-170: must define parameters in subjobs
         List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
         definition.add(new StringParameterDefinition("KEY","key"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
-		r.jenkins.rebuildDependencyGraph();
+        r.jenkins.rebuildDependencyGraph();
 
-		projectA.scheduleBuild2(0).get();
-		r.jenkins.getQueue().getItem(projectB).getFuture().get();
+        projectA.scheduleBuild2(0).get();
+        r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-		assertNotNull("builder should record environment", builder.getEnvVars());
-		assertEquals("value", builder.getEnvVars().get("KEY"));
-	}
-	
+        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertEquals("value", builder.getEnvVars().get("KEY"));
+    }
+
     @Test
     public void testNonAscii() throws Exception {
 
@@ -109,18 +114,59 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
         assertEquals("１２３", builder.getEnvVars().get("KEY"));
         assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
     }
-    
+
+    @Test
+    public void testDownstreamParameterIsMultilineForIndirectValue() throws Exception {
+
+        Project projectA = r.createFreeStyleProject("projectA");
+
+        List<ParameterDefinition> parametersA = new ArrayList<>();
+        parametersA.add(new TextParameterDefinition("A", "Lorem\nipsum", null));
+        projectA.addProperty(new ParametersDefinitionProperty(parametersA));
+
+        projectA.getPublishersList().add(
+                new BuildTrigger(new BuildTriggerConfig("projectB",
+                        ResultCondition.SUCCESS,
+                        new PredefinedBuildParameters("B=${A}", true))));
+
+        Project projectB = r.createFreeStyleProject("projectB");
+
+        List<ParameterDefinition> parametersB = new ArrayList<>();
+        parametersB.add(new TextParameterDefinition("B", "", null));
+        projectB.addProperty(new ParametersDefinitionProperty(parametersB));
+
+        CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
+        projectB.getBuildersList().add(builder);
+        projectB.setQuietPeriod(1);
+
+        r.jenkins.rebuildDependencyGraph();
+        projectA.scheduleBuild2(0).get();
+
+        FreeStyleBuild downstreamBuild = (FreeStyleBuild)
+                r.jenkins.getQueue().getItem(projectB).getFuture().get();
+
+        ParametersAction downstreamParametersAction =
+                downstreamBuild.getAction(ParametersAction.class);
+        assertNotNull(downstreamParametersAction);
+
+        ParameterValue downstreamValue =
+                downstreamParametersAction.getParameter("B");
+        assertTrue(downstreamValue instanceof TextParameterValue);
+
+        assertEquals("Lorem\nipsum", builder.getEnvVars().get("B"));
+    }
+
     @Test
     @Issue("SECURITY-101")
     public void ensureTextBasedParameterAreCorrectlyConvertedToPassword() throws Exception {
         // creation
         Project parent = r.createFreeStyleProject("parent");
         Project child = r.createFreeStyleProject("child");
-        
+
         {// configuration on parent
             String properties = "login=derp\n" +
                     "pwd=d3rp\n";
-            
+
             parent.getPublishersList().add(
                     new BuildTrigger(
                             new BuildTriggerConfig(
@@ -130,22 +176,22 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
                     )
             );
         }
-        
+
         {// configuration of child
             child.setQuietPeriod(1);
-            
+
             child.addProperty(new ParametersDefinitionProperty(
                     new StringParameterDefinition("login", "default-login", null),
                     new PasswordParameterDefinition("pwd", "default-pwd", null)
             ));
         }
-        
+
         r.jenkins.rebuildDependencyGraph();
-        
+
         // run of parent
         parent.scheduleBuild2(0).get();
         FreeStyleBuild childLastBuild = (FreeStyleBuild) r.jenkins.getQueue().getItem(child).getFuture().get();
-        
+
         List<ParametersAction> actions = childLastBuild.getActions(ParametersAction.class);
         assertFalse(actions.isEmpty());
         ParametersAction pa = actions.get(0);

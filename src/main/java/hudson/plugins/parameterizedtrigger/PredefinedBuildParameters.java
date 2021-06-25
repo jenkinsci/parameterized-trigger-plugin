@@ -24,7 +24,6 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 	private final String properties;
 	private final boolean textParamValueOnNewLine;
 
-
 	@DataBoundConstructor
 	public PredefinedBuildParameters(String properties, boolean textParamValueOnNewLine) {
 		this.properties = properties;
@@ -35,7 +34,8 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		this(properties, false);
 	}
 
-	public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
+	@Override
+	public Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
 			throws IOException, InterruptedException {
 
 		EnvVars env = getEnvironment(build, listener);
@@ -45,11 +45,11 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 		List<ParameterValue> values = new ArrayList<>();
 		for (Map.Entry<Object, Object> entry : p.entrySet()) {
 			// support multi-line parameters correctly
-			String s = entry.getValue().toString();
-			if(textParamValueOnNewLine && s.contains("\n")) {
-				values.add(new TextParameterValue(entry.getKey().toString(), env.expand(s)));
+			String s = env.expand(entry.getValue().toString());
+			if (textParamValueOnNewLine && s.contains("\n")) {
+				values.add(new TextParameterValue(entry.getKey().toString(), s));
 			} else {
-				values.add(new StringParameterValue(entry.getKey().toString(), env.expand(s)));
+				values.add(new StringParameterValue(entry.getKey().toString(), s));
 			}
 		}
 
@@ -66,6 +66,7 @@ public class PredefinedBuildParameters extends AbstractBuildParameters {
 
 	@Extension
 	public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
+
 		@Override
 		public String getDisplayName() {
 			return "Predefined parameters";
