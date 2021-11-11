@@ -30,7 +30,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
+
+import org.awaitility.Awaitility;
 import org.junit.Rule;
 import org.junit.Test;
 import hudson.tasks.Builder;
@@ -51,7 +55,7 @@ public class BuildTriggerTest {
     public LoggerRule logging = new LoggerRule().record(Run.class, Level.FINE);
     
     @Test
-    public void testParentProjectTrigger() throws Exception{
+    public void testParentProjectTrigger() throws Exception {
         FreeStyleProject downstream = r.createFreeStyleProject("downstream");
         MatrixProject upstream = r.createProject(MatrixProject.class, "upstream");
         List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
@@ -64,16 +68,16 @@ public class BuildTriggerTest {
         params.add(new CurrentBuildParameters());
         BuildTrigger triggerBuilder = new BuildTrigger(new BuildTriggerConfig("downstream", ResultCondition.SUCCESS, false, null, params, false));
         upstream.getPublishersList().add(triggerBuilder);
+
         r.buildAndAssertSuccess(upstream);
-        r.waitUntilNoActivity();
-        FreeStyleBuild downstreamBuild = downstream.getLastBuild();
-        assertNotNull("Downstream job should be triggered", downstreamBuild);
-        String project = downstreamBuild.getCause(Cause.UpstreamCause.class).getUpstreamProject();
+        Awaitility.await().pollInterval(1, SECONDS).atMost(10, SECONDS).until(() -> downstream.getLastBuild() != null);
+
+        String project = downstream.getLastBuild().getCause(Cause.UpstreamCause.class).getUpstreamProject();
         assertEquals("Build should be triggered by matrix project.", "upstream", project);
     }
     
     @Test
-    public void testChildProjectsTrigger() throws Exception{
+    public void testChildProjectsTrigger() throws Exception {
         MatrixProject upstream = r.createProject(MatrixProject.class, "upstream");
         FreeStyleProject downstream = r.createFreeStyleProject("downstream");
 
