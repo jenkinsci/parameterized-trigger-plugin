@@ -1,6 +1,4 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core">
-	<img width="16" height="16"
-         title="${it.tooltip}"
-	     src="${imagesURL}/16x16/computer.png"/>
-</j:jelly>  
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout">
+	<l:icon class="icon-computer icon-sm" title="${it.tooltip}"/>
+</j:jelly>
