@@ -1,5 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import hudson.Extension;
 import hudson.model.Item;
 import hudson.model.ItemGroup;
@@ -20,6 +22,7 @@ import org.kohsuke.stapler.Stapler;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
+@SuppressFBWarnings(value="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS", justification="Part of public API, reviewed all uses of Plugin are fully quantified in this class")
 public class Plugin extends hudson.Plugin {
     public static final String LOG_TAG = "[parameterized-trigger]";
 

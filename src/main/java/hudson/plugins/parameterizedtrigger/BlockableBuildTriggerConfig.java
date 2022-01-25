@@ -1,5 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -24,19 +26,24 @@ import java.util.List;
 
 /**
  * {@link BuildTriggerConfig} that supports blocking of the execution.
+ * 
  * @author Kohsuke Kawaguchi
  */
 public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     private final BlockingBehaviour block;
+    // Field is unused, but would change public API if it were deleted
+    @SuppressFBWarnings(value = "UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD", justification = "Part of the public API")
     public boolean buildAllNodesWithLabel;
 
-    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
+    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block,
+            List<AbstractBuildParameters> configs) {
         super(projects, ResultCondition.ALWAYS, false, configs);
         this.block = block;
     }
 
     @DataBoundConstructor
-    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameterFactory> configFactories,List<AbstractBuildParameters> configs) {
+    public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block,
+            List<AbstractBuildParameterFactory> configFactories, List<AbstractBuildParameters> configs) {
         super(projects, ResultCondition.ALWAYS, false, configFactories, configs, false);
         this.block = block;
     }
@@ -46,46 +53,57 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     @Override
-    public List<QueueTaskFuture<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    public List<QueueTaskFuture<AbstractBuild>> perform(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
         List<QueueTaskFuture<AbstractBuild>> r = super.perform(build, launcher, listener);
-        if (block==null) return Collections.emptyList();
+        if (block == null)
+            return Collections.emptyList();
         return r;
     }
 
     @Override
-    public ListMultimap<AbstractProject, QueueTaskFuture<AbstractBuild>> perform2(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        ListMultimap<AbstractProject, QueueTaskFuture<AbstractBuild>> futures = super.perform2(build, launcher, listener);
-        if(block==null) return ArrayListMultimap.create();
+    public ListMultimap<AbstractProject, QueueTaskFuture<AbstractBuild>> perform2(AbstractBuild<?, ?> build,
+            Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        ListMultimap<AbstractProject, QueueTaskFuture<AbstractBuild>> futures = super.perform2(build, launcher,
+                listener);
+        if (block == null)
+            return ArrayListMultimap.create();
         return futures;
     }
 
     @Override
-    public ListMultimap<Job, QueueTaskFuture<AbstractBuild>> perform3(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    public ListMultimap<Job, QueueTaskFuture<AbstractBuild>> perform3(AbstractBuild<?, ?> build, Launcher launcher,
+            BuildListener listener) throws InterruptedException, IOException {
         ListMultimap<Job, QueueTaskFuture<AbstractBuild>> futures = super.perform3(build, launcher, listener);
-        if(block==null) return ArrayListMultimap.create();
+        if (block == null)
+            return ArrayListMultimap.create();
         return futures;
     }
 
     @Override
-    protected QueueTaskFuture schedule(AbstractBuild<?, ?> build, Job project, List<Action> list, TaskListener listener) throws InterruptedException, IOException {
-        if (block!=null) {
+    protected QueueTaskFuture schedule(AbstractBuild<?, ?> build, Job project, List<Action> list, TaskListener listener)
+            throws InterruptedException, IOException {
+        if (block != null) {
             while (true) {
-                // add DifferentiatingAction to make sure this doesn't get merged with something else,
-                // which is most likely unintended. Might make sense to do it at BuildTriggerConfig for all.
+                // add DifferentiatingAction to make sure this doesn't get merged with something
+                // else,
+                // which is most likely unintended. Might make sense to do it at
+                // BuildTriggerConfig for all.
                 list = CollectionUtils.immutableList(list, new DifferentiatingAction());
 
-                
                 // if we fail to add the item to the queue, wait and retry.
-                // it also means we have to force quiet period = 0, or else it'll never leave the queue
+                // it also means we have to force quiet period = 0, or else it'll never leave
+                // the queue
                 QueueTaskFuture f = schedule(build, project, 0, list, listener);
-                // When a project is disabled or the configuration is not yet saved f will always be null and we're caught in a loop, therefore we need to check for it
-                if (f != null || !canBeScheduled(project)){
+                // When a project is disabled or the configuration is not yet saved f will
+                // always be null and we're caught in a loop, therefore we need to check for it
+                if (f != null || !canBeScheduled(project)) {
                     return f;
                 }
                 Thread.sleep(1000);
             }
         } else {
-            return super.schedule(build,project,list,listener);
+            return super.schedule(build, project, list, listener);
         }
     }
 

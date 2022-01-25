@@ -26,7 +26,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>subversion</artifactId>
-      <version>2.15.1</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -134,6 +133,10 @@
           <groupId>org.hamcrest</groupId>
           <artifactId>hamcrest-core</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna-platform</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -163,8 +166,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.263.x</artifactId>
-        <version>961.vf0c9f6f59827</version>
+        <artifactId>bom-2.289.x</artifactId>
+        <version>1090.v0a_33df40457a_</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -217,7 +220,7 @@
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
-    <jenkins.version>2.270</jenkins.version>
+    <jenkins.version>2.289.1</jenkins.version>
     <spotbugs.failOnError>false</spotbugs.failOnError>
   </properties>
 </project>
