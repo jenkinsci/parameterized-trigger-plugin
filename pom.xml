@@ -218,7 +218,9 @@
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
     <jenkins.version>2.270</jenkins.version>
+    <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.failOnError>false</spotbugs.failOnError>
+    <spotbugs.threshold>Low</spotbugs.threshold>
   </properties>
 </project>
 
