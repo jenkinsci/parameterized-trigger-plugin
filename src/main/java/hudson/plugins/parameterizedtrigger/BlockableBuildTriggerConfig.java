@@ -1,5 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -28,6 +30,8 @@ import java.util.List;
  */
 public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     private final BlockingBehaviour block;
+    // Field is unused, but would change public API if it were deleted
+    @SuppressFBWarnings(value = "UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD", justification = "Part of the public API")
     public boolean buildAllNodesWithLabel;
 
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
