@@ -78,7 +78,7 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
                 // which is most likely unintended. Might make sense to do it at BuildTriggerConfig for all.
                 list = CollectionUtils.immutableList(list, new DifferentiatingAction());
 
-
+                
                 // if we fail to add the item to the queue, wait and retry.
                 // it also means we have to force quiet period = 0, or else it'll never leave the queue
                 QueueTaskFuture f = schedule(build, project, 0, list, listener);
