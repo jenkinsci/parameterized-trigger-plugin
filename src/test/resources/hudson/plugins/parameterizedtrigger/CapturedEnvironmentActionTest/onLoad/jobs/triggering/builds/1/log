@@ -1,0 +1,8 @@
+Started by user unknown or anonymous
+Running as SYSTEM
+Building in workspace work/workspace/triggering
+[triggering] $ /bin/sh -xe /tmp/jenkins6322047612148674788.sh
++ echo hello world
+hello world
+Triggering a new build of [8mha:////4GiHzYchwi/IfoIgwGyntRMZkxF7TZatrqlGUxMVSCGyAAAAnh+LCAAAAAAAAP9b85aBtbiIQTGjNKU4P08vOT+vOD8nVc83PyU1x6OyILUoJzMv2y+/JJUBAhiZGBgqihhk0NSjKDWzXb3RdlLBUSYGJk8GtpzUvPSSDB8G5tKinBIGIZ+sxLJE/ZzEvHT94JKizLx0a6BxUmjGOUNodHsLgAzeEgZh/az8JP2S/KRUoAHp6alFqSn6ALQLPErIAAAA[0mtobetriggered
+Finished: SUCCESS
