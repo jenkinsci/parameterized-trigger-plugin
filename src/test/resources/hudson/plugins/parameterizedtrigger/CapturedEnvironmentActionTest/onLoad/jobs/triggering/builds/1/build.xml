@@ -1,0 +1,49 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<build>
+  <actions>
+    <hudson.model.CauseAction>
+      <causeBag class="linked-hash-map">
+        <entry>
+          <hudson.model.Cause_-UserIdCause/>
+          <int>1</int>
+        </entry>
+      </causeBag>
+    </hudson.model.CauseAction>
+    <hudson.plugins.parameterizedtrigger.CapturedEnvironmentAction plugin="parameterized-trigger@2.44-SNAPSHOT">
+      <env serialization="custom">
+        <unserializable-parents/>
+        <tree-map>
+          <default>
+            <comparator class="hudson.util.CaseInsensitiveComparator"/>
+          </default>
+          <int>4</int>
+          <string>BUILD_DISPLAY_NAME</string>
+          <string>#2</string>
+          <string>BUILD_ID</string>
+          <string>2</string>
+          <string>BUILD_NUMBER</string>
+          <string>1</string>
+          <string>BUILD_TAG</string>
+          <string>jenkins-triggering-2</string>
+        </tree-map>
+        <hudson.EnvVars>
+          <default>
+            <platform>UNIX</platform>
+          </default>
+        </hudson.EnvVars>
+      </env>
+    </hudson.plugins.parameterizedtrigger.CapturedEnvironmentAction>
+  </actions>
+  <queueId>3</queueId>
+  <timestamp>1646074584286</timestamp>
+  <startTime>1646074584297</startTime>
+  <result>SUCCESS</result>
+  <duration>117</duration>
+  <charset>UTF-8</charset>
+  <keepLog>false</keepLog>
+  <builtOn></builtOn>
+  <workspace>work/workspace/triggering</workspace>
+  <hudsonVersion>2.270</hudsonVersion>
+  <scm class="hudson.scm.NullChangeLogParser"/>
+  <culprits class="com.google.common.collect.EmptyImmutableSortedSet"/>
+</build>
