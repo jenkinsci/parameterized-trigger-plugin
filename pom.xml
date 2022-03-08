@@ -18,7 +18,7 @@
 
   <artifactId>parameterized-trigger</artifactId>
   <packaging>hpi</packaging>
-  <version>2.43.1</version>
+  <version>${revision}${changelist}</version>
   <name>Jenkins Parameterized Trigger plugin</name>
   <url>https://github.com/jenkinsci/parameterized-trigger-plugin</url>
 
@@ -195,7 +195,7 @@
     <connection>scm:git:git://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
     <url>https://github.com/${gitHubRepo}</url>
-    <tag>parameterized-trigger-2.43.1</tag>
+    <tag>${scmTag}</tag>
   </scm>
 
   <repositories>
@@ -213,7 +213,7 @@
   </pluginRepositories>
 
   <properties>
-    <revision>2.43.1</revision>
+    <revision>2.43.2</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
