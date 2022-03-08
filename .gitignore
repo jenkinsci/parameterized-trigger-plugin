@@ -4,3 +4,4 @@
 !.gitignore
 target/
 work
+.idea/

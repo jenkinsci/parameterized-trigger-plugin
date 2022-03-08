@@ -201,7 +201,7 @@
   </pluginRepositories>
 
   <properties>
-    <revision>2.42</revision>
+    <revision>2.41.1</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
