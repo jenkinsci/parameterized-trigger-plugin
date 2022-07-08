@@ -67,19 +67,15 @@ public class BuildTriggerTest {
         BuildTrigger triggerBuilder = new BuildTrigger(new BuildTriggerConfig("downstream", ResultCondition.SUCCESS, false, null, params, false));
         upstream.getPublishersList().add(triggerBuilder);
 
+        /*
+         * To avoid a period when upstream already finished, but async rebuilding graph {@link Jenkins#rebuildDependencyGraphAsync()}
+         * could still be in progress or even not start.
+         * Let's rebuild graph manually just in case to avoid flakiness.
+         */
+        r.jenkins.rebuildDependencyGraph();
+
         r.buildAndAssertSuccess(upstream);
         r.waitUntilNoActivity();
-
-        if (downstream.getLastBuild() == null) {
-            /*
-             * There could be a period when upstream already finished, but async rebuilding graph {@link Jenkins#rebuildDependencyGraphAsync()}
-             * could still be in progress or even not start.
-             * Let's rebuild graph manually in that case to avoid flakiness.
-             */
-            r.jenkins.rebuildDependencyGraph();
-            r.buildAndAssertSuccess(upstream);
-            r.waitUntilNoActivity();
-        }
 
         String project = downstream.getLastBuild().getCause(Cause.UpstreamCause.class).getUpstreamProject();
         assertEquals("Build should be triggered by matrix project.", "upstream", project);
