@@ -31,10 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
-import org.awaitility.Awaitility;
 import org.junit.Rule;
 import org.junit.Test;
 import hudson.tasks.Builder;
@@ -70,7 +68,18 @@ public class BuildTriggerTest {
         upstream.getPublishersList().add(triggerBuilder);
 
         r.buildAndAssertSuccess(upstream);
-        Awaitility.await().pollInterval(1, SECONDS).atMost(10, SECONDS).until(() -> downstream.getLastBuild() != null);
+        r.waitUntilNoActivity();
+
+        if (downstream.getLastBuild() == null) {
+            /*
+             * There could be a period when upstream already finished, but async rebuilding graph {@link Jenkins#rebuildDependencyGraphAsync()}
+             * could still be in progress or even not start.
+             * Let's rebuild graph manually in that case to avoid flakiness.
+             */
+            r.jenkins.rebuildDependencyGraph();
+            r.buildAndAssertSuccess(upstream);
+            r.waitUntilNoActivity();
+        }
 
         String project = downstream.getLastBuild().getCause(Cause.UpstreamCause.class).getUpstreamProject();
         assertEquals("Build should be triggered by matrix project.", "upstream", project);
