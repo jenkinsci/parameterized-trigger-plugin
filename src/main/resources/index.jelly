@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+  This plugin lets you trigger new builds when your build has completed, with various ways of specifying parameters for the new build.
+</div>
