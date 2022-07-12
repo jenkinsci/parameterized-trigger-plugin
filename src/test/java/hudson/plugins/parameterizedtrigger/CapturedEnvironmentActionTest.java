@@ -2,6 +2,7 @@ package hudson.plugins.parameterizedtrigger;
 
 import hudson.ExtensionList;
 import hudson.FilePath;
+import hudson.Functions;
 import hudson.diagnosis.OldDataMonitor;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
@@ -9,6 +10,7 @@ import hudson.model.Saveable;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -38,6 +40,7 @@ public class CapturedEnvironmentActionTest {
     @Test
     @Issue("SECURITY-2185") //@LocalData
     public void onLoad() throws Throwable {
+        Assume.assumeFalse("test can not run on windows", Functions.isWindows());
         j.then(r -> {
             final URL url = CapturedEnvironmentActionTest.class.getResource("/hudson/plugins/parameterizedtrigger/CapturedEnvironmentActionTest/onLoad");
             if (url == null) {
