@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.31</version>
+    <version>4.42</version>
     <relativePath />
   </parent>
 
@@ -164,8 +164,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.263.x</artifactId>
-        <version>961.vf0c9f6f59827</version>
+        <artifactId>bom-2.332.x</artifactId>
+        <version>1370.vfa_e23fe119c3</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -188,6 +188,16 @@
         <groupId>com.jcraft</groupId>
         <artifactId>jsch.agentproxy.connector-factory</artifactId>
         <version>0.0.9</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <version>4.5.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.kohsuke</groupId>
+        <artifactId>access-modifier-annotation</artifactId>
+        <version>1.27</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -218,7 +228,7 @@
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
-    <jenkins.version>2.270</jenkins.version>
+    <jenkins.version>2.332.1</jenkins.version>
     <spotbugs.failOnError>false</spotbugs.failOnError>
   </properties>
 </project>
