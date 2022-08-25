@@ -230,5 +230,6 @@
     <java.level>8</java.level>
     <jenkins.version>2.332.1</jenkins.version>
     <spotbugs.failOnError>false</spotbugs.failOnError>
+    <spotbugs.configuration.excludeFilterFile>suppressed-spotbug-errors.xml</spotbugs.configuration.excludeFilterFile>
   </properties>
 </project>
