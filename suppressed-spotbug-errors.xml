@@ -5,7 +5,35 @@
     for an explanation of the technique
  -->
 <FindBugsFilter>
-    <Match>
+    <!-- <Match>
         <Source name="~.*BlockableBuildTriggerConfig\.java"/>
-    </Match>
+    </Match> -->
+    <Match>
+    <Or>
+        <And>
+            <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+            <Class name="hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig"/>
+        </And>
+        <And>
+            <Bug pattern="UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD"/>
+            <Class name="hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig"/>
+        </And>
+        <And>
+            <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+            <Class name="hudson.plugins.parameterizedtrigger.Plugin"/>
+      </And>
+        <And>
+            <Bug pattern="UUF_UNUSED_FIELD"/>
+            <Class name="hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig"/>
+      </And>
+        <And>
+            <Bug pattern="UUF_UNUSED_FIELD"/>
+            <Class name="hudson.plugins.parameterizedtrigger.PredefinedPropertiesBuildTriggerConfig"/>
+      </And>
+        <And>
+            <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+            <Class name="hudson.plugins.parameterizedtrigger.NodeParameters"/>
+      </And>
+    </Or>
+  </Match>
 </FindBugsFilter>
