@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.42</version>
+    <version>4.47</version>
     <relativePath />
   </parent>
 
@@ -165,7 +165,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.332.x</artifactId>
-        <version>1370.vfa_e23fe119c3</version>
+        <version>1595.v8c71c13cc3a_9</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -192,7 +192,7 @@
       <dependency>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-annotations</artifactId>
-        <version>4.5.2</version>
+        <version>4.7.1</version>
       </dependency>
       <dependency>
         <groupId>org.kohsuke</groupId>
