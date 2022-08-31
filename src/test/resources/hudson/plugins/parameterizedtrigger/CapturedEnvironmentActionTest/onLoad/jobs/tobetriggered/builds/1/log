@@ -1,0 +1,9 @@
+Started by upstream project "[8mha:////4GRnFg0qnrPw4M47q42/6Hn+zLu1JydjlwbdO4AqwQb+AAAAmR+LCAAAAAAAAP9b85aBtbiIQTGjNKU4P08vOT+vOD8nVc83PyU1x6OyILUoJzMv2y+/JJUBAhiZGBgqihhk0NSjKDWzXb3RdlLBUSYGJk8GtpzUvPSSDB8G5tKinBIGIZ+sxLJE/ZzEvHT94JKizLx0a6BxUmjGOUNodHsLgAyuEgYB/az8JH2g5vT0VJAJ+gCV2UdCxQAAAA==[0mtriggering" build number [8mha:////4D+Ec5DGhEbnE6Cp3rmOis4sanYY4ucMjj06VZLZDDfkAAAAmR+LCAAAAAAAAP9b85aBtbiIQTGjNKU4P08vOT+vOD8nVc83PyU1x6OyILUoJzMv2y+/JJUBAhiZGBgqihhk0NSjKDWzXb3RdlLBUSYGJk8GtpzUvPSSDB8G5tKinBIGIZ+sxLJE/ZzEvHT94JKizLx0a6BxUmjGOUNodHsLQIwSBkH9rPwkfaDm9PRUkAn6RgBro0wrxgAAAA==[0m2
+originally caused by:
+ Started by user unknown or anonymous
+Running as SYSTEM
+Building in workspace work/workspace/tobetriggered
+[tobetriggered] $ /bin/sh -xe /tmp/jenkins6745008012408524781.sh
++ echo warning
+warning
+Finished: SUCCESS
