@@ -1,5 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
+import hudson.EnvVars;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
@@ -55,18 +57,24 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
     public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
         List<AbstractBuildParameters> result = new ArrayList<>();
         FilePath workspace = build.getWorkspace();
+
+        EnvVars env = build.getEnvironment(listener);
+
         if (workspace == null) {
             throw new IOException("Failed to get workspace");
         }
         try {
             // save them into the master because FileParameterValue might need files after the agent workspace have disappeared/reused
             FilePath target = new FilePath(build.getRootDir()).child("parameter-files");
-            int n = workspace.copyRecursiveTo(getFilePattern(), target);
+
+            String fPattern = env.expand(getFilePattern());
+
+            int n = workspace.copyRecursiveTo(fPattern, target);
 
             if (n==0) {
                 noFilesFoundAction.failCheck(listener);
             } else {
-                for(final FilePath f: target.list(getFilePattern())) {
+                for(final FilePath f: target.list(fPattern)) {
                     LOGGER.fine("Triggering build with " + f.getName());
 
                     result.add(new AbstractBuildParameters() {
