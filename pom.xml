@@ -164,7 +164,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.332.x</artifactId>
+        <artifactId>bom-2.346.x</artifactId>
         <version>1607.va_c1576527071</version>
         <scope>import</scope>
         <type>pom</type>
@@ -228,7 +228,7 @@
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <java.level>8</java.level>
-    <jenkins.version>2.332.1</jenkins.version>
+    <jenkins.version>2.346.3</jenkins.version>
     <spotbugs.failOnError>false</spotbugs.failOnError>
     <spotbugs.excludeFilterFile>suppressed-spotbug-errors.xml</spotbugs.excludeFilterFile>
   </properties>
