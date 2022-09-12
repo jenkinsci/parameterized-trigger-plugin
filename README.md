@@ -128,3 +128,7 @@ In Windows system, you can modify jenkins.xml placed in the installed folder.
         -<arguments>-Xrs -Xmx256m -Dhudson.lifecycle=hudson.lifecycle.WindowsServiceLifecycle -jar "%BASE%\\jenkins.war" --httpPort=8080\</arguments>
         +\<arguments>-Xrs -Xmx256m -Dhudson.lifecycle=hudson.lifecycle.WindowsServiceLifecycle -Dhudson.plugins.parameterizedtrigger.ProjectSpecificParametersActionFactory.compatibility_mode=true -jar "%BASE%\\jenkins.war" --httpPort=8080\</arguments>
 ```
+
+# Report an issue
+
+Please report issues and enhancements through the [Jenkins issue tracker](https://www.jenkins.io/participate/report-issue/redirect/#15592).
