@@ -134,10 +134,6 @@
           <groupId>org.hamcrest</groupId>
           <artifactId>hamcrest-core</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>net.java.dev.jna</groupId>
-          <artifactId>jna-platform</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
