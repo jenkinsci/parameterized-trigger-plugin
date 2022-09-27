@@ -549,9 +549,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         // From https://github.com/jenkinsci/jenkins/pull/1771
         Cause cause = createUpstreamCause(build);
         List<Action> queueActions = new ArrayList<>(list);
-        if (cause != null) {
-            queueActions.add(new CauseAction(cause));
-        }
+        queueActions.add(new CauseAction(cause));
 
         // Includes both traditional projects via AbstractProject and Workflow Job
         if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
