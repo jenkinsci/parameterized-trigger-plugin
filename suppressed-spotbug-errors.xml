@@ -17,8 +17,4 @@
     <Bug pattern="UUF_UNUSED_FIELD"/>
     <Class name="hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig"/>
   </Match>
-  <Match>
-    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    <Class name="hudson.plugins.parameterizedtrigger.NodeParameters"/>
-  </Match>
 </FindBugsFilter>
