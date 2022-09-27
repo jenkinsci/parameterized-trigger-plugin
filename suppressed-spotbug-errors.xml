@@ -5,24 +5,28 @@
     for an explanation of the technique
  -->
 <FindBugsFilter>
-    <Match>
-    <Or>
-        <And>
-            <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-            <Class name="hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig"/>
-        </And>
-        <And>
-            <Bug pattern="UUF_UNUSED_FIELD"/>
-            <Class name="hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig"/>
-      </And>
-        <And>
-            <Bug pattern="UUF_UNUSED_FIELD"/>
-            <Class name="hudson.plugins.parameterizedtrigger.PredefinedPropertiesBuildTriggerConfig"/>
-      </And>
-        <And>
-            <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-            <Class name="hudson.plugins.parameterizedtrigger.NodeParameters"/>
-      </And>
-    </Or>
+  <Match>
+    <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON"/>
+    <Class name="hudson.plugins.parameterizedtrigger.BuildTriggerConfig"/>
+  </Match>
+  <Match>
+    <Bug pattern="DP_DO_INSIDE_DO_PRIVILEGED"/>
+    <Class name="hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory"/>
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    <Class name="hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig"/>
+  </Match>
+  <Match>
+    <Bug pattern="UUF_UNUSED_FIELD"/>
+    <Class name="hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig"/>
+  </Match>
+  <Match>
+    <Bug pattern="UUF_UNUSED_FIELD"/>
+    <Class name="hudson.plugins.parameterizedtrigger.PredefinedPropertiesBuildTriggerConfig"/>
+  </Match>
+  <Match>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    <Class name="hudson.plugins.parameterizedtrigger.NodeParameters"/>
   </Match>
 </FindBugsFilter>
