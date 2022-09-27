@@ -226,9 +226,10 @@
     <revision>2.46</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
-    <java.level>8</java.level>
     <jenkins.version>2.332.1</jenkins.version>
+    <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.failOnError>true</spotbugs.failOnError>
+    <spotbugs.threshold>Low</spotbugs.threshold>
     <spotbugs.excludeFilterFile>suppressed-spotbug-errors.xml</spotbugs.excludeFilterFile>
   </properties>
 </project>

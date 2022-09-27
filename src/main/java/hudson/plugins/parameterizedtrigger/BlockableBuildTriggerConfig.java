@@ -15,6 +15,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import hudson.model.Label;
 import hudson.model.TaskListener;
 import hudson.model.queue.QueueTaskFuture;
 
@@ -94,7 +95,9 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     public Collection<Node> getNodes() {
-        return Jenkins.get().getLabel("asrt").getNodes();
+        Label label = Jenkins.get().getLabel("asrt");
+        if (label==null) return Collections.emptyList();
+        return label.getNodes();
     }
 
     @Extension
