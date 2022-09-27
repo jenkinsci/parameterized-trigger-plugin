@@ -13,8 +13,4 @@
     <Bug pattern="DP_DO_INSIDE_DO_PRIVILEGED"/>
     <Class name="hudson.plugins.parameterizedtrigger.BinaryFileParameterFactory"/>
   </Match>
-  <Match>
-    <Bug pattern="UUF_UNUSED_FIELD"/>
-    <Class name="hudson.plugins.parameterizedtrigger.FileBuildTriggerConfig"/>
-  </Match>
 </FindBugsFilter>
