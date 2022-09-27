@@ -21,7 +21,7 @@ public class PredefinedPropertiesBuildTriggerConfig extends BuildTriggerConfig {
     private ResultCondition condition;
     private boolean triggerWithNoParameters;
     private boolean includeCurrentParameters;
-	@SuppressFBWarnings(value = "UUF_UNUSED_FIELD", justification = "Do not risk compatibility")
+    @SuppressFBWarnings(value = "UUF_UNUSED_FIELD", justification = "Do not risk compatibility")
     private String batchCondition;
     
     public Object readResolve() {
