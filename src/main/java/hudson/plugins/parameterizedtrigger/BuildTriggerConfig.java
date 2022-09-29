@@ -5,6 +5,7 @@ import com.google.common.collect.ListMultimap;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.matrix.MatrixRun;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
@@ -529,6 +530,10 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
 
                 return new UpstreamCause((Run<?,?>)promotion.getTargetBuild());
             }
+        }
+        if(build instanceof MatrixRun && ! triggerFromChildProjects) {
+            MatrixRun matrixRun = (MatrixRun)build;
+            return new UpstreamCause((Run<?,?>)matrixRun.getParentBuild());
         }
         return new UpstreamCause(build);
     }
