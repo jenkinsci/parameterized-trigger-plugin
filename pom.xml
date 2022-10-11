@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.47</version>
+    <version>4.48</version>
     <relativePath />
   </parent>
 
@@ -26,7 +26,6 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>subversion</artifactId>
-      <version>2.15.5</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -227,9 +226,10 @@
     <revision>2.46</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
-    <java.level>8</java.level>
     <jenkins.version>2.332.1</jenkins.version>
-    <spotbugs.failOnError>false</spotbugs.failOnError>
+    <spotbugs.effort>Max</spotbugs.effort>
+    <spotbugs.failOnError>true</spotbugs.failOnError>
+    <spotbugs.threshold>Low</spotbugs.threshold>
     <spotbugs.excludeFilterFile>suppressed-spotbug-errors.xml</spotbugs.excludeFilterFile>
   </properties>
 </project>

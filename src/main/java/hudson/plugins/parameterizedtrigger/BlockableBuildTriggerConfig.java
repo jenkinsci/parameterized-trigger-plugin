@@ -1,5 +1,7 @@
 package hudson.plugins.parameterizedtrigger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -13,6 +15,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import hudson.model.Label;
 import hudson.model.TaskListener;
 import hudson.model.queue.QueueTaskFuture;
 
@@ -28,6 +31,8 @@ import java.util.List;
  */
 public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     private final BlockingBehaviour block;
+    // Field is unused, but would change public API if it were deleted
+    @SuppressFBWarnings(value = "UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD", justification = "Part of the public API")
     public boolean buildAllNodesWithLabel;
 
     public BlockableBuildTriggerConfig(String projects, BlockingBehaviour block, List<AbstractBuildParameters> configs) {
@@ -90,7 +95,9 @@ public class BlockableBuildTriggerConfig extends BuildTriggerConfig {
     }
 
     public Collection<Node> getNodes() {
-        return Jenkins.get().getLabel("asrt").getNodes();
+        Label label = Jenkins.get().getLabel("asrt");
+        if (label==null) return Collections.emptyList();
+        return label.getNodes();
     }
 
     @Extension

@@ -19,7 +19,6 @@ public class FileBuildTriggerConfig extends BuildTriggerConfig {
     private ResultCondition condition;
     private boolean triggerWithNoParameters;
     private boolean includeCurrentParameters;
-    private boolean batchCondition;
 	
     public Object readResolve() {
     	List<AbstractBuildParameters> configs = new ArrayList<>();

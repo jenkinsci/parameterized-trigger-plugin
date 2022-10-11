@@ -24,6 +24,8 @@
 
 package hudson.plugins.parameterizedtrigger;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import hudson.model.Job;
 
 import java.util.Comparator;
@@ -42,6 +44,7 @@ import java.util.TreeSet;
  *
  * @author JO Sivtoft
  */
+@SuppressFBWarnings(value="SIC_INNER_SHOULD_BE_STATIC_ANON")
 public class SubProjectData {
 
     private final Comparator<Job> customComparator = new Comparator<Job>() {
