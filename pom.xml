@@ -163,7 +163,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.332.x</artifactId>
+        <artifactId>bom-2.346.x</artifactId>
         <version>1643.v1cffef51df73</version>
         <scope>import</scope>
         <type>pom</type>
@@ -226,7 +226,7 @@
     <revision>2.46</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
-    <jenkins.version>2.332.1</jenkins.version>
+    <jenkins.version>2.346.3</jenkins.version>
     <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.failOnError>true</spotbugs.failOnError>
     <spotbugs.threshold>Low</spotbugs.threshold>
