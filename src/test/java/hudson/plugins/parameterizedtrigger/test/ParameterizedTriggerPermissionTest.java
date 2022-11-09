@@ -50,8 +50,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import jenkins.security.QueueItemAuthenticator;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
@@ -139,9 +139,9 @@ public class ParameterizedTriggerPermissionTest {
         Cause.UpstreamCause cause = lastBuild.getCause(Cause.UpstreamCause.class);
         assertNotNull("No upstream cause in subproject2", lastBuild);
     }
-    
-    @Nonnull
-    private FreeStyleProject createProjectWithPermissions(@Nonnull String projectName, @Nonnull String userName, 
+
+    @NonNull
+    private FreeStyleProject createProjectWithPermissions(@NonNull String projectName, @NonNull String userName,
             @CheckForNull List<Permission> permissions) throws Exception {
         final TreeSet<String> userSet = new TreeSet<>(Arrays.asList(userName));
         
