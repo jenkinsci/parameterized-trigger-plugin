@@ -42,7 +42,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,7 +56,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.acegisecurity.AccessDeniedException;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.security.QueueItemAuthenticator;
 
 public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
@@ -267,7 +267,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @return List of readable items, others will be skipped if {@link AccessDeniedException} happens
      */
     private static <T extends Item> List<T> readableItemsFromNameList(
-            ItemGroup context, @Nonnull String list, @Nonnull Class<T> type) {
+            ItemGroup context, @NonNull String list, @NonNull Class<T> type) {
         Jenkins hudson = Jenkins.get();
 
         List<T> r = new ArrayList<>();
@@ -418,7 +418,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
         return Collections.emptyList();
     }
 
-    private void reportSchedulingError(@Nonnull Run<?, ?> run, @Nonnull Job<?, ?> jobToTrigger, @Nonnull BuildListener listener) {
+    private void reportSchedulingError(@NonNull Run<?, ?> run, @NonNull Job<?, ?> jobToTrigger, @NonNull BuildListener listener) {
         // Do not print details to Build Listener, they have been reported previously in #canTriggerProject()
         listener.error("Skipping " + jobToTrigger.getFullName() + "...");
         if (LOGGER.isLoggable(Level.CONFIG)) {
@@ -543,8 +543,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
     
     @CheckForNull
-    protected QueueTaskFuture schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull final Job project, int quietPeriod,
-            @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
+    protected QueueTaskFuture schedule(@NonNull AbstractBuild<?, ?> build, @NonNull final Job project, int quietPeriod,
+            @NonNull List<Action> list, @NonNull TaskListener listener) throws InterruptedException, IOException {
         // TODO Once it's in core (since 1.621) and LTS is out, switch to use new ParameterizedJobMixIn convenience method
         // From https://github.com/jenkinsci/jenkins/pull/1771
         Cause cause = createUpstreamCause(build);
@@ -582,8 +582,8 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @return {@code true} if the project can be scheduled.
      *         {@code false} if there is a lack of permissions, details will be printed to the logs then.
      */
-    /*package*/ static boolean canTriggerProject(@Nonnull AbstractBuild<?, ?> build, 
-            @Nonnull final Job job, @Nonnull TaskListener taskListener) {
+    /*package*/ static boolean canTriggerProject(@NonNull AbstractBuild<?, ?> build,
+            @NonNull final Job job, @NonNull TaskListener taskListener) {
         if (!job.hasPermission(Item.BUILD)) {
             String message = String.format("Cannot schedule the build of %s from %s. "
                         + "The authenticated build user %s has no Job.BUILD permission",
@@ -601,7 +601,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @param job Job to be checked
      * @return true if the job can be scheduled from the 
      */
-    protected boolean canBeScheduled(@Nonnull Job<?, ?> job) {
+    protected boolean canBeScheduled(@NonNull Job<?, ?> job) {
         if (!job.isBuildable()) {
             return false;
         }
@@ -618,7 +618,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
     }
     
     @CheckForNull
-    protected QueueTaskFuture schedule(@Nonnull AbstractBuild<?, ?> build, @Nonnull Job project, @Nonnull List<Action> list, @Nonnull TaskListener listener) throws InterruptedException, IOException {
+    protected QueueTaskFuture schedule(@NonNull AbstractBuild<?, ?> build, @NonNull Job project, @NonNull List<Action> list, @NonNull TaskListener listener) throws InterruptedException, IOException {
         if (project instanceof ParameterizedJobMixIn.ParameterizedJob) {
             return schedule(build, project, ((ParameterizedJobMixIn.ParameterizedJob) project).getQuietPeriod(), list, listener);
         } else {
