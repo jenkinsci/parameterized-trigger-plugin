@@ -192,6 +192,5 @@
     <spotbugs.effort>Max</spotbugs.effort>
     <spotbugs.failOnError>true</spotbugs.failOnError>
     <spotbugs.threshold>Low</spotbugs.threshold>
-    <spotbugs.excludeFilterFile>suppressed-spotbug-errors.xml</spotbugs.excludeFilterFile>
   </properties>
 </project>
