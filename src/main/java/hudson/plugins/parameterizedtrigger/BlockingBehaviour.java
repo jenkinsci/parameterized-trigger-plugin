@@ -32,7 +32,7 @@ import hudson.model.Descriptor;
 import hudson.model.Result;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import java.util.Arrays;
 import java.util.List;
 

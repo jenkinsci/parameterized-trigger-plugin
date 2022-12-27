@@ -1,6 +1,8 @@
 // Builds a module using https://github.com/jenkins-infra/pipeline-library
-buildPlugin(useAci: true, configurations: [
-        [ platform: "linux", jdk: "8" ],
-        [ platform: "windows", jdk: "8" ],
-        [ platform: "linux", jdk: "11" ]
+buildPlugin(
+  useContainerAgent: true,
+  configurations: [
+    // [platform: 'linux', jdk: 17], // Java 17 fails tests with a serialization error in mocked objects
+    [platform: 'linux', jdk: 11],
+    [platform: 'windows', jdk: 11],
 ])
