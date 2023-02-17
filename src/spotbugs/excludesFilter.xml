@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 
+<!--
     see https://spotbugs.readthedocs.io/en/stable/filter.html#source
     and https://stackoverflow.com/questions/52336795/spotbugs-maven-plugin-exclude-a-directory
     for an explanation of the technique
