@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.54</version>
+    <version>4.55</version>
     <relativePath />
   </parent>
 
@@ -159,6 +159,12 @@
       <dependency>
         <groupId>org.kohsuke</groupId>
         <artifactId>access-modifier-annotation</artifactId>
+      </dependency>
+      <!-- Resolve upper bounds messages reported by enforcer in parent pom 4.55 -->
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest</artifactId>
+        <version>2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
