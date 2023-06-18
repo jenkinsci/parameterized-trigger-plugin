@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.65</version>
+    <version>4.67</version>
     <relativePath />
   </parent>
 
@@ -46,18 +46,6 @@
           <groupId>org.sonatype.sisu</groupId>
           <artifactId>sisu-guice</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.ant</groupId>
-          <artifactId>ant</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -67,6 +55,11 @@
       <optional>true</optional>
     </dependency>
 
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>apache-httpcomponents-client-4-api</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- Workflow plugin imports are used to test compatibility -->
     <dependency>
       <groupId>org.jenkins-ci.plugins.workflow</groupId>
@@ -135,14 +128,6 @@
         <type>pom</type>
       </dependency>
       <dependency>
-        <groupId>com.google.errorprone</groupId>
-        <artifactId>error_prone_annotations</artifactId>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-      </dependency>
-      <dependency>
         <groupId>com.jcraft</groupId>
         <artifactId>jsch.agentproxy.core</artifactId>
         <version>0.0.9</version>
@@ -151,20 +136,6 @@
         <groupId>com.jcraft</groupId>
         <artifactId>jsch.agentproxy.connector-factory</artifactId>
         <version>0.0.9</version>
-      </dependency>
-      <dependency>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-annotations</artifactId>
-      </dependency>
-      <dependency>
-        <groupId>org.kohsuke</groupId>
-        <artifactId>access-modifier-annotation</artifactId>
-      </dependency>
-      <!-- Resolve upper bounds messages reported by enforcer in parent pom 4.55 -->
-      <dependency>
-        <groupId>org.hamcrest</groupId>
-        <artifactId>hamcrest</artifactId>
-        <version>2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
