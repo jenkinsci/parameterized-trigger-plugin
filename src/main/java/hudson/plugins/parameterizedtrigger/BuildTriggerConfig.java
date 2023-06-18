@@ -141,6 +141,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
      * @deprecated
      *      Use {@link #getJobs(ItemGroup, EnvVars)}
      */
+    @Deprecated
     public List<AbstractProject> getProjectList(EnvVars env) {
         return getProjectList(null, env);
     }
