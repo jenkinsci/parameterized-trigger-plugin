@@ -6,6 +6,8 @@ if (System.getProperty(DISABLE_ACTION_VIEWS_KEY) != null) {
 	return
 }
 
+def l = namespace(lib.LayoutTagLib)
+
 def builds = my.triggeredBuilds
 if(builds.size() > 0) {
 	h2("Subproject Builds")
@@ -18,8 +20,7 @@ if(builds.size() > 0) {
 						text(item.project.displayName)
 					}
 					a(href:"${rootURL}/${item.url}", class:"model-link") {
-						img(src:"${imagesURL}/16x16/${item.buildStatusUrl}",
-								alt:"${item.iconColor.description}", height:"16", width:"16")
+						l.icon(class: "${item.iconColor.iconClassName} icon-sm", alt:"${item.iconColor.description}")
 						text(item.displayName)
 					}
 				}
