@@ -52,6 +52,7 @@ import hudson.model.queue.QueueTaskFuture;
 
 
 import java.util.ArrayList;
+import java.util.concurrent.Future;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
@@ -70,9 +71,12 @@ import org.mockito.Mockito;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+
 
 public class TriggerBuilderTest {
 
@@ -222,6 +226,34 @@ public class TriggerBuilderTest {
 
         assertLines(triggerProject.getLastBuild(),
                 "Triggering projects: project1, project2, project3");
+    }
+
+    @Test
+    public void testCancelsDownstreamBuildWhenInterrupted() throws Exception{
+        r.jenkins.setNumExecutors(1); // the downstream-project would be in the build queue
+
+        FreeStyleProject triggerProject = r.createFreeStyleProject("upstream-project");
+        FreeStyleProject downstreamProject = r.createFreeStyleProject("downstream-project");
+
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("downstream-project"));
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+
+        QueueTaskFuture<FreeStyleBuild> parentBuild = triggerProject.scheduleBuild2(0);
+        parentBuild.waitForStart();
+
+        // Now cancel the trigger project and let it finishes
+        triggerProject.getLastBuild().getExecutor().interrupt();
+        parentBuild.get();
+
+        assertLines(triggerProject.getLastBuild(),
+            "Waiting for the completion of downstream-project",
+            "Build aborting: cancelling queued project downstream-project",
+            "Build was aborted",
+            "Finished: ABORTED"
+        );
+        assertNull("No downstream build has been run", downstreamProject.getLastBuild());
+        assertEquals("No build left in queue", 0, r.jenkins.getQueue().countBuildableItems());
     }
 
     @Test
