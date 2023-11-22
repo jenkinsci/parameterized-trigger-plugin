@@ -148,7 +148,15 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                             try {
                                 if (future != null ) {
                                     listener.getLogger().println("Waiting for the completion of " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-                                    Run startedRun = future.waitForStart();
+                                    Run startedRun;
+                                    try {
+                                        startedRun = future.waitForStart();
+                                    } catch (InterruptedException x) {
+                                        listener.getLogger().println( "Build aborting: cancelling queued project " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()) );
+                                        future.cancel(true);
+                                        throw x; // rethrow so that the triggering project get flagged as cancelled
+                                    }
+
                                     listener.getLogger().println(HyperlinkNote.encodeTo('/' + startedRun.getUrl(), startedRun.getFullDisplayName()) + " started.");
 
                                     Run completedRun = future.get();
