@@ -68,7 +68,7 @@ public class ParameterizedTriggerUtils {
     }
     
     /**
-     * {@link} read VirtualFile
+     * Read VirtualFile.
      * 
      * @param f file to read
      * @return read string
