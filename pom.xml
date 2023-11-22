@@ -18,7 +18,7 @@
 
   <artifactId>parameterized-trigger</artifactId>
   <packaging>hpi</packaging>
-  <version>${revision}${changelist}</version>
+  <version>${changelist}</version>
   <name>Jenkins Parameterized Trigger plugin</name>
   <url>https://github.com/jenkinsci/parameterized-trigger-plugin</url>
 
@@ -151,8 +151,7 @@
   </pluginRepositories>
 
   <properties>
-    <revision>2.47</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <changelist>999999-SNAPSHOT</changelist>
     <gitHubRepo>jenkinsci/parameterized-trigger-plugin</gitHubRepo>
     <jenkins.version>2.387.3</jenkins.version>
     <spotbugs.effort>Max</spotbugs.effort>
