@@ -4,6 +4,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Action;
 import java.util.Collections;
 import java.util.List;
+
 /**
  * Action added Projects to track what projects are
  * were triggered from the trigger builds on other projects buildstep.
@@ -15,10 +16,10 @@ import java.util.List;
  */
 public class SubProjectsAction implements Action {
 
-    private final AbstractProject<?,?> project;
+    private final AbstractProject<?, ?> project;
     private final List<BlockableBuildTriggerConfig> configs;
 
-    public SubProjectsAction(AbstractProject<?,?> project, List<BlockableBuildTriggerConfig> configs) {
+    public SubProjectsAction(AbstractProject<?, ?> project, List<BlockableBuildTriggerConfig> configs) {
         this.project = project;
         this.configs = configs;
     }
@@ -49,7 +50,7 @@ public class SubProjectsAction implements Action {
         return Collections.emptyList();
     }
 
-    public AbstractProject<?,?> getProject() {
+    public AbstractProject<?, ?> getProject() {
         return project;
     }
 

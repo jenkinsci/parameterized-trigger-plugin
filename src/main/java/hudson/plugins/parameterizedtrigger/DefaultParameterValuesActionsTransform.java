@@ -1,9 +1,8 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.model.*;
-
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Ensure the given project's parameters with default values exist in the parameter list.
@@ -11,11 +10,11 @@ import java.util.ArrayList;
  * If they do not, append them with the specified default value.
  */
 public class DefaultParameterValuesActionsTransform implements ITransformProjectParametersAction {
-    public ParametersAction transformParametersAction(ParametersAction a, Job<?,?> project) {
+    public ParametersAction transformParametersAction(ParametersAction a, Job<?, ?> project) {
         return ParameterizedTriggerUtils.mergeParameters(getDefaultParameters(project), a);
     }
 
-    private static ParametersAction getDefaultParameters(Job<?,?> project) {
+    private static ParametersAction getDefaultParameters(Job<?, ?> project) {
 
         ParametersDefinitionProperty property = project.getProperty(ParametersDefinitionProperty.class);
 

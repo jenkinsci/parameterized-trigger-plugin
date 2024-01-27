@@ -8,8 +8,6 @@ import hudson.model.FileParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory.NoFilesFoundEnum;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -17,6 +15,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * Creates a {@link FileParameterValue} for each matching file.
@@ -36,7 +35,7 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
     }
 
     public BinaryFileParameterFactory(String parameterName, String filePattern) {
-        this(parameterName,filePattern, NoFilesFoundEnum.SKIP);
+        this(parameterName, filePattern, NoFilesFoundEnum.SKIP);
     }
 
     public String getParameterName() {
@@ -52,32 +51,37 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
     }
 
     @Override
-    public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
+    public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener)
+            throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
         List<AbstractBuildParameters> result = new ArrayList<>();
         FilePath workspace = build.getWorkspace();
         if (workspace == null) {
             throw new IOException("Failed to get workspace");
         }
         try {
-            // save them into the master because FileParameterValue might need files after the agent workspace have disappeared/reused
+            // save them into the master because FileParameterValue might need files after the agent workspace have
+            // disappeared/reused
             FilePath target = new FilePath(build.getRootDir()).child("parameter-files");
             int n = workspace.copyRecursiveTo(getFilePattern(), target);
 
-            if (n==0) {
+            if (n == 0) {
                 noFilesFoundAction.failCheck(listener);
             } else {
-                for(final FilePath f: target.list(getFilePattern())) {
+                for (final FilePath f : target.list(getFilePattern())) {
                     LOGGER.fine("Triggering build with " + f.getName());
 
                     result.add(new AbstractBuildParameters() {
                         @Override
-                        public Action getAction(AbstractBuild<?,?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-                            assert f.getChannel()==null;    // we copied files locally. This file must be local to the master
-                            FileParameterValue fv = new FileParameterValue(parameterName, new File(f.getRemote()), f.getName());
+                        public Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
+                                throws IOException, InterruptedException, DontTriggerException {
+                            assert f.getChannel()
+                                    == null; // we copied files locally. This file must be local to the master
+                            FileParameterValue fv =
+                                    new FileParameterValue(parameterName, new File(f.getRemote()), f.getName());
 
-                            if ($setLocation!=null) {
+                            if ($setLocation != null) {
                                 try {
-                                    $setLocation.invoke(fv,parameterName);
+                                    $setLocation.invoke(fv, parameterName);
                                 } catch (IllegalAccessException | InvocationTargetException e) {
                                     // be defensive as the core might change
                                 }
@@ -94,7 +98,6 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
         return result;
     }
 
-
     @Extension
     public static class DescriptorImpl extends AbstractBuildParameterFactoryDescriptor {
         @Override
@@ -108,11 +111,12 @@ public class BinaryFileParameterFactory extends AbstractBuildParameterFactory {
     static {
         // work around NPE fixed in the core at 4a95cc6f9269108e607077dc9fd57f06e4c9af26
         try {
-            $setLocation = FileParameterValue.class.getDeclaredMethod("setLocation",String.class);
+            $setLocation = FileParameterValue.class.getDeclaredMethod("setLocation", String.class);
             $setLocation.setAccessible(true);
         } catch (NoSuchMethodException e) {
             // ignore
         }
     }
+
     private static final Logger LOGGER = Logger.getLogger(BinaryFileParameterFactory.class.getName());
 }

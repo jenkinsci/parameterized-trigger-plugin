@@ -23,13 +23,26 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.ArrayListMultimap;
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.Plugin;
+import hudson.matrix.AxisList;
+import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixRun;
+import hudson.matrix.TextAxis;
 import hudson.model.*;
-import hudson.model.Cause.UserIdCause;
 import hudson.model.Cause.UpstreamCause;
+import hudson.model.Cause.UserIdCause;
+import hudson.model.queue.QueueTaskFuture;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
@@ -38,45 +51,23 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import hudson.plugins.promoted_builds.PromotionProcess;
 import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
-
-import hudson.matrix.TextAxis;
-import hudson.matrix.MatrixProject;
-import hudson.matrix.MatrixRun;
-import hudson.matrix.AxisList;
-import hudson.model.queue.QueueTaskFuture;
-
-
-import java.util.ArrayList;
-import java.util.concurrent.Future;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.io.IOException;
-
-import java.lang.System;
-
-import jenkins.model.Jenkins;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SleepBuilder;
 import org.mockito.Mockito;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
 
 public class TriggerBuilderTest {
 
@@ -96,9 +87,8 @@ public class TriggerBuilderTest {
         when(config.getBlock()).thenReturn(new BlockingBehaviour(Result.FAILURE, Result.FAILURE, Result.FAILURE));
 
         final ArrayListMultimap<Job, QueueTaskFuture<AbstractBuild>> futures = ArrayListMultimap.create();
-        when(config.perform3(any(AbstractBuild.class),
-                Mockito.any(Launcher.class),
-                Mockito.any(BuildListener.class))).thenReturn(futures);
+        when(config.perform3(any(AbstractBuild.class), Mockito.any(Launcher.class), Mockito.any(BuildListener.class)))
+                .thenReturn(futures);
         // Then project is disabled scheduler returns null instead of QueueTaskFuture<Run> object
         futures.put(disabledJob, null);
 
@@ -137,7 +127,8 @@ public class TriggerBuilderTest {
 
         triggerProject.scheduleBuild2(0).get();
 
-        assertLines(triggerProject.getLastBuild(),
+        assertLines(
+                triggerProject.getLastBuild(),
                 "project1 #1 started.",
                 "project1 #1 completed. Result was SUCCESS",
                 "project2 #1 started.",
@@ -155,13 +146,17 @@ public class TriggerBuilderTest {
     @Test
     public void testSubParameterBuilds() throws Exception {
         r.jenkins.setNumExecutors(10); // makes sure there are enough executors so that there are no deadlocks
-        r.jenkins.setNodes(r.jenkins.getNodes()); // update nodes configuration (TODO https://github.com/jenkinsci/jenkins/pull/1596 renders this workaround unnecessary)
+        r.jenkins.setNodes(
+                r.jenkins
+                        .getNodes()); // update nodes configuration (TODO https://github.com/jenkinsci/jenkins/pull/1596
+        // renders
+        // this workaround unnecessary)
 
         FreeStyleProject p1 = r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
         r.createFreeStyleProject("project3");
 
-        ///triggered from project 1
+        /// triggered from project 1
         r.createFreeStyleProject("projectZ4");
         r.createFreeStyleProject("projectZ5");
         r.createFreeStyleProject("projectZ6");
@@ -180,13 +175,14 @@ public class TriggerBuilderTest {
         triggerProject.getBuildersList().add(triggerBuilder);
 
         triggerProject.scheduleBuild2(0).get();
-        assertLines(triggerProject.getLastBuild(),
-            "project1 #1 started.",
-            "project1 #1 completed. Result was SUCCESS",
-            "project2 #1 started.",
-            "project2 #1 completed. Result was SUCCESS",
-            "project3 #1 started.",
-            "project3 #1 completed. Result was SUCCESS");
+        assertLines(
+                triggerProject.getLastBuild(),
+                "project1 #1 started.",
+                "project1 #1 completed. Result was SUCCESS",
+                "project2 #1 started.",
+                "project2 #1 completed. Result was SUCCESS",
+                "project3 #1 started.",
+                "project3 #1 completed. Result was SUCCESS");
     }
 
     @Test
@@ -203,7 +199,8 @@ public class TriggerBuilderTest {
 
         triggerProject.scheduleBuild2(0).get();
 
-        assertLines(triggerProject.getLastBuild(),
+        assertLines(
+                triggerProject.getLastBuild(),
                 "Waiting for the completion of project1",
                 "Waiting for the completion of project2",
                 "Waiting for the completion of project3");
@@ -217,19 +214,19 @@ public class TriggerBuilderTest {
 
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
 
-        BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("project1, project2, project3", null, null);
+        BlockableBuildTriggerConfig config =
+                new BlockableBuildTriggerConfig("project1, project2, project3", null, null);
         TriggerBuilder triggerBuilder = new TriggerBuilder(config);
 
         triggerProject.getBuildersList().add(triggerBuilder);
 
         triggerProject.scheduleBuild2(0).get();
 
-        assertLines(triggerProject.getLastBuild(),
-                "Triggering projects: project1, project2, project3");
+        assertLines(triggerProject.getLastBuild(), "Triggering projects: project1, project2, project3");
     }
 
     @Test
-    public void testCancelsDownstreamBuildWhenInterrupted() throws Exception{
+    public void testCancelsDownstreamBuildWhenInterrupted() throws Exception {
         r.jenkins.setNumExecutors(1); // the downstream-project would be in the build queue
 
         FreeStyleProject triggerProject = r.createFreeStyleProject("upstream-project");
@@ -246,35 +243,38 @@ public class TriggerBuilderTest {
         triggerProject.getLastBuild().getExecutor().interrupt();
         parentBuild.get();
 
-        assertLines(triggerProject.getLastBuild(),
-            "Waiting for the completion of downstream-project",
-            "Build aborting: cancelling queued project downstream-project",
-            "Build was aborted",
-            "Finished: ABORTED"
-        );
+        assertLines(
+                triggerProject.getLastBuild(),
+                "Waiting for the completion of downstream-project",
+                "Build aborting: cancelling queued project downstream-project",
+                "Build was aborted",
+                "Finished: ABORTED");
         assertNull("No downstream build has been run", downstreamProject.getLastBuild());
         assertEquals("No build left in queue", 0, r.jenkins.getQueue().countBuildableItems());
     }
 
     @Test
-    public void testConsoleOutputWithCounterParameters() throws Exception{
+    public void testConsoleOutputWithCounterParameters() throws Exception {
         r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
         r.createFreeStyleProject("project3");
 
-        Project<?,?> triggerProject = r.createFreeStyleProject();
+        Project<?, ?> triggerProject = r.createFreeStyleProject();
 
         BlockingBehaviour blockingBehaviour = new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE);
-        List<AbstractBuildParameterFactory> buildParameter = Collections.singletonList(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
+        List<AbstractBuildParameterFactory> buildParameter =
+                Collections.singletonList(new CounterBuildParameterFactory("0", "2", "1", "TEST=COUNT$COUNT"));
         List<AbstractBuildParameters> emptyList = Collections.emptyList();
 
-        BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig("project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
+        BlockableBuildTriggerConfig bBTConfig = new BlockableBuildTriggerConfig(
+                "project1, project2, project3", blockingBehaviour, buildParameter, emptyList);
 
         triggerProject.getBuildersList().add(new TriggerBuilder(bBTConfig));
 
         triggerProject.scheduleBuild2(0).get();
 
-        assertLines(triggerProject.getLastBuild(),
+        assertLines(
+                triggerProject.getLastBuild(),
                 "project1 #1 started.",
                 "project1 #1 completed. Result was SUCCESS",
                 "project1 #2 started.",
@@ -310,10 +310,11 @@ public class TriggerBuilderTest {
 
         triggerProject.scheduleBuild2(0).get();
 
-        assertLines(triggerProject.getLastBuild(),
+        assertLines(
+                triggerProject.getLastBuild(),
                 "Waiting for the completion of project1",
-                "Skipping project2. The project is either disabled, or the authenticated user " + User.current() +
-                        " has no Item.BUILD permissions, or the configuration has not been saved yet.",
+                "Skipping project2. The project is either disabled, or the authenticated user " + User.current()
+                        + " has no Item.BUILD permissions, or the configuration has not been saved yet.",
                 "Waiting for the completion of project3");
     }
 
@@ -416,24 +417,25 @@ public class TriggerBuilderTest {
 
         List<MatrixRun> runs = matrixProject.getLastBuild().getRuns();
 
-        assertEquals(4,runs.size());
+        assertEquals(4, runs.size());
 
         for (MatrixRun run : runs) {
-            assertLinesRegex(run,
-                "project1 #[0-9] completed. Result was SUCCESS",
-                "project2 #[0-9] completed. Result was SUCCESS",
-                "project3 #[0-9] completed. Result was SUCCESS",
-                "project4 #[0-9] completed. Result was SUCCESS",
-                "project5 #[0-9] completed. Result was SUCCESS",
-                "project6 #[0-9] completed. Result was SUCCESS");
+            assertLinesRegex(
+                    run,
+                    "project1 #[0-9] completed. Result was SUCCESS",
+                    "project2 #[0-9] completed. Result was SUCCESS",
+                    "project3 #[0-9] completed. Result was SUCCESS",
+                    "project4 #[0-9] completed. Result was SUCCESS",
+                    "project5 #[0-9] completed. Result was SUCCESS",
+                    "project6 #[0-9] completed. Result was SUCCESS");
         }
     }
 
     @Issue("JENKINS-17751")
     @Test
     public void testTriggerFromPromotion() throws Exception {
-        Plugin plugin = Jenkins.get().getPlugin( "promoted-builds");
-        Assume.assumeTrue(plugin!=null);
+        Plugin plugin = Jenkins.get().getPlugin("promoted-builds");
+        Assume.assumeTrue(plugin != null);
         // Test combination with PromotedBuilds.
         // Assert that the original build can be tracked from triggered build.
         // The configuration is as following:
@@ -447,7 +449,8 @@ public class TriggerBuilderTest {
         project1.getPublishersList().add(new hudson.tasks.BuildTrigger(project2.getName(), "SUCCESS"));
 
         // promotion for project1.
-        hudson.plugins.promoted_builds.JobPropertyImpl promote = new hudson.plugins.promoted_builds.JobPropertyImpl(project1);
+        hudson.plugins.promoted_builds.JobPropertyImpl promote =
+                new hudson.plugins.promoted_builds.JobPropertyImpl(project1);
         project1.addProperty(promote);
 
         // promotion process to trigger project3
@@ -455,7 +458,7 @@ public class TriggerBuilderTest {
         pp.conditions.add(new DownstreamPassCondition(project2.getName()));
         pp.getBuildSteps().add(new TriggerBuilder(createTriggerConfig(project3.getName())));
         // When using built-in BuildTrigger, set up as following:
-        //pp.getBuildSteps().add(new hudson.tasks.BuildTrigger(project3.getName(), "SUCCESS"));
+        // pp.getBuildSteps().add(new hudson.tasks.BuildTrigger(project3.getName(), "SUCCESS"));
 
         // Are there any other ways to enable a new BuildTrigger?
         Jenkins.getInstance().rebuildDependencyGraph();
@@ -469,50 +472,40 @@ public class TriggerBuilderTest {
         FreeStyleBuild project2_build = null;
         FreeStyleBuild project3_build = null;
 
-        while(true) {
+        while (true) {
             Thread.sleep(1000);
-            if(project1_build == null) {
+            if (project1_build == null) {
                 project1_build = project1.getLastBuild();
             }
-            if(project2_build == null) {
+            if (project2_build == null) {
                 project2_build = project2.getLastBuild();
             }
-            if(project3_build == null) {
+            if (project3_build == null) {
                 project3_build = project3.getLastBuild();
             }
-            if(project1_build != null && !project1_build.isBuilding()
-                    && project2_build != null && !project2_build.isBuilding()
-                    && project3_build != null && !project3_build.isBuilding()
-            ) {
+            if (project1_build != null
+                    && !project1_build.isBuilding()
+                    && project2_build != null
+                    && !project2_build.isBuilding()
+                    && project3_build != null
+                    && !project3_build.isBuilding()) {
                 break;
             }
 
-            if(System.currentTimeMillis() > till) {
+            if (System.currentTimeMillis() > till) {
                 // something not completed.
-                assertNotNull(
-                        String.format("Failed to trigger project1(%s)", project1.getName()),
-                        project1_build
-                );
+                assertNotNull(String.format("Failed to trigger project1(%s)", project1.getName()), project1_build);
                 assertFalse(
                         String.format("project1(%s) does not finish.", project1.getName()),
-                        project1_build.isBuilding()
-                );
-                assertNotNull(
-                        String.format("Failed to trigger project2(%s)", project2.getName()),
-                        project2_build
-                );
+                        project1_build.isBuilding());
+                assertNotNull(String.format("Failed to trigger project2(%s)", project2.getName()), project2_build);
                 assertFalse(
                         String.format("project2(%s) does not finish.", project2.getName()),
-                        project2_build.isBuilding()
-                );
-                assertNotNull(
-                        String.format("Failed to trigger project3(%s)", project3.getName()),
-                        project3_build
-                );
+                        project2_build.isBuilding());
+                assertNotNull(String.format("Failed to trigger project3(%s)", project3.getName()), project3_build);
                 assertFalse(
                         String.format("project3(%s) does not finish.", project3.getName()),
-                        project3_build.isBuilding()
-                );
+                        project3_build.isBuilding());
                 break;
             }
         }
@@ -530,8 +523,8 @@ public class TriggerBuilderTest {
         MatrixProject p = r.createProject(MatrixProject.class, name);
         // set up 2x2 matrix
         AxisList axes = new AxisList();
-        axes.add(new TextAxis("db","mysql","oracle"));
-        axes.add(new TextAxis("direction","north","south"));
+        axes.add(new TextAxis("db", "mysql", "oracle"));
+        axes.add(new TextAxis("direction", "north", "south"));
         p.setAxes(axes);
 
         return p;
@@ -540,9 +533,8 @@ public class TriggerBuilderTest {
     @Test
     public void testExpansionOfMultipleProjectsInEnvVariable() throws Exception {
         FreeStyleProject upstream = r.createFreeStyleProject();
-        upstream.addProperty(new ParametersDefinitionProperty(
-                new StringParameterDefinition("PARAM", "downstream1,downstream2")
-        ));
+        upstream.addProperty(
+                new ParametersDefinitionProperty(new StringParameterDefinition("PARAM", "downstream1,downstream2")));
 
         FreeStyleProject downstream1 = r.createFreeStyleProject("downstream1");
         FreeStyleProject downstream2 = r.createFreeStyleProject("downstream2");
@@ -551,7 +543,11 @@ public class TriggerBuilderTest {
 
         upstream.getBuildersList().add(triggerBuilder);
 
-        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(0, new UserIdCause(), new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2"))).get();
+        FreeStyleBuild upstreamBuild = upstream.scheduleBuild2(
+                        0,
+                        new UserIdCause(),
+                        new ParametersAction(new StringParameterValue("PARAM", "downstream1,downstream2")))
+                .get();
         r.assertBuildStatusSuccess(upstreamBuild);
         r.waitUntilNoActivity();
         FreeStyleBuild downstream1Build = downstream1.getLastBuild();
@@ -572,13 +568,12 @@ public class TriggerBuilderTest {
         triggerProject.getBuildersList().add(triggerBuilder);
         triggerProject.getBuildersList().add(new SleepBuilder(500));
 
-
         triggerProject.scheduleBuild2(0).get();
         Thread.sleep(500);
         assertEquals(triggeredProject.getBuilds().toArray().length, 1);
     }
 
-    private void assertLines(Run<?,?> build, String... lines) throws IOException {
+    private void assertLines(Run<?, ?> build, String... lines) throws IOException {
         List<String> log = build.getLog(Integer.MAX_VALUE);
         List<String> rest = log;
         for (String line : lines) {
@@ -588,19 +583,19 @@ public class TriggerBuilderTest {
         }
     }
 
-    private void assertLinesRegex (Run<?,?> build, String... regexs) throws IOException {
+    private void assertLinesRegex(Run<?, ?> build, String... regexs) throws IOException {
         // Same function as above but allows regex instead of just strings
         List<String> log = build.getLog(Integer.MAX_VALUE);
         List<String> rest = log;
         ListIterator li = log.listIterator();
 
         Pattern p = Pattern.compile(""); // initial pattern will be replaced in loop
-        Matcher m = p.matcher((String)li.next());
+        Matcher m = p.matcher((String) li.next());
         for (String regex : regexs) {
             int lastmatched = 0;
             m.usePattern(Pattern.compile(regex));
             while (li.hasNext()) {
-                m.reset((String)li.next());
+                m.reset((String) li.next());
                 if (m.matches()) {
                     lastmatched = li.nextIndex();
                     li = log.listIterator(li.nextIndex());
@@ -609,7 +604,7 @@ public class TriggerBuilderTest {
             }
             // set up rest to contain the part of the log that has not been successfully checked
             rest = log.subList(lastmatched + 1, log.size());
-            assertTrue("Could not find regex '" + regex + "' among remaining log lines " + rest, li.hasNext() );
+            assertTrue("Could not find regex '" + regex + "' among remaining log lines " + rest, li.hasNext());
         }
     }
 }

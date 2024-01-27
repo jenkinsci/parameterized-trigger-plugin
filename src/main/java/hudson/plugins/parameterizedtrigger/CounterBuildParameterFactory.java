@@ -7,14 +7,13 @@ import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import hudson.util.VariableResolver;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
  * A BuildParameterFactory generating Predefined Parameters for a counter
@@ -30,24 +29,27 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     private final SteppingValidationEnum validationFail;
 
     public enum SteppingValidationEnum {
-        FAIL("Fail the build step"),    // previous behaviour (default)
-        SKIP("Don't trigger these projects"){
+        FAIL("Fail the build step"), // previous behaviour (default)
+        SKIP("Don't trigger these projects") {
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
                 listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateSkipping());
                 throw new AbstractBuildParameters.DontTriggerException();
-        }},
-        NOPARMS("Skip these parameters"){
+            }
+        },
+        NOPARMS("Skip these parameters") {
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
                 listener.getLogger().println(Messages.CounterBuildParameterFactory_CountingWillNotTerminateIgnore());
-        }};
+            }
+        };
 
         private final String description;
 
         public String getDescription() {
             return description;
         }
+
         SteppingValidationEnum(String description) {
             this.description = description;
         }
@@ -60,7 +62,9 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     public CounterBuildParameterFactory(long from, long to, long step, String paramExpr) {
         this(Long.toString(from), Long.toString(to), Long.toString(step), paramExpr);
     }
-    public CounterBuildParameterFactory(long from, long to, long step, String paramExpr, SteppingValidationEnum validationFail) {
+
+    public CounterBuildParameterFactory(
+            long from, long to, long step, String paramExpr, SteppingValidationEnum validationFail) {
         this(Long.toString(from), Long.toString(to), Long.toString(step), paramExpr, validationFail);
     }
 
@@ -70,7 +74,8 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
     }
 
     @DataBoundConstructor
-    public CounterBuildParameterFactory(String from, String to, String step, String paramExpr, SteppingValidationEnum validationFail) {
+    public CounterBuildParameterFactory(
+            String from, String to, String step, String paramExpr, SteppingValidationEnum validationFail) {
         this.from = from;
         this.to = to;
         this.step = step;
@@ -78,9 +83,9 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
         this.validationFail = validationFail;
     }
 
-
     @Override
-    public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
+    public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener)
+            throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
         EnvVars envVars = build.getEnvironment(listener);
 
         long fromNum = Long.parseLong(envVars.expand(from));
@@ -118,11 +123,14 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             return Messages.CounterBuildParameterFactory_CounterBuildParameterFactory();
         }
 
-        public FormValidation doCheckFrom(@QueryParameter String value) { return validateNumberField(value);
+        public FormValidation doCheckFrom(@QueryParameter String value) {
+            return validateNumberField(value);
         }
+
         public FormValidation doCheckTo(@QueryParameter String value) {
             return validateNumberField(value);
         }
+
         public FormValidation doCheckStep(@QueryParameter String value) {
             return validateNumberField(value);
         }
@@ -175,5 +183,4 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             return "";
         }
     };
-
 }

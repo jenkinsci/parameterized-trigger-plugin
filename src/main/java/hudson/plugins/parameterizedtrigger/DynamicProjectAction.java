@@ -1,7 +1,6 @@
 package hudson.plugins.parameterizedtrigger;
 
 import hudson.model.Action;
-
 import java.util.ArrayList;
 import java.util.List;
 

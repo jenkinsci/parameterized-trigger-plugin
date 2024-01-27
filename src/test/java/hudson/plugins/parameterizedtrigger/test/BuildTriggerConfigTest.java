@@ -24,6 +24,12 @@
 
 package hudson.plugins.parameterizedtrigger.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import hudson.model.AbstractProject;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.FreeStyleProject;
@@ -48,7 +54,16 @@ import hudson.security.AuthorizationMatrixProperty;
 import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import hudson.util.FormValidation;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import jenkins.model.Jenkins;
+import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -58,22 +73,6 @@ import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import jenkins.security.QueueItemAuthenticatorConfiguration;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.MockQueueItemAuthenticator;
 
@@ -81,11 +80,11 @@ public class BuildTriggerConfigTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
+
     @Rule
     public BuildWatcher buildWatcher = new BuildWatcher();
 
-    private BlockableBuildTriggerConfig createConfig(String projectToTrigger){
+    private BlockableBuildTriggerConfig createConfig(String projectToTrigger) {
         List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
@@ -98,15 +97,32 @@ public class BuildTriggerConfigTest {
         projectA.getBuildersList().add(builder);
     }
 
-    private void validateOutcome(Project<?, ?> project, BuildTriggerConfig config,
-                                 int fixedExpected, int dynamicExpected, int triggeredExpected, int unresolvedExpected) {
+    private void validateOutcome(
+            Project<?, ?> project,
+            BuildTriggerConfig config,
+            int fixedExpected,
+            int dynamicExpected,
+            int triggeredExpected,
+            int unresolvedExpected) {
 
         SubProjectData subProjectData = config.getProjectInfo(project);
 
-        assertEquals("Not the expected number of fixed project(s)", fixedExpected, subProjectData.getFixed().size());
-        assertEquals("Not the expected number of dynamic project(s)", dynamicExpected, subProjectData.getDynamic().size());
-        assertEquals("Not the expected number of triggered project(s)", triggeredExpected, subProjectData.getTriggered().size());
-        assertEquals("Not the expected number of unresolved project(s)", unresolvedExpected, subProjectData.getUnresolved().size());
+        assertEquals(
+                "Not the expected number of fixed project(s)",
+                fixedExpected,
+                subProjectData.getFixed().size());
+        assertEquals(
+                "Not the expected number of dynamic project(s)",
+                dynamicExpected,
+                subProjectData.getDynamic().size());
+        assertEquals(
+                "Not the expected number of triggered project(s)",
+                triggeredExpected,
+                subProjectData.getTriggered().size());
+        assertEquals(
+                "Not the expected number of unresolved project(s)",
+                unresolvedExpected,
+                subProjectData.getUnresolved().size());
     }
 
     /**
@@ -131,7 +147,6 @@ public class BuildTriggerConfigTest {
 
         // Expects 1 dynamic and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 0, 1, 0, 1);
-
     }
 
     /**
@@ -156,7 +171,6 @@ public class BuildTriggerConfigTest {
 
         // Expects 1 fixed and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 1, 0, 0, 1);
-
     }
 
     @Test
@@ -192,7 +206,7 @@ public class BuildTriggerConfigTest {
         workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }", false));
         // SECURITY-170: must define parameters in subjobs
         List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
-        definition.add(new StringParameterDefinition("myParam","myParam"));
+        definition.add(new StringParameterDefinition("myParam", "myParam"));
         workflowProject.addProperty(new ParametersDefinitionProperty(definition));
 
         // Trigger a normal and workflow project
@@ -204,7 +218,8 @@ public class BuildTriggerConfigTest {
         buildParameters.add(customParams);
 
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
-        BlockableBuildTriggerConfig masterConfig = new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
+        BlockableBuildTriggerConfig masterConfig =
+                new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
 
         addParameterizedTrigger(masterProject, masterConfig);
 
@@ -242,7 +257,7 @@ public class BuildTriggerConfigTest {
         addParameterizedTrigger(upstreamProject, triggerConfig);
 
         // Setup upstream project security
-        Map<Permission,Set<String>> permissions = new HashMap<Permission,Set<String>>();
+        Map<Permission, Set<String>> permissions = new HashMap<Permission, Set<String>>();
         Set<String> userIds = new HashSet<String>(Arrays.asList("testUser"));
         permissions.put(Item.READ, userIds);
         AuthorizationMatrixProperty projectPermissions = new AuthorizationMatrixProperty(permissions);
@@ -253,7 +268,8 @@ public class BuildTriggerConfigTest {
             @Override
             public void run() {
                 SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
-                assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
+                assertTrue(
+                        "Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
         });
@@ -264,7 +280,8 @@ public class BuildTriggerConfigTest {
             @Override
             public void run() {
                 SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
-                assertTrue("Downstream project should be unresolved, because testUser has no READ permission",
+                assertTrue(
+                        "Downstream project should be unresolved, because testUser has no READ permission",
                         projectInfo.getUnresolved().contains(downstreamProject.getName()));
             }
         });
@@ -292,7 +309,6 @@ public class BuildTriggerConfigTest {
 
         // Expects 1 fixed and 1 unresolved project
         validateOutcome(masterProject, masterConfig, 1, 1, 0, 0);
-
     }
 
     /**
@@ -324,14 +340,15 @@ public class BuildTriggerConfigTest {
 
         // Expects 1 fixed and 1 triggered project
         validateOutcome(masterProject, masterConfig, 1, 0, 1, 0);
-
     }
 
     @Test
     public void testBlankConfig() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
-        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "");
+        FormValidation form = r.jenkins
+                .getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class)
+                .doCheckProjects(masterProject, "");
 
         assertEquals(FormValidation.Kind.ERROR, form.kind);
     }
@@ -340,7 +357,9 @@ public class BuildTriggerConfigTest {
     public void testNonExistedProject() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
-        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "nonExistedProject");
+        FormValidation form = r.jenkins
+                .getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class)
+                .doCheckProjects(masterProject, "nonExistedProject");
 
         assertEquals(FormValidation.Kind.ERROR, form.kind);
     }
@@ -349,7 +368,9 @@ public class BuildTriggerConfigTest {
     public void testValidConfig() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
-        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "project");
+        FormValidation form = r.jenkins
+                .getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class)
+                .doCheckProjects(masterProject, "project");
 
         assertEquals(FormValidation.Kind.OK, form.kind);
     }
@@ -358,7 +379,9 @@ public class BuildTriggerConfigTest {
     public void testBlankProjectNameInConfig() throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
-        FormValidation form = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class).doCheckProjects(masterProject, "project, ");
+        FormValidation form = r.jenkins
+                .getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class)
+                .doCheckProjects(masterProject, "project, ");
 
         assertEquals(FormValidation.Kind.ERROR, form.kind);
     }
@@ -367,13 +390,14 @@ public class BuildTriggerConfigTest {
     @Test
     public void testFieldValidation() throws Exception {
         FreeStyleProject p = r.createFreeStyleProject("project");
-        BuildTriggerConfig.DescriptorImpl descriptor = r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class);
+        BuildTriggerConfig.DescriptorImpl descriptor =
+                r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class);
         assertNotNull(descriptor);
         // Valid value, Empty Value
         assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(p, p.getFullName()).kind);
         assertSame(FormValidation.Kind.ERROR, descriptor.doCheckProjects(p, "FOO").kind);
         assertSame(FormValidation.Kind.ERROR, descriptor.doCheckProjects(p, "").kind);
-        //JENKINS-32526: Check that it behaves gracefully for an unknown context.
+        // JENKINS-32526: Check that it behaves gracefully for an unknown context.
         assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, p.getFullName()).kind);
         assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "FOO").kind);
         assertSame(FormValidation.Kind.OK, descriptor.doCheckProjects(null, "").kind);
@@ -386,9 +410,15 @@ public class BuildTriggerConfigTest {
         }
 
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
-        QueueItemAuthenticatorConfiguration.get().getAuthenticators().add(new MockQueueItemAuthenticator(Collections.singletonMap("project", User.get("alice").impersonate())));
+        QueueItemAuthenticatorConfiguration.get()
+                .getAuthenticators()
+                .add(new MockQueueItemAuthenticator(
+                        Collections.singletonMap("project", User.get("alice").impersonate())));
         FreeStyleProject other = r.createFreeStyleProject("other");
-        MockAuthorizationStrategy auth = new MockAuthorizationStrategy().grant(Jenkins.READ, Item.READ).onItems(other).to("alice");
+        MockAuthorizationStrategy auth = new MockAuthorizationStrategy()
+                .grant(Jenkins.READ, Item.READ)
+                .onItems(other)
+                .to("alice");
         r.jenkins.setAuthorizationStrategy(auth);
         assertSame(FormValidation.Kind.ERROR, descriptor.doCheckProjects(p, "other").kind);
         auth.grant(Item.BUILD).onItems(other).to("alice");

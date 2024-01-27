@@ -4,12 +4,11 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Job;
 import hudson.model.Run;
-import jenkins.model.Jenkins;
-import jenkins.model.RunAction2;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import jenkins.model.Jenkins;
+import jenkins.model.RunAction2;
 
 /**
  * Shows a list of a dynamic downstream builds
@@ -23,14 +22,10 @@ public class DynamicBuildAction implements RunAction2 {
     }
 
     @Override
-    public void onAttached(Run<?, ?> run) {
-
-    }
+    public void onAttached(Run<?, ?> run) {}
 
     @Override
-    public void onLoad(Run<?, ?> run) {
-
-    }
+    public void onLoad(Run<?, ?> run) {}
 
     public List<AbstractBuild<?, ?>> getBuilds() {
         List<AbstractBuild<?, ?>> builds = new ArrayList<>();
@@ -48,7 +43,6 @@ public class DynamicBuildAction implements RunAction2 {
 
         return builds;
     }
-
 
     @Override
     public String getIconFileName() {
