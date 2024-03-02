@@ -33,34 +33,34 @@ import org.kohsuke.stapler.DataBoundConstructor;
  *
  * @author Chris Johnson
  */
-public class BooleanParameterConfig implements Describable<BooleanParameterConfig>{
+public class BooleanParameterConfig implements Describable<BooleanParameterConfig> {
 
-	private final String name;
-	private final boolean value;
+    private final String name;
+    private final boolean value;
 
-	@DataBoundConstructor
-	public BooleanParameterConfig(String name, boolean value) {
-		this.name = name;
-		this.value = value;
-	}
-	public boolean getValue() {
-		return value;
-	}
+    @DataBoundConstructor
+    public BooleanParameterConfig(String name, boolean value) {
+        this.name = name;
+        this.value = value;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public boolean getValue() {
+        return value;
+    }
 
-	public Descriptor<BooleanParameterConfig> getDescriptor() {
-		return Jenkins.get().getDescriptorOrDie(getClass());
-	}
-	
-	
-	@Extension
-	public static class DescriptorImpl extends Descriptor<BooleanParameterConfig> {
-		@Override
-		public String getDisplayName() {
-			return ""; // unused
-		}
-	}
+    public String getName() {
+        return name;
+    }
+
+    public Descriptor<BooleanParameterConfig> getDescriptor() {
+        return Jenkins.get().getDescriptorOrDie(getClass());
+    }
+
+    @Extension
+    public static class DescriptorImpl extends Descriptor<BooleanParameterConfig> {
+        @Override
+        public String getDisplayName() {
+            return ""; // unused
+        }
+    }
 }

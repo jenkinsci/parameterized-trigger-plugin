@@ -9,7 +9,6 @@ import hudson.model.ParametersAction;
 import hudson.model.Queue;
 import hudson.model.Queue.Task;
 import hudson.model.TaskListener;
-
 import java.io.IOException;
 
 /**
@@ -20,7 +19,8 @@ import java.io.IOException;
  *
  * @see Queue#schedule(Task, int, Action...)
  */
-public abstract class AbstractBuildParameters extends AbstractDescribableImpl<AbstractBuildParameters> implements ExtensionPoint {
+public abstract class AbstractBuildParameters extends AbstractDescribableImpl<AbstractBuildParameters>
+        implements ExtensionPoint {
 
     /**
      *
@@ -29,13 +29,13 @@ public abstract class AbstractBuildParameters extends AbstractDescribableImpl<Ab
      * @param listener
      *      Connected to the in-progress build of the {@code build} parameter.
      */
-    public abstract Action getAction(AbstractBuild<?,?> build, TaskListener listener)
+    public abstract Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
             throws IOException, InterruptedException, DontTriggerException;
 
     /**
      * Retrieve the build environment from the upstream build
      */
-    public EnvVars getEnvironment(AbstractBuild<?,?> build, TaskListener listener)
+    public EnvVars getEnvironment(AbstractBuild<?, ?> build, TaskListener listener)
             throws IOException, InterruptedException {
 
         CapturedEnvironmentAction capture = build.getAction(CapturedEnvironmentAction.class);

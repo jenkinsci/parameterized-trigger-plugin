@@ -7,24 +7,24 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.tasks.Builder;
-import net.sf.json.JSONObject;
-import org.kohsuke.stapler.StaplerRequest;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.StaplerRequest;
 
 /**
  * @author wolfs
  */
 public class CaptureAllEnvironmentBuilder extends Builder {
-    private final Map<String,EnvVars> envVars = new HashMap<>();
+    private final Map<String, EnvVars> envVars = new HashMap<>();
 
-	public Map<String, EnvVars> getEnvVars() {
-		return envVars;
-	}
+    public Map<String, EnvVars> getEnvVars() {
+        return envVars;
+    }
 
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+            throws InterruptedException, IOException {
         envVars.put(build.getId(), build.getEnvironment(listener));
         return true;
     }

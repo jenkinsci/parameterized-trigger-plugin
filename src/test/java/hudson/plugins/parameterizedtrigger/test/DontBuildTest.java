@@ -23,6 +23,9 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
 import hudson.model.Project;
@@ -31,48 +34,43 @@ import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
-
 import java.io.IOException;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class DontBuildTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
-	public static final class DontBuildTrigger extends AbstractBuildParameters {
-		boolean called = false;
-		@Override
-		public Action getAction(AbstractBuild<?,?> build, TaskListener listener)
-				throws IOException, InterruptedException, DontTriggerException {
-			called = true;
-			throw new DontTriggerException();
-		}
-	}
 
-	@Test
-	public void test() throws Exception {
+    public static final class DontBuildTrigger extends AbstractBuildParameters {
+        boolean called = false;
 
-		Project projectA = r.createFreeStyleProject("projectA");
-		DontBuildTrigger dbt = new DontBuildTrigger();
-		projectA.getPublishersList().add(
-			new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, dbt)));
+        @Override
+        public Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
+                throws IOException, InterruptedException, DontTriggerException {
+            called = true;
+            throw new DontTriggerException();
+        }
+    }
 
-		Project projectB = r.createFreeStyleProject("projectB");
-		projectB.setQuietPeriod(0);
-		r.jenkins.rebuildDependencyGraph();
+    @Test
+    public void test() throws Exception {
 
-		projectA.scheduleBuild2(0).get();
-		Thread.sleep(1000);
+        Project projectA = r.createFreeStyleProject("projectA");
+        DontBuildTrigger dbt = new DontBuildTrigger();
+        projectA.getPublishersList()
+                .add(new BuildTrigger(new BuildTriggerConfig("projectB", ResultCondition.SUCCESS, dbt)));
 
-		assertEquals(0, projectB.getBuilds().size());
-		assertTrue("trigger was not called", dbt.called);
-	}
+        Project projectB = r.createFreeStyleProject("projectB");
+        projectB.setQuietPeriod(0);
+        r.jenkins.rebuildDependencyGraph();
 
+        projectA.scheduleBuild2(0).get();
+        Thread.sleep(1000);
+
+        assertEquals(0, projectB.getBuilds().size());
+        assertTrue("trigger was not called", dbt.called);
+    }
 }
