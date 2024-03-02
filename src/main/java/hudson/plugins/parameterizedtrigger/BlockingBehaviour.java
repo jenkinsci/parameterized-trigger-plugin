@@ -28,7 +28,6 @@ package hudson.plugins.parameterizedtrigger;
 import static hudson.model.Result.*;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -93,7 +92,6 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
 
     @Extension
     public static class DescriptorImpl extends Descriptor<BlockingBehaviour> {
-        @NonNull
         @Override
         public String getDisplayName() {
             return ""; // unused
