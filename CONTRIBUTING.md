@@ -61,9 +61,10 @@ Please don't introduce new spotbugs output.
 ## Automated Tests
 
 Automated tests are run as part of the `verify` phase.
+Run automated tests with multiple Java virtual machines with the command:
 
 ```
-$ mvn clean verify
+$ mvn clean -DforkCount=1C verify
 ```
 
 ## Issue Reports
