@@ -187,11 +187,8 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                     if (buildStepResult
                                             && config.getBlock().mapBuildStepResult(completedRun.getResult())) {
                                         Result r = config.getBlock().mapBuildResult(completedRun.getResult());
-                                        if (r != null) {
+                                        if (r != null) { // The blocking job is not a success
                                             build.setResult(r);
-                                        } else {
-                                            LOGGER.warning("Attempting to use the result of unfinished build "
-                                                    + completedRun.toString());
                                         }
                                     } else {
                                         buildStepResult = false;
