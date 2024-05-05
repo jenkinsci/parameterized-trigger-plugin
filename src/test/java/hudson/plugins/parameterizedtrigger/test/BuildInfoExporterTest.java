@@ -23,6 +23,13 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.Cause.UserIdCause;
@@ -39,34 +46,26 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
-import org.jvnet.hudson.test.recipes.LocalData;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.recipes.LocalData;
 
 public class BuildInfoExporterTest {
 
     @Rule
     public JenkinsRule r = new JenkinsRule();
-    
-    @Rule public BuildWatcher buildWatcher = new BuildWatcher();
+
+    @Rule
+    public BuildWatcher buildWatcher = new BuildWatcher();
 
     @Test
     public void test() throws Exception {
@@ -92,13 +91,19 @@ public class BuildInfoExporterTest {
 
         Run buildB1 = projectB.getBuildByNumber(expectedBuildNumber);
         EnvVars envVars = builder.getEnvVars();
-        //System.out.println("envVars: " + envVars);
+        // System.out.println("envVars: " + envVars);
 
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildB1.getResult().toString()));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber), buildB1.getResult().toString()));
+        assertThat(
+                envVars,
+                hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildB1.getResult().toString()));
+        assertThat(
+                envVars,
+                hasEntry(
+                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber),
+                        buildB1.getResult().toString()));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
 
@@ -107,17 +112,23 @@ public class BuildInfoExporterTest {
         assertThat(projectB.getNextBuildNumber(), is(not(expectedBuildNumber)));
 
         expectedBuildNumber = projectB.getNextBuildNumber();
-        AbstractBuild<?, ?> buildA2 = projectA.scheduleBuild2(0, new UserIdCause()).get();
+        AbstractBuild<?, ?> buildA2 =
+                projectA.scheduleBuild2(0, new UserIdCause()).get();
         envVars = builder.getEnvVars();
 
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildA2.getResult().toString()));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber), buildA2.getResult().toString()));
+        assertThat(
+                envVars,
+                hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildA2.getResult().toString()));
+        assertThat(
+                envVars,
+                hasEntry(
+                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber),
+                        buildA2.getResult().toString()));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
-
     }
 
     @Test
@@ -145,11 +156,12 @@ public class BuildInfoExporterTest {
         projectA.scheduleBuild2(0, new UserIdCause()).get();
 
         EnvVars envVars = builder.getEnvVars();
-        //System.out.println("envVars: " + envVars);
+        // System.out.println("envVars: " + envVars);
 
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", testNameResult));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult, Integer.toString(expectedBuildNumber)));
+        assertThat(
+                envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult, Integer.toString(expectedBuildNumber)));
 
         // The below test for expectedBuildNumber is meaningless if the
         // value doesn't update, though it should always update.
@@ -161,7 +173,8 @@ public class BuildInfoExporterTest {
 
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", testNameResult));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult, Integer.toString(expectedBuildNumber)));
+        assertThat(
+                envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult, Integer.toString(expectedBuildNumber)));
     }
 
     @Test
@@ -173,12 +186,13 @@ public class BuildInfoExporterTest {
         Project<?, ?> projectA = r.createFreeStyleProject();
         Project projectB = r.createFreeStyleProject(testNameResult);
         Project projectC = r.createFreeStyleProject(testNameResult2);
-        projectA.getBuildersList().add(
-                new TriggerBuilder(
-                new BlockableBuildTriggerConfig(testNameResult + "," + testNameResult2,
-                new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                Collections.singletonList(new CounterBuildParameterFactory("0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
-                Collections.emptyList())));
+        projectA.getBuildersList()
+                .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
+                        testNameResult + "," + testNameResult2,
+                        new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+                        Collections.singletonList(new CounterBuildParameterFactory(
+                                "0", Integer.toString(buildsToTest - 1), "1", "TEST=COUNT$COUNT")),
+                        Collections.emptyList())));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         projectA.getBuildersList().add(builder);
@@ -197,27 +211,27 @@ public class BuildInfoExporterTest {
         r.waitUntilNoActivity();
 
         EnvVars envVars = builder.getEnvVars();
-        //System.out.println("envVars: " + envVars);
+        // System.out.println("envVars: " + envVars);
 
         assertEquals(buildsToTest, projectB.getBuilds().size());
         assertEquals(buildsToTest, projectC.getBuilds().size());
 
         String allBuildNumbersB = "";
         for (int run = 1, buildNumber = firstExpectedBuildNumberB; run <= buildsToTest; run++, buildNumber++) {
-          if (allBuildNumbersB.length() > 0) {
-            allBuildNumbersB += ",";
-          }
-          allBuildNumbersB += buildNumber;
-          assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + buildNumber, "SUCCESS"));
+            if (allBuildNumbersB.length() > 0) {
+                allBuildNumbersB += ",";
+            }
+            allBuildNumbersB += buildNumber;
+            assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + buildNumber, "SUCCESS"));
         }
 
         String allBuildNumbersC = "";
         for (int run = 1, buildNumber = firstExpectedBuildNumberC; run <= buildsToTest; run++, buildNumber++) {
-          if (allBuildNumbersC.length() > 0) {
-            allBuildNumbersC += ",";
-          }
-          allBuildNumbersC += buildNumber;
-          assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + buildNumber, "SUCCESS"));
+            if (allBuildNumbersC.length() > 0) {
+                allBuildNumbersC += ",";
+            }
+            allBuildNumbersC += buildNumber;
+            assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + buildNumber, "SUCCESS"));
         }
 
         int lastBuildNumberB = firstExpectedBuildNumberB + (buildsToTest - 1);
@@ -230,7 +244,6 @@ public class BuildInfoExporterTest {
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", testNameResult + "," + testNameResult2));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_" + testNameResult, allBuildNumbersB));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_" + testNameResult2, allBuildNumbersC));
-
     }
 
     @Test
@@ -241,7 +254,8 @@ public class BuildInfoExporterTest {
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         BlockableBuildTriggerConfig config = new BlockableBuildTriggerConfig("projectB", neverFail, buildParameters);
 
-        BlockableBuildTriggerConfig nonBlockingConfig = new BlockableBuildTriggerConfig("projectC", null, buildParameters);
+        BlockableBuildTriggerConfig nonBlockingConfig =
+                new BlockableBuildTriggerConfig("projectC", null, buildParameters);
         projectA.getBuildersList().add(new TriggerBuilder(config, nonBlockingConfig));
 
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
@@ -265,135 +279,204 @@ public class BuildInfoExporterTest {
         Run buildB1 = projectB.getBuildByNumber(expectedBuildNumber);
         Run buildC1 = projectC.getBuildByNumber(expectedBuildNumberC);
         EnvVars envVars = builder.getEnvVars();
-        //System.out.println("envVars: " + envVars);
+        // System.out.println("envVars: " + envVars);
 
         assertThat(envVars, notNullValue());
         assertThat(envVars, hasEntry("LAST_TRIGGERED_JOB_NAME", "projectB"));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_projectB", Integer.toString(expectedBuildNumber)));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildB1.getResult().toString()));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + expectedBuildNumber, buildB1.getResult().toString()));
+        assertThat(
+                envVars,
+                hasEntry("TRIGGERED_BUILD_RESULT_projectB", buildB1.getResult().toString()));
+        assertThat(
+                envVars,
+                hasEntry(
+                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + expectedBuildNumber,
+                        buildB1.getResult().toString()));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
         // check that we don't see entries for projectC
         assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_NUMBER_projectC", Integer.toString(expectedBuildNumberC))));
-        assertThat(envVars, not(hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + expectedBuildNumberC, buildC1.getResult().toString())));
-
+        assertThat(
+                envVars,
+                not(hasEntry(
+                        "TRIGGERED_BUILD_RESULT_projectC_RUN_" + expectedBuildNumberC,
+                        buildC1.getResult().toString())));
     }
-  
+
     @Test
     public void testProjectDeleted() throws Exception {
         FreeStyleProject p1 = r.createFreeStyleProject();
         FreeStyleProject p2 = r.createFreeStyleProject();
 
         // Blocked build
-        p1.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig(
-              p2.getName(),
-              new BlockingBehaviour(
-                      Result.FAILURE,
-                      Result.UNSTABLE,
-                      Result.FAILURE
-              ),
-              Arrays.asList(
-                      new PredefinedBuildParameters("test=test")
-              )
-        )));
+        p1.getBuildersList()
+                .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
+                        p2.getName(),
+                        new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
+                        Arrays.asList(new PredefinedBuildParameters("test=test")))));
 
         FreeStyleBuild blockedBuild = p1.scheduleBuild2(0).get();
         r.assertBuildStatusSuccess(blockedBuild);
 
         // Unblocked build
         p1.getBuildersList().clear();
-        p1.getBuildersList().add(new TriggerBuilder(new BlockableBuildTriggerConfig(
-              p2.getName(),
-              null,
-              Arrays.<AbstractBuildParameters>asList(
-                      new PredefinedBuildParameters("test=test")
-              )
-        )));
+        p1.getBuildersList()
+                .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
+                        p2.getName(),
+                        null,
+                        Arrays.<AbstractBuildParameters>asList(new PredefinedBuildParameters("test=test")))));
 
         FreeStyleBuild unblockedBuild = p1.scheduleBuild2(0).get();
         r.assertBuildStatusSuccess(unblockedBuild);
 
         r.waitUntilNoActivity();
 
-        assertEquals(1, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
-        assertEquals(p2.getBuildByNumber(1), blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().get(0));
-        assertEquals(0, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
+        assertEquals(
+                1,
+                blockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredBuilds()
+                        .size());
+        assertEquals(
+                p2.getBuildByNumber(1),
+                blockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredBuilds()
+                        .get(0));
+        assertEquals(
+                0,
+                blockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredProjects()
+                        .size());
 
-        assertEquals(0, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
-        assertEquals(1, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
-        assertEquals(p2, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().get(0));
+        assertEquals(
+                0,
+                unblockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredBuilds()
+                        .size());
+        assertEquals(
+                1,
+                unblockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredProjects()
+                        .size());
+        assertEquals(
+                p2,
+                unblockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredProjects()
+                        .get(0));
 
         p2.delete();
 
-        assertEquals(1, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
-        assertNull(blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().get(0));
-        assertEquals(0, blockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
+        assertEquals(
+                1,
+                blockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredBuilds()
+                        .size());
+        assertNull(blockedBuild
+                .getAction(BuildInfoExporterAction.class)
+                .getTriggeredBuilds()
+                .get(0));
+        assertEquals(
+                0,
+                blockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredProjects()
+                        .size());
 
-        assertEquals(0, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredBuilds().size());
-        assertEquals(1, unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().size());
-        assertNull(unblockedBuild.getAction(BuildInfoExporterAction.class).getTriggeredProjects().get(0));
+        assertEquals(
+                0,
+                unblockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredBuilds()
+                        .size());
+        assertEquals(
+                1,
+                unblockedBuild
+                        .getAction(BuildInfoExporterAction.class)
+                        .getTriggeredProjects()
+                        .size());
+        assertNull(unblockedBuild
+                .getAction(BuildInfoExporterAction.class)
+                .getTriggeredProjects()
+                .get(0));
     }
 
     @LocalData
     @Test
-    public void testMigrateFrom221() throws Exception
-    {
+    public void testMigrateFrom221() throws Exception {
         // lastReference should be preserved after migration.
         String lastReferenceValue = null;
 
         {
-          FreeStyleProject p = r.jenkins.getItemByFullName("upstream", FreeStyleProject.class);
-          assertNotNull(p);
-          FreeStyleBuild b = p.getLastBuild();
-          assertNotNull(b);
-          BuildInfoExporterAction action = b.getAction(BuildInfoExporterAction.class);
-          assertNotNull(action);
+            FreeStyleProject p = r.jenkins.getItemByFullName("upstream", FreeStyleProject.class);
+            assertNotNull(p);
+            FreeStyleBuild b = p.getLastBuild();
+            assertNotNull(b);
+            BuildInfoExporterAction action = b.getAction(BuildInfoExporterAction.class);
+            assertNotNull(action);
 
-          // action should contain following builds:
-          //  downstream1#1
-          //  downstream1#2
-          //  downstream2#1
+            // action should contain following builds:
+            //  downstream1#1
+            //  downstream1#2
+            //  downstream2#1
 
-          Set<Run<?,?>> expected = new HashSet<>();
-          expected.addAll(Arrays.asList(r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
-                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
-                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)));
-          
-          assertEquals(expected, new HashSet<>(action.getTriggeredBuilds()));
+            Set<Run<?, ?>> expected = new HashSet<>();
+            expected.addAll(Arrays.asList(
+                    r.jenkins
+                            .getItemByFullName("downstream1", FreeStyleProject.class)
+                            .getBuildByNumber(1),
+                    r.jenkins
+                            .getItemByFullName("downstream1", FreeStyleProject.class)
+                            .getBuildByNumber(2),
+                    r.jenkins
+                            .getItemByFullName("downstream2", FreeStyleProject.class)
+                            .getBuildByNumber(1)));
 
-          EnvVars env = new EnvVars();
-          action.buildEnvVars(b, env);
-          lastReferenceValue = env.get(BuildInfoExporterAction.JOB_NAME_VARIABLE);
-          assertEquals("downstream1", lastReferenceValue);
+            assertEquals(expected, new HashSet<>(action.getTriggeredBuilds()));
 
-          b.save();
+            EnvVars env = new EnvVars();
+            action.buildEnvVars(b, env);
+            lastReferenceValue = env.get(BuildInfoExporterAction.JOB_NAME_VARIABLE);
+            assertEquals("downstream1", lastReferenceValue);
+
+            b.save();
         }
 
         {
-          FreeStyleProject p = r.jenkins.getItemByFullName("upstream", FreeStyleProject.class);
-          assertNotNull(p);
-          FreeStyleBuild b = p.getLastBuild();
-          assertNotNull(b);
-          BuildInfoExporterAction action = b.getAction(BuildInfoExporterAction.class);
-          assertNotNull(action);
+            FreeStyleProject p = r.jenkins.getItemByFullName("upstream", FreeStyleProject.class);
+            assertNotNull(p);
+            FreeStyleBuild b = p.getLastBuild();
+            assertNotNull(b);
+            BuildInfoExporterAction action = b.getAction(BuildInfoExporterAction.class);
+            assertNotNull(action);
 
-          // action should contain following builds:
-          //  downstream1#1
-          //  downstream1#2
-          //  downstream2#1
+            // action should contain following builds:
+            //  downstream1#1
+            //  downstream1#2
+            //  downstream2#1
 
-          Set<Run<?,?>> expected = new HashSet<>();
-          expected.addAll(Arrays.asList(r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(1),
-                      r.jenkins.getItemByFullName("downstream1", FreeStyleProject.class).getBuildByNumber(2),
-                      r.jenkins.getItemByFullName("downstream2", FreeStyleProject.class).getBuildByNumber(1)));
+            Set<Run<?, ?>> expected = new HashSet<>();
+            expected.addAll(Arrays.asList(
+                    r.jenkins
+                            .getItemByFullName("downstream1", FreeStyleProject.class)
+                            .getBuildByNumber(1),
+                    r.jenkins
+                            .getItemByFullName("downstream1", FreeStyleProject.class)
+                            .getBuildByNumber(2),
+                    r.jenkins
+                            .getItemByFullName("downstream2", FreeStyleProject.class)
+                            .getBuildByNumber(1)));
 
-          assertEquals(expected, new HashSet<>(action.getTriggeredBuilds())
-          );
+            assertEquals(expected, new HashSet<>(action.getTriggeredBuilds()));
 
-          EnvVars env = new EnvVars();
-          action.buildEnvVars(b, env);
-          assertEquals(lastReferenceValue, env.get(BuildInfoExporterAction.JOB_NAME_VARIABLE));
+            EnvVars env = new EnvVars();
+            action.buildEnvVars(b, env);
+            assertEquals(lastReferenceValue, env.get(BuildInfoExporterAction.JOB_NAME_VARIABLE));
         }
     }
 }

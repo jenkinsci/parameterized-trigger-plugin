@@ -32,10 +32,8 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.TaskListener;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -44,34 +42,33 @@ import org.kohsuke.stapler.DataBoundConstructor;
  */
 public class BooleanParameters extends AbstractBuildParameters {
 
-	private final List<BooleanParameterConfig> configs;
+    private final List<BooleanParameterConfig> configs;
 
-	@DataBoundConstructor
-	public BooleanParameters(List <BooleanParameterConfig> configs ){
-		this.configs = configs;
-	}
+    @DataBoundConstructor
+    public BooleanParameters(List<BooleanParameterConfig> configs) {
+        this.configs = configs;
+    }
 
-	@Override
-	public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
+    @Override
+    public Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
+            throws IOException, InterruptedException, DontTriggerException {
 
-		List<ParameterValue> values = configs
-			.stream()
-			.map( config -> new BooleanParameterValue(config.getName(), config.getValue()) )
-			.collect( Collectors.toList() );
+        List<ParameterValue> values = configs.stream()
+                .map(config -> new BooleanParameterValue(config.getName(), config.getValue()))
+                .collect(Collectors.toList());
 
-		return new ParametersAction(values);
-	}
+        return new ParametersAction(values);
+    }
 
-	public List<BooleanParameterConfig> getConfigs() {
-		return configs;
-	}
+    public List<BooleanParameterConfig> getConfigs() {
+        return configs;
+    }
 
-	@Extension
-	public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
-		@Override
-		public String getDisplayName() {
-			return "Boolean parameters";
-		}
-	
-	}
+    @Extension
+    public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
+        @Override
+        public String getDisplayName() {
+            return "Boolean parameters";
+        }
+    }
 }

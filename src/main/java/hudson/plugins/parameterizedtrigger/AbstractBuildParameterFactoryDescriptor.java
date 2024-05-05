@@ -15,6 +15,5 @@ public abstract class AbstractBuildParameterFactoryDescriptor extends Descriptor
         super(clazz);
     }
 
-    public AbstractBuildParameterFactoryDescriptor() {
-    }
+    public AbstractBuildParameterFactoryDescriptor() {}
 }

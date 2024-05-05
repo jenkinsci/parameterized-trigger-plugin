@@ -11,10 +11,6 @@ import hudson.Util;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.util.FormValidation;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -23,7 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 /**
  * For each matching property file, invoke a build.
@@ -38,23 +36,26 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
      *
      */
     public enum NoFilesFoundEnum {
-        SKIP("Don't trigger these projects"){ // previous behaviour (default)
+        SKIP("Don't trigger these projects") { // previous behaviour (default)
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
                 listener.getLogger().println(Messages.FileBuildParameterFactory_NoFilesFoundSkipping());
                 throw new AbstractBuildParameters.DontTriggerException();
-        }},
-        NOPARMS("Skip these parameters"){
+            }
+        },
+        NOPARMS("Skip these parameters") {
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
                 listener.getLogger().println(Messages.FileBuildParameterFactory_NoFilesFoundIgnore());
-        }},
-        FAIL("Fail the build step"){
+            }
+        },
+        FAIL("Fail the build step") {
             @Override
             public void failCheck(TaskListener listener) throws AbstractBuildParameters.DontTriggerException {
                 listener.getLogger().println(Messages.FileBuildParameterFactory_NoFilesFoundTerminate());
                 throw new RuntimeException();
-        }};
+            }
+        };
 
         private final String description;
 
@@ -101,7 +102,8 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
     }
 
     @Override
-    public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
+    public List<AbstractBuildParameters> getParameters(AbstractBuild<?, ?> build, TaskListener listener)
+            throws IOException, InterruptedException, AbstractBuildParameters.DontTriggerException {
 
         EnvVars env = build.getEnvironment(listener);
 
@@ -110,12 +112,13 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
         try {
             FilePath workspace = getWorkspace(build);
             FilePath[] files = workspace.list(env.expand(getFilePattern()));
-            if(files.length == 0) {
+            if (files.length == 0) {
                 noFilesFoundAction.failCheck(listener);
             } else {
-                for(FilePath f: files) {
+                for (FilePath f : files) {
                     String parametersStr = ParameterizedTriggerUtils.readFileToString(f, getEncoding());
-                    Logger.getLogger(FileBuildParameterFactory.class.getName()).log(Level.INFO, null, "Triggering build with " + f.getName());
+                    Logger.getLogger(FileBuildParameterFactory.class.getName())
+                            .log(Level.INFO, null, "Triggering build with " + f.getName());
                     result.add(new PredefinedBuildParameters(parametersStr));
                 }
             }
@@ -140,14 +143,14 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
         public String getDisplayName() {
             return Messages.FileBuildParameterFactory_FileBuildParameterFactory();
         }
-        
+
         public FormValidation doCheckEncoding(@QueryParameter String encoding) {
             if (!StringUtils.isBlank(encoding)) {
                 try {
                     Charset.forName(encoding.trim());
-                } catch(UnsupportedCharsetException e) {
+                } catch (UnsupportedCharsetException e) {
                     return FormValidation.error("Unsupported Encoding");
-                } catch(IllegalCharsetNameException e) {
+                } catch (IllegalCharsetNameException e) {
                     return FormValidation.error("Bad Encoding Name");
                 }
             }

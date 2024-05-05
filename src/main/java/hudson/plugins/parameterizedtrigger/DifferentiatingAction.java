@@ -3,7 +3,6 @@ package hudson.plugins.parameterizedtrigger;
 import hudson.model.Action;
 import hudson.model.InvisibleAction;
 import hudson.model.Queue;
-
 import java.util.List;
 
 /**

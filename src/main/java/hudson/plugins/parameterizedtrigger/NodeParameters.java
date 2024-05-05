@@ -19,34 +19,34 @@ import org.kohsuke.stapler.DataBoundConstructor;
  *
  * @author Chris johnson
  */
-public class NodeParameters extends AbstractBuildParameters{
+public class NodeParameters extends AbstractBuildParameters {
 
-	@DataBoundConstructor
-	public NodeParameters() {
-	}
+    @DataBoundConstructor
+    public NodeParameters() {}
 
-	@Override
-	public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws IOException, InterruptedException, DontTriggerException {
-		String nodeName = build.getBuiltOnStr();
-		Label nodeLabel;
-                String nodeDisplayName;
-		// Controller does not return a node name so add it explicitly.
-		if( StringUtils.isEmpty( nodeName ) ) {
-			nodeLabel = Jenkins.get().getSelfLabel();
-                        nodeDisplayName = nodeLabel.getDisplayName();
-		} else {
-			nodeLabel = Label.get(nodeName);
-                        nodeDisplayName = nodeLabel != null ? nodeLabel.getDisplayName() : "null label of " + nodeName;
-		}
-		listener.getLogger().println("Returning node parameter for " + nodeDisplayName);
-		return new NodeAction(nodeLabel);
-	}
+    @Override
+    public Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
+            throws IOException, InterruptedException, DontTriggerException {
+        String nodeName = build.getBuiltOnStr();
+        Label nodeLabel;
+        String nodeDisplayName;
+        // Controller does not return a node name so add it explicitly.
+        if (StringUtils.isEmpty(nodeName)) {
+            nodeLabel = Jenkins.get().getSelfLabel();
+            nodeDisplayName = nodeLabel.getDisplayName();
+        } else {
+            nodeLabel = Label.get(nodeName);
+            nodeDisplayName = nodeLabel != null ? nodeLabel.getDisplayName() : "null label of " + nodeName;
+        }
+        listener.getLogger().println("Returning node parameter for " + nodeDisplayName);
+        return new NodeAction(nodeLabel);
+    }
 
-	@Extension
-	public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
-		@Override
-		public String getDisplayName() {
-			return "Build on the same node";
-		}
-	}
+    @Extension
+    public static class DescriptorImpl extends Descriptor<AbstractBuildParameters> {
+        @Override
+        public String getDisplayName() {
+            return "Build on the same node";
+        }
+    }
 }

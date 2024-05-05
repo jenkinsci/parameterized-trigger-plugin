@@ -25,18 +25,17 @@
 
 package hudson.plugins.parameterizedtrigger;
 
-import hudson.model.AbstractDescribableImpl;
-import org.apache.commons.lang.StringUtils;
-import hudson.Extension;
-import hudson.model.Descriptor;
-import hudson.model.Result;
-import org.kohsuke.stapler.DataBoundConstructor;
+import static hudson.model.Result.*;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
+import hudson.Extension;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
+import hudson.model.Result;
 import java.util.Arrays;
 import java.util.List;
-
-import static hudson.model.Result.*;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * Determines how to handle the status of the triggered builds in {@link TriggerBuilder}.
@@ -56,7 +55,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
     }
 
     private Result parse(String t) {
-        if(StringUtils.isBlank(t) || "never".equals(t)) {
+        if (StringUtils.isBlank(t) || "never".equals(t)) {
             return null;
         }
         return Result.fromString(t);
@@ -67,10 +66,10 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
         this.unstableThreshold = unstableThreshold;
         this.failureThreshold = failureThreshold;
     }
-    
+
     /**
      * Maps the result of a triggered build to the result of the triggering build step.
-     * 
+     *
      * @param r the {@link Result} of the triggered build to map
      * @return {@code false} if the triggering build step has to fail, {@code true} otherwise
      */
@@ -80,14 +79,14 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
 
     /**
      * Maps the result of a triggered build to the result of the triggering build.
-     * 
+     *
      * @param r the {@link Result} of the triggered build to map
      * @return the result of the triggering build
      */
     @CheckForNull
     public Result mapBuildResult(Result r) {
-        if (failureThreshold!=null && r.isWorseOrEqualTo(failureThreshold))   return FAILURE;
-        if (unstableThreshold!=null && r.isWorseOrEqualTo(unstableThreshold))  return UNSTABLE;
+        if (failureThreshold != null && r.isWorseOrEqualTo(failureThreshold)) return FAILURE;
+        if (unstableThreshold != null && r.isWorseOrEqualTo(unstableThreshold)) return UNSTABLE;
         return null;
     }
 
@@ -99,7 +98,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
         }
 
         public List<Result> getAllResults() {
-            return Arrays.asList(SUCCESS,UNSTABLE,FAILURE);
+            return Arrays.asList(SUCCESS, UNSTABLE, FAILURE);
         }
     }
 }
