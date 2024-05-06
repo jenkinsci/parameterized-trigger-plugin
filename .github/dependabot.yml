@@ -4,6 +4,10 @@ version: 2
 updates:
   - package-ecosystem: "maven"
     directory: "/"
+    ignore:
+      # Fails plugin bill of materials tests
+      # https://github.com/jenkinsci/bom/issues/3171
+      - dependency-name: "org.jenkins-ci.plugins:promoted-builds"
     labels:
       - "dependencies"
     schedule:
