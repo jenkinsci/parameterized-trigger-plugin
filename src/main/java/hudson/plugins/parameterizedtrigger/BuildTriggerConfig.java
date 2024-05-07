@@ -848,8 +848,9 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
          *
          * Copied from hudson.tasks.BuildTrigger.doAutoCompleteChildProjects(String value)
          *
-         * @param value
-         * @return
+         * @param value String provided by the user for autocompletion
+         * @param context Context of the autocompletion request
+         * @return candidates for autocompletion
          */
         public AutoCompletionCandidates doAutoCompleteProjects(
                 @QueryParameter String value, @AncestorInPath ItemGroup context) {

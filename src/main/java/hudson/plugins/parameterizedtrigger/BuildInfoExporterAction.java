@@ -243,7 +243,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
      * Handle cases from older builds so that they still add old variables if
      * needed to. Should not show any UI as there will be no data added.
      *
-     * @return
+     * @return object extracted from old data
      */
     public Object readResolve() {
         if (this.lastReference == null) {
@@ -288,7 +288,7 @@ public class BuildInfoExporterAction implements EnvironmentContributingAction {
     /**
      * Get a list of projects as a string using the separator
      *
-     * @param separator
+     * @param separator string to separate the list of projects
      * @return list of projects separated by separator
      */
     protected String getProjectListString(String separator) {

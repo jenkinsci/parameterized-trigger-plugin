@@ -44,7 +44,7 @@ public class ParameterizedTriggerUtils {
     /**
      * Load properties from string.
      *
-     * @throws IOException
+     * @throws IOException on IO error
      */
     public static Properties loadProperties(String properties) throws IOException {
         Properties p = new Properties();
@@ -58,7 +58,7 @@ public class ParameterizedTriggerUtils {
      * @param f file to read
      * @param encoding null for platform default encoding.
      * @return read string
-     * @throws IOException
+     * @throws IOException on IO error
      */
     public static String readFileToString(FilePath f, String encoding) throws IOException, InterruptedException {
         try (InputStream in = f.read()) {
@@ -71,7 +71,7 @@ public class ParameterizedTriggerUtils {
      *
      * @param f file to read
      * @return read string
-     * @throws IOException
+     * @throws IOException on IO error
      */
     public static String readFileToString(VirtualFile f) throws IOException, InterruptedException {
         try (InputStream in = f.open()) {
