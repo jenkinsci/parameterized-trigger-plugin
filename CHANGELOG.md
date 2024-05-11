@@ -198,7 +198,7 @@ Fixed Issues
 
 -   Parameterized trigger from a multi-configuration project triggers
     downstream jobs twice (JENKINS-11669)
--   Allow speciying Git SHA1 commit id for next build(s) as Predefined
+-   Allow specifying Git SHA1 commit id for next build(s) as Predefined
     parameter (JENKINS-13852)
 -   Counter/File Parameter Factories now can prevent triggering, skip
     adding parameteers or fail the build if errors occur.
@@ -254,7 +254,7 @@ Release date: (Feb 9, 2012)
 -   When multiple builds are launched as blocking build steps, all
     should be listed as "waiting to complete", and should be listed in
     launched order. (JENKINS-11116, JENKINS-11117)
--   Fixed a compatibility with hierachical jobs (such as the CloudBees
+-   Fixed a compatibility with hierarchical jobs (such as the CloudBees
     folder plugin.)
 -   Added a mechanism to repeatedly invoke jobs for each file that
     matches GLOB ([pull
@@ -416,7 +416,7 @@ Release date: (Feb 28, 2009)
 
 Release date: (Feb 27, 2009)
 
--   Fixes incompatiblity with Jenkins 1.285. Jenkins 1.286 is a minimum
+-   Fixes incompatibility with Jenkins 1.285. Jenkins 1.286 is a minimum
     requirement for this version.
 
 #### 1.0, 1.1 
