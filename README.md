@@ -101,7 +101,7 @@ i.e. triggering a build on the same node with the same JDK.
 
 ### Workaround
 
-As backward compatibility, you can make it work without fix by setting Java system property `hudson.plugins.parameterizedtrigger.ProjectSpecificParametersActionFactory.compatibility_mode` to `true`.
+The Java system property `hudson.plugins.parameterizedtrigger.ProjectSpecificParametersActionFactory.compatibility_mode` can be set to `true` to restore the old behavior.
 Refer to the ["Jenkins features controlled by system properties"](https://www.jenkins.io/doc/book/managing/system-properties/) for detailed instructions to enable Java system properties.
 
 ## Report an issue
