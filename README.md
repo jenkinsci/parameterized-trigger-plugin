@@ -81,7 +81,7 @@ i.e. triggering a build on the same node with the same JDK.
 ## Backward compatibility with version 2.22
 
 -   Since Parameterized Trigger 2.23, there are cases that Parameterized Trigger fails to trigger downstream builds that can be successfully triggered with Parameterized Trigger \<= 2.22.
-    -   This is caused by the new behavir introduced in Parameterized Trigger 2.23.
+    -   This is caused by the new behavior introduced in Parameterized Trigger 2.23.
         It gets to pass parameter values not directly to the downstream build, but to parameter definitions of downstream projects.
         This enables parameter definitions to perform its specific process, for example, selecting nodes with NodeLabel Parameter Plugin.
 -   Example: There is a project with a choice parameter with choices A, B, C.
