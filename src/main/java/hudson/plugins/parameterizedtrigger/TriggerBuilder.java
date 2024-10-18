@@ -178,18 +178,19 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                                                 + " started.");
 
                                 Run completedRun = future.get();
+                                Result completedResult = completedRun.getResult();
                                 listener.getLogger()
                                         .println(HyperlinkNote.encodeTo(
                                                         '/' + completedRun.getUrl(), completedRun.getFullDisplayName())
-                                                + " completed. Result was " + completedRun.getResult());
+                                                + " completed. Result was " + completedResult);
                                 BuildInfoExporterAction.addBuildInfoExporterAction(
                                         build,
                                         completedRun.getParent().getFullName(),
                                         completedRun.getNumber(),
-                                        completedRun.getResult());
+                                        completedResult);
 
-                                if (buildStepResult && config.getBlock().mapBuildStepResult(completedRun.getResult())) {
-                                    Result r = config.getBlock().mapBuildResult(completedRun.getResult());
+                                if (buildStepResult && config.getBlock().mapBuildStepResult(completedResult)) {
+                                    Result r = config.getBlock().mapBuildResult(completedResult);
                                     if (r != null) { // The blocking job is not a success
                                         build.setResult(r);
                                     }
