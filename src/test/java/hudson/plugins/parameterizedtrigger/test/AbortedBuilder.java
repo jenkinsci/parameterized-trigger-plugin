@@ -9,7 +9,7 @@ import hudson.model.Result;
 import hudson.tasks.Builder;
 import java.io.IOException;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * A Builder which simulates an aborted build.
@@ -31,7 +31,7 @@ public class AbortedBuilder extends Builder {
             return "Make build aborted";
         }
 
-        public AbortedBuilder newInstance(StaplerRequest req, JSONObject data) {
+        public AbortedBuilder newInstance(StaplerRequest2 req, JSONObject data) {
             return new AbortedBuilder();
         }
     }

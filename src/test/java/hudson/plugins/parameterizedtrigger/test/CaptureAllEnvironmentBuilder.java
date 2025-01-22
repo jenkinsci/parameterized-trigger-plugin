@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 
 /**
  * @author wolfs
@@ -31,7 +31,7 @@ public class CaptureAllEnvironmentBuilder extends Builder {
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<Builder> {
-        public Builder newInstance(StaplerRequest req, JSONObject data) {
+        public Builder newInstance(StaplerRequest2 req, JSONObject data) {
             throw new UnsupportedOperationException();
         }
 

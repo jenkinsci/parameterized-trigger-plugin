@@ -251,7 +251,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
          * Check whether the configuring model is {@link MatrixProject}. Called from jelly.
          *
          * Note: Caller should pass it for the model is not bound to
-         * {@link org.kohsuke.stapler.StaplerRequest#findAncestorObject(Class)}
+         * {@link org.kohsuke.stapler.StaplerRequest2#findAncestorObject(Class)}
          * when called via hetero-list.
          *
          * @param it Object to check
