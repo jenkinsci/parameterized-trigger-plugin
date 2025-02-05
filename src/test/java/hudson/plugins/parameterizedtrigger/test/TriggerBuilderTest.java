@@ -254,6 +254,39 @@ public class TriggerBuilderTest {
     }
 
     @Test
+    public void testCancelledFromBuildQueue() throws Exception {
+        r.jenkins.setNumExecutors(1); // the downstream-project would be in the build queue
+
+        FreeStyleProject triggerProject = r.createFreeStyleProject("upstream-project");
+        FreeStyleProject downstreamProject = r.createFreeStyleProject("downstream-project");
+
+        TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("downstream-project"));
+
+        triggerProject.getBuildersList().add(triggerBuilder);
+        QueueTaskFuture<FreeStyleBuild> parentBuild = triggerProject.scheduleBuild2(0);
+
+        parentBuild.waitForStart();
+        Thread.sleep(500);
+
+        assertEquals(
+                "Downstream project is in build queue", 1, r.jenkins.getQueue().countBuildableItems());
+
+        // Cancel the queued build
+        r.jenkins.getQueue().clear();
+        parentBuild.get();
+
+        assertLines(
+                triggerProject.getLastBuild(),
+                "Waiting for the completion of downstream-project",
+                "Not built: downstream-project has been cancelled while waiting in the queue.",
+                // The test class configures the BlockingBehaviour to never
+                // fail and that includes cancelled job.
+                "Finished: SUCCESS");
+        assertNull("No downstream build has been run", downstreamProject.getLastBuild());
+        assertEquals("No build left in queue", 0, r.jenkins.getQueue().countBuildableItems());
+    }
+
+    @Test
     public void testConsoleOutputWithCounterParameters() throws Exception {
         r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
