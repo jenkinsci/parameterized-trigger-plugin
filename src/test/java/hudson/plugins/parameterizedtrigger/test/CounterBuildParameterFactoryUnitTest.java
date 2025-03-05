@@ -1,6 +1,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import hudson.EnvVars;
@@ -11,62 +12,64 @@ import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory.SteppingValidationEnum;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  *
  * @author Chris Johnson
  */
-public class CounterBuildParameterFactoryUnitTest {
+class CounterBuildParameterFactoryUnitTest {
 
     @Test
-    public void countingShouldWork() throws Exception {
+    void countingShouldWork() throws Exception {
         List<AbstractBuildParameters> parameters = getParameters(1, 2, 1);
         assertEquals(2, parameters.size());
     }
 
     @Test
-    public void countingWithNegativeIncrementShouldWork() throws Exception {
+    void countingWithNegativeIncrementShouldWork() throws Exception {
         List<AbstractBuildParameters> parameters = getParameters(2, 1, -1);
         assertEquals(2, parameters.size());
     }
 
     @Test
-    public void countingWithBigNegativeIncrementShouldWork() throws Exception {
+    void countingWithBigNegativeIncrementShouldWork() throws Exception {
         List<AbstractBuildParameters> parameters = getParameters(2, 1, -3);
         assertEquals(1, parameters.size());
     }
 
-    @Test(expected = RuntimeException.class)
-    public void countingWithNoIncrementShouldNotWork() throws Exception {
-        getParameters(1, 2, 0);
+    @Test
+    void countingWithNoIncrementShouldNotWork() {
+        assertThrows(RuntimeException.class, () -> getParameters(1, 2, 0));
     }
 
     @Test
-    public void countingWithNoIncrementOnlyOneElement() throws Exception {
+    void countingWithNoIncrementOnlyOneElement() throws Exception {
         // step is ignored if from and to are equal
         List<AbstractBuildParameters> parameters = getParameters(1, 1, 0);
         assertEquals(1, parameters.size());
     }
 
     @Test
-    public void countingWhenFromToIsSameShouldWork() throws Exception {
+    void countingWhenFromToIsSameShouldWork() throws Exception {
         List<AbstractBuildParameters> parameters = getParameters(1, 1, 1);
         assertEquals(1, parameters.size());
     }
 
-    @Test(expected = RuntimeException.class)
-    public void countingWithNoIncrementShouldNotWork1() throws Exception {
-        getParameters(1, 2, 0, SteppingValidationEnum.FAIL);
-    }
-
-    @Test(expected = AbstractBuildParameters.DontTriggerException.class)
-    public void countingWithNoIncrementShouldNotWork2() throws Exception {
-        getParameters(1, 2, 0, SteppingValidationEnum.SKIP);
+    @Test
+    void countingWithNoIncrementShouldNotWork1() {
+        assertThrows(RuntimeException.class, () -> getParameters(1, 2, 0, SteppingValidationEnum.FAIL));
     }
 
     @Test
-    public void countingWithNoIncrementShouldNotWork3() throws Exception {
+    void countingWithNoIncrementShouldNotWork2() {
+        assertThrows(
+                AbstractBuildParameters.DontTriggerException.class,
+                () -> getParameters(1, 2, 0, SteppingValidationEnum.SKIP));
+    }
+
+    @Test
+    void countingWithNoIncrementShouldNotWork3() throws Exception {
         List<AbstractBuildParameters> parameters = getParameters(1, 2, 0, SteppingValidationEnum.NOPARMS);
         assertEquals(0, parameters.size());
     }

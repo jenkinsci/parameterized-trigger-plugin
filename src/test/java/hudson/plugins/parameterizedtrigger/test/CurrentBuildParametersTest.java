@@ -23,10 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.model.Cause.UserIdCause;
 import hudson.model.ParameterDefinition;
@@ -44,21 +41,19 @@ import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.plugins.parameterizedtrigger.TriggerBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class CurrentBuildParametersTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class CurrentBuildParametersTest {
 
     @Test
-    public void test() throws Exception {
+    void test(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("KEY", "key"));
         projectA.addProperty(new ParametersDefinitionProperty(definition));
         projectA.getPublishersList()
@@ -76,25 +71,23 @@ public class CurrentBuildParametersTest {
                 .get();
         r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         assertEquals("value", builder.getEnvVars().get("KEY"));
 
         // Now rename projectB and confirm projectA's build trigger is updated automatically:
         projectB.renameTo("new-projectB");
         assertEquals(
-                "rename in trigger",
                 "new-projectB",
                 projectA.getPublishersList()
                         .get(BuildTrigger.class)
                         .getConfigs()
                         .get(0)
-                        .getProjects());
+                        .getProjects(),
+                "rename in trigger");
 
         // Now delete projectB and confirm projectA's build trigger is updated automatically:
         projectB.delete();
-        assertNull(
-                "now-empty trigger should be removed",
-                projectA.getPublishersList().get(BuildTrigger.class));
+        assertNull(projectA.getPublishersList().get(BuildTrigger.class), "now-empty trigger should be removed");
     }
 
     /**
@@ -107,8 +100,8 @@ public class CurrentBuildParametersTest {
      * @throws Exception
      */
     @Test
-    public void testPostBuildTriggerNoParametersWithoutParametersFalse() throws Exception {
-        testPostBuildTriggerNoParameters(false);
+    void testPostBuildTriggerNoParametersWithoutParametersFalse(JenkinsRule r) throws Exception {
+        testPostBuildTriggerNoParameters(r, false);
     }
 
     /**
@@ -121,13 +114,13 @@ public class CurrentBuildParametersTest {
      * @throws Exception
      */
     @Test
-    public void testPostBuildTriggerNoParametersWithoutParametersTrue() throws Exception {
-        testPostBuildTriggerNoParameters(true);
+    void testPostBuildTriggerNoParametersWithoutParametersTrue(JenkinsRule r) throws Exception {
+        testPostBuildTriggerNoParameters(r, true);
     }
 
-    public void testPostBuildTriggerNoParameters(boolean pWithoutParameters) throws Exception {
+    public void testPostBuildTriggerNoParameters(JenkinsRule r, boolean pWithoutParameters) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         projectA.getPublishersList()
                 .add(new BuildTrigger(new BuildTriggerConfig(
@@ -156,9 +149,9 @@ public class CurrentBuildParametersTest {
      * @throws Exception
      */
     @Test
-    public void testBuildStepTriggerBuildNoParameters() throws Exception {
+    void testBuildStepTriggerBuildNoParameters(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         projectA.getBuildersList()
                 .add(new TriggerBuilder(new BlockableBuildTriggerConfig("projectB", null, buildParameters)));

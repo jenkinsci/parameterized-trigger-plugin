@@ -1,14 +1,18 @@
 package hudson.plugins.parameterizedtrigger.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.ParameterizedTriggerUtils;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-public class ParameterizedTriggerUtilsTest extends TestCase {
+class ParameterizedTriggerUtilsTest {
 
-    public void testMergeParameters() {
+    @Test
+    void testMergeParameters() {
         ParametersAction base = new ParametersAction(
                 new StringParameterValue("key1", "value1"), new StringParameterValue("key2", "value2"));
 
@@ -23,10 +27,7 @@ public class ParameterizedTriggerUtilsTest extends TestCase {
     }
 
     private static void assertStringParameterValueEquals(String expected, ParameterValue actual) {
-        if (actual == null) {
-            fail("ParameterValue is Null");
-        } else {
-            assertEquals(expected, ((StringParameterValue) actual).value);
-        }
+        assertNotNull(actual, "ParameterValue is Null");
+        assertEquals(expected, ((StringParameterValue) actual).value);
     }
 }

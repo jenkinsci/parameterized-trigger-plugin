@@ -26,9 +26,7 @@ package hudson.plugins.parameterizedtrigger.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
@@ -52,23 +50,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.jvnet.hudson.test.recipes.LocalData;
 
-public class BuildInfoExporterTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-
-    @Rule
-    public BuildWatcher buildWatcher = new BuildWatcher();
+@WithJenkins
+class BuildInfoExporterTest {
 
     @Test
-    public void test() throws Exception {
+    void test(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
         List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
@@ -102,7 +94,7 @@ public class BuildInfoExporterTest {
         assertThat(
                 envVars,
                 hasEntry(
-                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber),
+                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + expectedBuildNumber,
                         buildB1.getResult().toString()));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
@@ -125,14 +117,14 @@ public class BuildInfoExporterTest {
         assertThat(
                 envVars,
                 hasEntry(
-                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + Integer.toString(expectedBuildNumber),
+                        "TRIGGERED_BUILD_RESULT_projectB_RUN_" + expectedBuildNumber,
                         buildA2.getResult().toString()));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_RUN_COUNT_projectB", "1"));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", "projectB"));
     }
 
     @Test
-    public void test_oddchars() throws Exception {
+    void test_oddchars(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
         List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
@@ -178,7 +170,7 @@ public class BuildInfoExporterTest {
     }
 
     @Test
-    public void test_multipletriggers() throws Exception {
+    void test_multipletriggers(JenkinsRule r) throws Exception {
         String testNameResult = "projectB";
         String testNameResult2 = "projectC";
         int buildsToTest = 5;
@@ -216,21 +208,21 @@ public class BuildInfoExporterTest {
         assertEquals(buildsToTest, projectB.getBuilds().size());
         assertEquals(buildsToTest, projectC.getBuilds().size());
 
-        String allBuildNumbersB = "";
+        StringBuilder allBuildNumbersB = new StringBuilder();
         for (int run = 1, buildNumber = firstExpectedBuildNumberB; run <= buildsToTest; run++, buildNumber++) {
-            if (allBuildNumbersB.length() > 0) {
-                allBuildNumbersB += ",";
+            if (!allBuildNumbersB.isEmpty()) {
+                allBuildNumbersB.append(",");
             }
-            allBuildNumbersB += buildNumber;
+            allBuildNumbersB.append(buildNumber);
             assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectB_RUN_" + buildNumber, "SUCCESS"));
         }
 
-        String allBuildNumbersC = "";
+        StringBuilder allBuildNumbersC = new StringBuilder();
         for (int run = 1, buildNumber = firstExpectedBuildNumberC; run <= buildsToTest; run++, buildNumber++) {
-            if (allBuildNumbersC.length() > 0) {
-                allBuildNumbersC += ",";
+            if (!allBuildNumbersC.isEmpty()) {
+                allBuildNumbersC.append(",");
             }
-            allBuildNumbersC += buildNumber;
+            allBuildNumbersC.append(buildNumber);
             assertThat(envVars, hasEntry("TRIGGERED_BUILD_RESULT_projectC_RUN_" + buildNumber, "SUCCESS"));
         }
 
@@ -242,12 +234,12 @@ public class BuildInfoExporterTest {
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult, Integer.toString(lastBuildNumberB)));
         assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBER_" + testNameResult2, Integer.toString(lastBuildNumberC)));
         assertThat(envVars, hasEntry("TRIGGERED_JOB_NAMES", testNameResult + "," + testNameResult2));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_" + testNameResult, allBuildNumbersB));
-        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_" + testNameResult2, allBuildNumbersC));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_" + testNameResult, allBuildNumbersB.toString()));
+        assertThat(envVars, hasEntry("TRIGGERED_BUILD_NUMBERS_" + testNameResult2, allBuildNumbersC.toString()));
     }
 
     @Test
-    public void testNonBlocking() throws Exception {
+    void testNonBlocking(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject("projectA");
         List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
@@ -304,7 +296,7 @@ public class BuildInfoExporterTest {
     }
 
     @Test
-    public void testProjectDeleted() throws Exception {
+    void testProjectDeleted(JenkinsRule r) throws Exception {
         FreeStyleProject p1 = r.createFreeStyleProject();
         FreeStyleProject p2 = r.createFreeStyleProject();
 
@@ -313,7 +305,7 @@ public class BuildInfoExporterTest {
                 .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
                         p2.getName(),
                         new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
-                        Arrays.asList(new PredefinedBuildParameters("test=test")))));
+                        List.of(new PredefinedBuildParameters("test=test")))));
 
         FreeStyleBuild blockedBuild = p1.scheduleBuild2(0).get();
         r.assertBuildStatusSuccess(blockedBuild);
@@ -322,9 +314,7 @@ public class BuildInfoExporterTest {
         p1.getBuildersList().clear();
         p1.getBuildersList()
                 .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
-                        p2.getName(),
-                        null,
-                        Arrays.<AbstractBuildParameters>asList(new PredefinedBuildParameters("test=test")))));
+                        p2.getName(), null, List.of(new PredefinedBuildParameters("test=test")))));
 
         FreeStyleBuild unblockedBuild = p1.scheduleBuild2(0).get();
         r.assertBuildStatusSuccess(unblockedBuild);
@@ -408,7 +398,7 @@ public class BuildInfoExporterTest {
 
     @LocalData
     @Test
-    public void testMigrateFrom221() throws Exception {
+    void testMigrateFrom221(JenkinsRule r) throws Exception {
         // lastReference should be preserved after migration.
         String lastReferenceValue = null;
 
@@ -425,8 +415,7 @@ public class BuildInfoExporterTest {
             //  downstream1#2
             //  downstream2#1
 
-            Set<Run<?, ?>> expected = new HashSet<>();
-            expected.addAll(Arrays.asList(
+            Set<Run<?, ?>> expected = new HashSet<>(Arrays.asList(
                     r.jenkins
                             .getItemByFullName("downstream1", FreeStyleProject.class)
                             .getBuildByNumber(1),
@@ -460,8 +449,7 @@ public class BuildInfoExporterTest {
             //  downstream1#2
             //  downstream2#1
 
-            Set<Run<?, ?>> expected = new HashSet<>();
-            expected.addAll(Arrays.asList(
+            Set<Run<?, ?>> expected = new HashSet<>(Arrays.asList(
                     r.jenkins
                             .getItemByFullName("downstream1", FreeStyleProject.class)
                             .getBuildByNumber(1),

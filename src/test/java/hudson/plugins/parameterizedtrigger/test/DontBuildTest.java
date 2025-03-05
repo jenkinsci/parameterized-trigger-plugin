@@ -23,8 +23,8 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import hudson.model.AbstractBuild;
 import hudson.model.Action;
@@ -34,29 +34,25 @@ import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
-import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class DontBuildTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class DontBuildTest {
 
     public static final class DontBuildTrigger extends AbstractBuildParameters {
         boolean called = false;
 
         @Override
-        public Action getAction(AbstractBuild<?, ?> build, TaskListener listener)
-                throws IOException, InterruptedException, DontTriggerException {
+        public Action getAction(AbstractBuild<?, ?> build, TaskListener listener) throws DontTriggerException {
             called = true;
             throw new DontTriggerException();
         }
     }
 
     @Test
-    public void test() throws Exception {
+    void test(JenkinsRule r) throws Exception {
 
         Project projectA = r.createFreeStyleProject("projectA");
         DontBuildTrigger dbt = new DontBuildTrigger();
@@ -71,6 +67,6 @@ public class DontBuildTest {
         Thread.sleep(1000);
 
         assertEquals(0, projectB.getBuilds().size());
-        assertTrue("trigger was not called", dbt.called);
+        assertTrue(dbt.called, "trigger was not called");
     }
 }

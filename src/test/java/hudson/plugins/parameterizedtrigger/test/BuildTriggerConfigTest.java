@@ -24,11 +24,7 @@
 
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.model.AbstractProject;
 import hudson.model.Cause.UserIdCause;
@@ -55,7 +51,6 @@ import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import hudson.util.FormValidation;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,31 +62,25 @@ import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.MockQueueItemAuthenticator;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class BuildTriggerConfigTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-
-    @Rule
-    public BuildWatcher buildWatcher = new BuildWatcher();
+@WithJenkins
+class BuildTriggerConfigTest {
 
     private BlockableBuildTriggerConfig createConfig(String projectToTrigger) {
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
         BlockingBehaviour neverFail = new BlockingBehaviour("never", "never", "never");
         return new BlockableBuildTriggerConfig(projectToTrigger, neverFail, buildParameters);
     }
 
-    private void addParameterizedTrigger(Project<?, ?> projectA, BlockableBuildTriggerConfig config) throws Exception {
+    private void addParameterizedTrigger(Project<?, ?> projectA, BlockableBuildTriggerConfig config) {
         projectA.getBuildersList().add(new TriggerBuilder(config));
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         projectA.getBuildersList().add(builder);
@@ -107,22 +96,17 @@ public class BuildTriggerConfigTest {
 
         SubProjectData subProjectData = config.getProjectInfo(project);
 
+        assertEquals(fixedExpected, subProjectData.getFixed().size(), "Not the expected number of fixed project(s)");
         assertEquals(
-                "Not the expected number of fixed project(s)",
-                fixedExpected,
-                subProjectData.getFixed().size());
+                dynamicExpected, subProjectData.getDynamic().size(), "Not the expected number of dynamic project(s)");
         assertEquals(
-                "Not the expected number of dynamic project(s)",
-                dynamicExpected,
-                subProjectData.getDynamic().size());
-        assertEquals(
-                "Not the expected number of triggered project(s)",
                 triggeredExpected,
-                subProjectData.getTriggered().size());
+                subProjectData.getTriggered().size(),
+                "Not the expected number of triggered project(s)");
         assertEquals(
-                "Not the expected number of unresolved project(s)",
                 unresolvedExpected,
-                subProjectData.getUnresolved().size());
+                subProjectData.getUnresolved().size(),
+                "Not the expected number of unresolved project(s)");
     }
 
     /**
@@ -131,7 +115,7 @@ public class BuildTriggerConfigTest {
      * @throws Exception
      */
     @Test
-    public void testGetProjectListDynamic() throws Exception {
+    void testGetProjectListDynamic(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         // trigger two dynamic project
@@ -155,7 +139,7 @@ public class BuildTriggerConfigTest {
      * @throws Exception
      */
     @Test
-    public void testGetProjectListStatic() throws Exception {
+    void testGetProjectListStatic(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         // trigger two fixed project
@@ -174,7 +158,7 @@ public class BuildTriggerConfigTest {
     }
 
     @Test
-    public void testGetProjectListWithWorkflow() throws Exception {
+    void testGetProjectListWithWorkflow(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
         WorkflowJob p = r.createProject(WorkflowJob.class, "workflowproject");
         p.setDefinition(new CpsFlowDefinition("println('hello')", false));
@@ -189,29 +173,29 @@ public class BuildTriggerConfigTest {
 
         List<Job> jobs = masterConfig.getJobs(masterProject.getParent(), null);
         assertEquals(2, jobs.size());
-        assertTrue("Job should include workflow job", jobs.contains(p));
-        assertTrue("Job should include non-workflow job", jobs.contains(subProject1));
+        assertTrue(jobs.contains(p), "Job should include workflow job");
+        assertTrue(jobs.contains(subProject1), "Job should include non-workflow job");
 
         List<AbstractProject> projects = masterConfig.getProjectList(masterProject.getParent(), null);
         assertEquals(1, projects.size());
-        assertFalse("Projects should NOT include workflow job", projects.contains(p));
-        assertTrue("Projects should include non-workflow job", projects.contains(subProject1));
+        assertFalse(projects.contains(p), "Projects should NOT include workflow job");
+        assertTrue(projects.contains(subProject1), "Projects should include non-workflow job");
         validateOutcome(masterProject, masterConfig, 2, 0, 0, 0);
     }
 
     @Test
-    public void testBuildWithWorkflowProjects() throws Exception {
+    void testBuildWithWorkflowProjects(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
         WorkflowJob workflowProject = r.createProject(WorkflowJob.class, "workflowproject");
         workflowProject.setDefinition(new CpsFlowDefinition("node { echo myParam; }", false));
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("myParam", "myParam"));
         workflowProject.addProperty(new ParametersDefinitionProperty(definition));
 
         // Trigger a normal and workflow project
         String projectToTrigger = "subproject1, workflowproject";
-        List<AbstractBuildParameters> buildParameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> buildParameters = new ArrayList<>();
         buildParameters.add(new CurrentBuildParameters());
 
         PredefinedBuildParameters customParams = new PredefinedBuildParameters("myParam=GOOBER");
@@ -241,7 +225,7 @@ public class BuildTriggerConfigTest {
 
     @Issue("JENKINS-31727")
     @Test
-    public void testShouldNotFailOnDiscoverWithoutReadPermission() throws Exception {
+    void testShouldNotFailOnDiscoverWithoutReadPermission(JenkinsRule r) throws Exception {
         // Setup global security
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
         User user = User.get("testUser");
@@ -257,33 +241,27 @@ public class BuildTriggerConfigTest {
         addParameterizedTrigger(upstreamProject, triggerConfig);
 
         // Setup upstream project security
-        Map<Permission, Set<String>> permissions = new HashMap<Permission, Set<String>>();
-        Set<String> userIds = new HashSet<String>(Arrays.asList("testUser"));
+        Map<Permission, Set<String>> permissions = new HashMap<>();
+        Set<String> userIds = new HashSet<>(List.of("testUser"));
         permissions.put(Item.READ, userIds);
         AuthorizationMatrixProperty projectPermissions = new AuthorizationMatrixProperty(permissions);
         upstreamProject.addProperty(projectPermissions);
 
         // Ensure that we can get the info about the downstream project, but it is unresolved
-        ACL.impersonate(user.impersonate(), new Runnable() {
-            @Override
-            public void run() {
-                SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
-                assertTrue(
-                        "Downstream project should be unresolved, because testUser has no READ permission",
-                        projectInfo.getUnresolved().contains(downstreamProject.getName()));
-            }
+        ACL.impersonate(user.impersonate(), () -> {
+            SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
+            assertTrue(
+                    projectInfo.getUnresolved().contains(downstreamProject.getName()),
+                    "Downstream project should be unresolved, because testUser has no READ permission");
         });
 
         // Now invoke the build and check again (other logic handlers)
         r.buildAndAssertSuccess(upstreamProject);
-        ACL.impersonate(user.impersonate(), new Runnable() {
-            @Override
-            public void run() {
-                SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
-                assertTrue(
-                        "Downstream project should be unresolved, because testUser has no READ permission",
-                        projectInfo.getUnresolved().contains(downstreamProject.getName()));
-            }
+        ACL.impersonate(user.impersonate(), () -> {
+            SubProjectData projectInfo = triggerConfig.getProjectInfo(upstreamProject);
+            assertTrue(
+                    projectInfo.getUnresolved().contains(downstreamProject.getName()),
+                    "Downstream project should be unresolved, because testUser has no READ permission");
         });
     }
 
@@ -293,7 +271,7 @@ public class BuildTriggerConfigTest {
      * @throws Exception
      */
     @Test
-    public void testGetProjectListMix() throws Exception {
+    void testGetProjectListMix(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         // trigger two fixed project
@@ -317,7 +295,7 @@ public class BuildTriggerConfigTest {
      * @throws Exception
      */
     @Test
-    public void testGetProjectListTriggered() throws Exception {
+    void testGetProjectListTriggered(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         // trigger two fixed project
@@ -343,7 +321,7 @@ public class BuildTriggerConfigTest {
     }
 
     @Test
-    public void testBlankConfig() throws Exception {
+    void testBlankConfig(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         FormValidation form = r.jenkins
@@ -354,7 +332,7 @@ public class BuildTriggerConfigTest {
     }
 
     @Test
-    public void testNonExistedProject() throws Exception {
+    void testNonExistedProject(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         FormValidation form = r.jenkins
@@ -365,7 +343,7 @@ public class BuildTriggerConfigTest {
     }
 
     @Test
-    public void testValidConfig() throws Exception {
+    void testValidConfig(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         FormValidation form = r.jenkins
@@ -376,7 +354,7 @@ public class BuildTriggerConfigTest {
     }
 
     @Test
-    public void testBlankProjectNameInConfig() throws Exception {
+    void testBlankProjectNameInConfig(JenkinsRule r) throws Exception {
         Project<?, ?> masterProject = r.createFreeStyleProject("project");
 
         FormValidation form = r.jenkins
@@ -388,7 +366,7 @@ public class BuildTriggerConfigTest {
 
     @Issue("JENKINS-32527")
     @Test
-    public void testFieldValidation() throws Exception {
+    void testFieldValidation(JenkinsRule r) throws Exception {
         FreeStyleProject p = r.createFreeStyleProject("project");
         BuildTriggerConfig.DescriptorImpl descriptor =
                 r.jenkins.getDescriptorByType(BuildTriggerConfig.DescriptorImpl.class);

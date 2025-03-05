@@ -23,10 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.EnvVars;
 import hudson.Launcher;
@@ -48,7 +45,6 @@ import hudson.model.Project;
 import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.model.labels.LabelExpression;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
 import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
@@ -61,26 +57,24 @@ import hudson.util.FormValidation;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.ExtractResourceSCM;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SingleFileSCM;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class FileBuildTriggerConfigTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class FileBuildTriggerConfigTest {
 
     @Test
-    public void test() throws Exception {
-
+    void test(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=value";
         projectA.setScm(new SingleFileSCM("properties.txt", properties));
@@ -93,7 +87,7 @@ public class FileBuildTriggerConfigTest {
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("KEY", "key"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
@@ -101,13 +95,12 @@ public class FileBuildTriggerConfigTest {
         projectA.scheduleBuild2(0).get();
         r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         assertEquals("value", builder.getEnvVars().get("KEY"));
     }
 
     @Test
-    public void test_multiplefiles() throws Exception {
-
+    void test_multiplefiles(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         projectA.setScm(new ExtractResourceSCM(getClass().getResource("multiple_property_files.zip")));
         projectA.getPublishersList()
@@ -122,7 +115,7 @@ public class FileBuildTriggerConfigTest {
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("A_TEST_01", "test1"));
         definition.add(new StringParameterDefinition("A_TEST_02", "test2"));
         definition.add(new StringParameterDefinition("A_TEST_03", "test3"));
@@ -134,7 +127,7 @@ public class FileBuildTriggerConfigTest {
         projectA.scheduleBuild2(0).get();
         r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         // test from first file
         assertEquals("These_three_values_should", builder.getEnvVars().get("A_TEST_01"));
         assertEquals("be_from_file_a_properties_txt", builder.getEnvVars().get("A_TEST_02"));
@@ -145,8 +138,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void test_failOnMissingFile() throws Exception {
-
+    void test_failOnMissingFile(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         projectA.setScm(new ExtractResourceSCM(getClass().getResource("multiple_property_files.zip")));
         projectA.getPublishersList()
@@ -169,12 +161,11 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testUtf8File() throws Exception {
-
+    void testUtf8File(JenkinsRule r) throws Exception {
         FreeStyleProject projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=こんにちは\n" // "hello" in Japanese.
                 + "ＫＥＹ=value"; // "KEY" in multibytes.
-        projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes("UTF-8")));
+        projectA.setScm(new SingleFileSCM("properties.txt", properties.getBytes(StandardCharsets.UTF_8)));
         projectA.getPublishersList()
                 .add(new BuildTrigger(new BuildTriggerConfig(
                         "projectB",
@@ -195,7 +186,7 @@ public class FileBuildTriggerConfigTest {
             projectA.scheduleBuild2(0).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertNotNull(builder.getEnvVars(), "builder should record environment");
             assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
             assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
         } finally {
@@ -205,7 +196,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testShiftJISFile() throws Exception {
+    void testShiftJISFile(JenkinsRule r) throws Exception {
         // ShiftJIS is an encoding of Japanese texts.
         // I test here that a non-UTF-8 encoding also works.
 
@@ -233,7 +224,7 @@ public class FileBuildTriggerConfigTest {
             projectA.scheduleBuild2(0).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertNotNull(builder.getEnvVars(), "builder should record environment");
             assertEquals("こんにちは", builder.getEnvVars().get("KEY"));
             assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
         } finally {
@@ -243,7 +234,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testPlatformDefaultEncodedFile() throws Exception {
+    void testPlatformDefaultEncodedFile(JenkinsRule r) throws Exception {
         // ShiftJIS is an encoding of Japanese texts.
         // I test here that a non-UTF-8 encoding also works.
 
@@ -269,7 +260,7 @@ public class FileBuildTriggerConfigTest {
             projectA.scheduleBuild2(0).get();
             r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertNotNull(builder.getEnvVars(), "builder should record environment");
 
             // This test explicitly uses the platform's default encoding, which e.g. on Windows is likely to be
             // windows-1250
@@ -288,7 +279,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testDoCheckEncoding() throws Exception {
+    void testDoCheckEncoding(JenkinsRule r) {
         FileBuildParameters.DescriptorImpl d =
                 (FileBuildParameters.DescriptorImpl) r.jenkins.getDescriptorOrDie(FileBuildParameters.class);
 
@@ -302,7 +293,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testNullifyEncoding() throws Exception {
+    void testNullifyEncoding(JenkinsRule r) {
         // to use default encoding, encoding must be null.
         {
             FileBuildParameters target = new FileBuildParameters("*.properties", null, false);
@@ -352,14 +343,14 @@ public class FileBuildTriggerConfigTest {
             return null;
         }
         ParameterValue v = action.getParameter(name);
-        if (v == null || !(v instanceof StringParameterValue)) {
+        if (!(v instanceof StringParameterValue)) {
             return null;
         }
         return ((StringParameterValue) v).value;
     }
 
     @Test
-    public void testMatrixBuildsOnSameNodes() throws Exception {
+    void testMatrixBuildsOnSameNodes(JenkinsRule r) throws Exception {
         // all builds runs on controller.
         // upstream matrix projects creates properties files in each builds.
         MatrixProject upstream = r.createProject(MatrixProject.class);
@@ -380,8 +371,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, false, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, false, null, false)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -409,8 +399,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, false)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -436,8 +425,7 @@ public class FileBuildTriggerConfigTest {
                     .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
                             downstream.getFullName(),
                             null,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, false, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, false, null, false)))));
 
             upstream.getPublishersList().clear();
 
@@ -481,8 +469,7 @@ public class FileBuildTriggerConfigTest {
                     .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
                             downstream.getFullName(),
                             null,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, false)))));
 
             upstream.getPublishersList().clear();
 
@@ -518,7 +505,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testMatrixBuildsOnOtherNodes() throws Exception {
+    void testMatrixBuildsOnOtherNodes(JenkinsRule r) throws Exception {
         // each builds run on other nodes.
         // upstream matrix projects creates properties files in each builds.
         r.createOnlineSlave(LabelExpression.parseExpression("child1"));
@@ -542,8 +529,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, false, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, false, null, false)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -571,8 +557,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, false)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -597,8 +582,7 @@ public class FileBuildTriggerConfigTest {
                     .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
                             downstream.getFullName(),
                             null,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, false, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, false, null, false)))));
 
             upstream.getPublishersList().clear();
 
@@ -641,8 +625,7 @@ public class FileBuildTriggerConfigTest {
                     .add(new TriggerBuilder(new BlockableBuildTriggerConfig(
                             downstream.getFullName(),
                             null,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, false)))));
 
             upstream.getPublishersList().clear();
 
@@ -677,7 +660,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testMatrixBuildsCombinationFilter() throws Exception {
+    void testMatrixBuildsCombinationFilter(JenkinsRule r) throws Exception {
         MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("childname", "child1", "child2", "child3")));
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "triggered_${childname}=true"));
@@ -692,8 +675,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, false)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -718,7 +700,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(new FileBuildParameters(
+                            List.of(new FileBuildParameters(
                                     "properties.txt", null, false, true, "childname!='child2'", false)))));
 
             r.jenkins.rebuildDependencyGraph();
@@ -738,7 +720,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testMatrixBuildsOnlyExactRuns() throws Exception {
+    void testMatrixBuildsOnlyExactRuns(JenkinsRule r) throws Exception {
         MatrixProject upstream = r.createProject(MatrixProject.class);
         upstream.setAxes(new AxisList(new TextAxis("childname", "child1", "child2", "child3")));
         upstream.getBuildersList().add(new WriteFileBuilder("properties.txt", "triggered_${childname}=true"));
@@ -760,8 +742,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, false)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, false)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -787,8 +768,7 @@ public class FileBuildTriggerConfigTest {
                             downstream.getFullName(),
                             ResultCondition.SUCCESS,
                             true,
-                            Arrays.<AbstractBuildParameters>asList(
-                                    new FileBuildParameters("properties.txt", null, false, true, null, true)))));
+                            List.of(new FileBuildParameters("properties.txt", null, false, true, null, true)))));
 
             r.jenkins.rebuildDependencyGraph();
 
@@ -808,7 +788,7 @@ public class FileBuildTriggerConfigTest {
 
     @Issue("JENKINS-22705")
     @Test
-    public void testMatrixBuildsConfiguration() throws Exception {
+    void testMatrixBuildsConfiguration(JenkinsRule r) throws Exception {
         FreeStyleProject downstream = r.createFreeStyleProject();
 
         MatrixProject upstream = r.createProject(MatrixProject.class);
@@ -818,7 +798,7 @@ public class FileBuildTriggerConfigTest {
                         downstream.getFullName(),
                         ResultCondition.SUCCESS,
                         true,
-                        Arrays.<AbstractBuildParameters>asList(new FileBuildParameters(
+                        List.of(new FileBuildParameters(
                                 "properties.txt", "UTF-8", true, true, "axis1=value1", true)))));
         upstream.save();
 
@@ -845,7 +825,7 @@ public class FileBuildTriggerConfigTest {
     }
 
     @Test
-    public void testAbsolutePath() throws Exception {
+    void testAbsolutePath(JenkinsRule r) throws Exception {
         FreeStyleProject downstream = r.createFreeStyleProject();
 
         FreeStyleProject upstream = r.createFreeStyleProject();
@@ -871,7 +851,7 @@ public class FileBuildTriggerConfigTest {
                         downstream.getFullName(),
                         ResultCondition.SUCCESS,
                         true,
-                        Arrays.<AbstractBuildParameters>asList(new FileBuildParameters(String.format(
+                        List.of(new FileBuildParameters(String.format(
                                 "%s,../properties.txt,properties.txt", absoluteFile.getAbsolutePath()))))));
 
         r.jenkins.rebuildDependencyGraph();
@@ -900,7 +880,7 @@ public class FileBuildTriggerConfigTest {
 
     @Issue("JENKINS-22229")
     @Test
-    public void testAbsolutePathWithoutWorkspace() throws Exception {
+    void testAbsolutePathWithoutWorkspace(JenkinsRule r) throws Exception {
         // Though it is rather a problem with ws-cleanup-plugin,
         // there's a case a workspace is removed.
         FreeStyleProject downstream = r.createFreeStyleProject();
@@ -919,8 +899,7 @@ public class FileBuildTriggerConfigTest {
                         downstream.getFullName(),
                         ResultCondition.SUCCESS,
                         true,
-                        Arrays.<AbstractBuildParameters>asList(
-                                new FileBuildParameters(absoluteFile.getAbsolutePath())))));
+                        List.of(new FileBuildParameters(absoluteFile.getAbsolutePath())))));
 
         r.jenkins.rebuildDependencyGraph();
 

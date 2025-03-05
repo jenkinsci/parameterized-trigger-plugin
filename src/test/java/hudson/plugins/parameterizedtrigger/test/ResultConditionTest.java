@@ -23,10 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.model.Build;
 import hudson.model.FreeStyleProject;
@@ -39,70 +36,68 @@ import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.FailureBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SleepBuilder;
 import org.jvnet.hudson.test.UnstableBuilder;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class ResultConditionTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class ResultConditionTest {
 
     @Test
-    public void testTriggerByStableBuild() throws Exception {
+    void testTriggerByStableBuild(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         Project projectB = r.createFreeStyleProject("projectB");
         projectB.setQuietPeriod(1);
 
-        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        schedule(r, projectA, projectB, ResultCondition.SUCCESS);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.FAILED);
+        schedule(r, projectA, projectB, ResultCondition.FAILED);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
         assertEquals(2, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE);
         assertEquals(2, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(2, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.FAILED_OR_BETTER);
         assertEquals(3, projectB.getLastBuild().getNumber());
     }
 
     @Test
-    public void testTriggerByUnstableBuild() throws Exception {
+    void testTriggerByUnstableBuild(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new UnstableBuilder());
         Project projectB = r.createFreeStyleProject("projectB");
         projectB.setQuietPeriod(1);
 
-        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        schedule(r, projectA, projectB, ResultCondition.SUCCESS);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.FAILED);
+        schedule(r, projectA, projectB, ResultCondition.FAILED);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE);
         assertEquals(2, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(3, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.FAILED_OR_BETTER);
         assertEquals(4, projectB.getLastBuild().getNumber());
     }
 
-    private void schedule(Project projectA, Project projectB, ResultCondition condition)
+    private static void schedule(JenkinsRule r, Project projectA, Project projectB, ResultCondition condition)
             throws IOException, InterruptedException, ExecutionException {
         projectA.getPublishersList()
                 .replace(new BuildTrigger(
@@ -113,7 +108,7 @@ public class ResultConditionTest {
         if (q != null) q.getFuture().get();
     }
 
-    private Build<?, ?> waitForBuildStarts(Project<?, ?> project, long timeoutMillis) throws Exception {
+    private static Build<?, ?> waitForBuildStarts(Project<?, ?> project, long timeoutMillis) throws Exception {
         long current = System.currentTimeMillis();
         while (project.getLastBuild() == null || !project.getLastBuild().isBuilding()) {
             assertTrue(System.currentTimeMillis() - current < timeoutMillis);
@@ -126,8 +121,8 @@ public class ResultConditionTest {
         return build;
     }
 
-    private void scheduleAndAbort(Project<?, ?> projectA, Project<?, ?> projectB, ResultCondition condition)
-            throws Exception {
+    private static void scheduleAndAbort(
+            JenkinsRule r, Project<?, ?> projectA, Project<?, ?> projectB, ResultCondition condition) throws Exception {
         projectA.getPublishersList()
                 .replace(new BuildTrigger(
                         new BuildTriggerConfig(projectB.getFullName(), condition, new PredefinedBuildParameters(""))));
@@ -140,86 +135,86 @@ public class ResultConditionTest {
     }
 
     @Test
-    public void testTriggerByFailedBuild() throws Exception {
+    void testTriggerByFailedBuild(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new FailureBuilder());
         Project projectB = r.createFreeStyleProject("projectB");
         projectB.setQuietPeriod(1);
 
-        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        schedule(r, projectA, projectB, ResultCondition.SUCCESS);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.FAILED);
+        schedule(r, projectA, projectB, ResultCondition.FAILED);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(2, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.FAILED_OR_BETTER);
         assertEquals(3, projectB.getLastBuild().getNumber());
     }
 
     @Test
-    public void testTriggerByAbortedBuild() throws Exception {
+    void testTriggerByAbortedBuild(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new AbortedBuilder());
         Project projectB = r.createFreeStyleProject("projectB");
         projectB.setQuietPeriod(1);
 
-        schedule(projectA, projectB, ResultCondition.SUCCESS);
+        schedule(r, projectA, projectB, ResultCondition.SUCCESS);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.FAILED);
+        schedule(r, projectA, projectB, ResultCondition.FAILED);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE);
         assertNull(projectB.getLastBuild());
 
-        schedule(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        schedule(r, projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        schedule(r, projectA, projectB, ResultCondition.FAILED_OR_BETTER);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        schedule(projectA, projectB, ResultCondition.ALWAYS);
+        schedule(r, projectA, projectB, ResultCondition.ALWAYS);
         assertEquals(2, projectB.getLastBuild().getNumber());
     }
 
     @Test
-    public void testTriggerByAbortedByInterrupted() throws Exception {
+    void testTriggerByAbortedByInterrupted(JenkinsRule r) throws Exception {
         FreeStyleProject projectA = r.createFreeStyleProject("projectA");
         projectA.getBuildersList().add(new SleepBuilder(10000));
         FreeStyleProject projectB = r.createFreeStyleProject("projectB");
         projectB.setQuietPeriod(1);
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.SUCCESS);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.SUCCESS);
         assertNull(projectB.getLastBuild());
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.FAILED);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.FAILED);
         assertNull(projectB.getLastBuild());
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.UNSTABLE_OR_BETTER);
         assertNull(projectB.getLastBuild());
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.UNSTABLE);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.UNSTABLE);
         assertNull(projectB.getLastBuild());
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.UNSTABLE_OR_WORSE);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.FAILED_OR_BETTER);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.FAILED_OR_BETTER);
         assertEquals(1, projectB.getLastBuild().getNumber());
 
-        scheduleAndAbort(projectA, projectB, ResultCondition.ALWAYS);
+        scheduleAndAbort(r, projectA, projectB, ResultCondition.ALWAYS);
         assertEquals(2, projectB.getLastBuild().getNumber());
     }
 }

@@ -23,11 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -61,25 +57,23 @@ import java.util.regex.Pattern;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.SleepBuilder;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mockito;
 
-public class TriggerBuilderTest {
+@WithJenkins
+class TriggerBuilderTest {
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-
-    private BlockableBuildTriggerConfig createTriggerConfig(String projects) {
+    private static BlockableBuildTriggerConfig createTriggerConfig(String projects) {
         return new BlockableBuildTriggerConfig(projects, new BlockingBehaviour("never", "never", "never"), null);
     }
 
     @Test
-    public void testProjectWasEnabledDuringTheBuild() throws Exception {
+    void testProjectWasEnabledDuringTheBuild(JenkinsRule r) throws Exception {
         final Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         final Project<?, ?> disabledJob = r.createFreeStyleProject("projectC");
         final BlockableBuildTriggerConfig config = Mockito.mock(BlockableBuildTriggerConfig.class);
@@ -92,7 +86,7 @@ public class TriggerBuilderTest {
         // Then project is disabled scheduler returns null instead of QueueTaskFuture<Run> object
         futures.put(disabledJob, null);
 
-        final List<Job> jobs = new ArrayList<Job>();
+        final List<Job> jobs = new ArrayList<>();
         jobs.add(disabledJob);
 
         when(config.getJobs(any(ItemGroup.class), any(EnvVars.class))).thenReturn(jobs);
@@ -106,7 +100,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testOrderOfLogEntries() throws Exception {
+    void testOrderOfLogEntries(JenkinsRule r) throws Exception {
         r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
         r.createFreeStyleProject("project3");
@@ -144,7 +138,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testSubParameterBuilds() throws Exception {
+    void testSubParameterBuilds(JenkinsRule r) throws Exception {
         r.jenkins.setNumExecutors(10); // makes sure there are enough executors so that there are no deadlocks
         r.jenkins.setNodes(
                 r.jenkins
@@ -186,7 +180,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testWaitingForCompletion() throws Exception {
+    void testWaitingForCompletion(JenkinsRule r) throws Exception {
         r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
         r.createFreeStyleProject("project3");
@@ -207,7 +201,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testNonBlockingTrigger() throws Exception {
+    void testNonBlockingTrigger(JenkinsRule r) throws Exception {
         r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
         r.createFreeStyleProject("project3");
@@ -226,7 +220,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testCancelsDownstreamBuildWhenInterrupted() throws Exception {
+    void testCancelsDownstreamBuildWhenInterrupted(JenkinsRule r) throws Exception {
         r.jenkins.setNumExecutors(1); // the downstream-project would be in the build queue
 
         FreeStyleProject triggerProject = r.createFreeStyleProject("upstream-project");
@@ -249,12 +243,12 @@ public class TriggerBuilderTest {
                 "Build aborting: cancelling queued project downstream-project",
                 "Build was aborted",
                 "Finished: ABORTED");
-        assertNull("No downstream build has been run", downstreamProject.getLastBuild());
-        assertEquals("No build left in queue", 0, r.jenkins.getQueue().countBuildableItems());
+        assertNull(downstreamProject.getLastBuild(), "No downstream build has been run");
+        assertEquals(0, r.jenkins.getQueue().countBuildableItems(), "No build left in queue");
     }
 
     @Test
-    public void testConsoleOutputWithCounterParameters() throws Exception {
+    void testConsoleOutputWithCounterParameters(JenkinsRule r) throws Exception {
         r.createFreeStyleProject("project1");
         r.createFreeStyleProject("project2");
         r.createFreeStyleProject("project3");
@@ -296,7 +290,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testBlockingTriggerWithDisabledProjects() throws Exception {
+    void testBlockingTriggerWithDisabledProjects(JenkinsRule r) throws Exception {
         r.createFreeStyleProject("project1");
         Project<?, ?> p2 = r.createFreeStyleProject("project2");
         p2.disable();
@@ -320,7 +314,7 @@ public class TriggerBuilderTest {
 
     /** Verify that workflow build can be triggered */
     @Test
-    public void testTriggerWithWorkflow() throws Exception {
+    void testTriggerWithWorkflow(JenkinsRule r) throws Exception {
         WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
         p.setDefinition(new CpsFlowDefinition("println('hello')", false));
 
@@ -337,7 +331,7 @@ public class TriggerBuilderTest {
     /** Verify that getProjectsList works with workflow and normal projects */
     @Issue("JENKINS-30040")
     @Test
-    public void testGetProjectsList() throws Exception {
+    void testGetProjectsList(JenkinsRule r) throws Exception {
         WorkflowJob p = r.createProject(WorkflowJob.class, "project1");
         p.setDefinition(new CpsFlowDefinition("println('hello')", false));
         Project<?, ?> p2 = r.createFreeStyleProject("project2");
@@ -346,7 +340,7 @@ public class TriggerBuilderTest {
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
         triggerProject.getBuildersList().add(triggerBuilder);
 
-        List<Job> jobs = new ArrayList<Job>();
+        List<Job> jobs = new ArrayList<>();
         jobs.add(p);
         jobs.add(p2);
         String projectListAsString = triggerBuilder.getProjectListAsString(jobs);
@@ -356,7 +350,7 @@ public class TriggerBuilderTest {
 
     /** Verify that workflow build can be triggered with normal project too */
     @Test
-    public void testTriggerWithWorkflowMixedTypes() throws Exception {
+    void testTriggerWithWorkflowMixedTypes(JenkinsRule r) throws Exception {
         r.createFreeStyleProject("project1");
         WorkflowJob p = r.createProject(WorkflowJob.class, "project2");
         p.setDefinition(new CpsFlowDefinition("println('hello')", false));
@@ -373,7 +367,7 @@ public class TriggerBuilderTest {
 
     @Issue("JENKINS-14278")
     @Test
-    public void testBlockingTriggerWithMatrixProject() throws Exception {
+    void testBlockingTriggerWithMatrixProject(JenkinsRule r) throws Exception {
 
         /* This test case will start a matrix project that is configured with 2 Axis
          * each with two possible values giving 4 combinations.
@@ -399,7 +393,7 @@ public class TriggerBuilderTest {
         r.createFreeStyleProject("project5");
         r.createFreeStyleProject("project6");
 
-        MatrixProject matrixProject = createMatrixProject("matrixProject");
+        MatrixProject matrixProject = createMatrixProject(r, "matrixProject");
 
         TriggerBuilder triggerBuilder = new TriggerBuilder(createTriggerConfig("project1"));
         triggerBuilder.getConfigs().add(createTriggerConfig("project2"));
@@ -433,9 +427,9 @@ public class TriggerBuilderTest {
 
     @Issue("JENKINS-17751")
     @Test
-    public void testTriggerFromPromotion() throws Exception {
+    void testTriggerFromPromotion(JenkinsRule r) throws Exception {
         Plugin plugin = Jenkins.get().getPlugin("promoted-builds");
-        Assume.assumeTrue(plugin != null);
+        Assumptions.assumeTrue(plugin != null);
         // Test combination with PromotedBuilds.
         // Assert that the original build can be tracked from triggered build.
         // The configuration is as following:
@@ -494,18 +488,18 @@ public class TriggerBuilderTest {
 
             if (System.currentTimeMillis() > till) {
                 // something not completed.
-                assertNotNull(String.format("Failed to trigger project1(%s)", project1.getName()), project1_build);
+                assertNotNull(project1_build, String.format("Failed to trigger project1(%s)", project1.getName()));
                 assertFalse(
-                        String.format("project1(%s) does not finish.", project1.getName()),
-                        project1_build.isBuilding());
-                assertNotNull(String.format("Failed to trigger project2(%s)", project2.getName()), project2_build);
+                        project1_build.isBuilding(),
+                        String.format("project1(%s) does not finish.", project1.getName()));
+                assertNotNull(project2_build, String.format("Failed to trigger project2(%s)", project2.getName()));
                 assertFalse(
-                        String.format("project2(%s) does not finish.", project2.getName()),
-                        project2_build.isBuilding());
-                assertNotNull(String.format("Failed to trigger project3(%s)", project3.getName()), project3_build);
+                        project2_build.isBuilding(),
+                        String.format("project2(%s) does not finish.", project2.getName()));
+                assertNotNull(project3_build, String.format("Failed to trigger project3(%s)", project3.getName()));
                 assertFalse(
-                        String.format("project3(%s) does not finish.", project3.getName()),
-                        project3_build.isBuilding());
+                        project3_build.isBuilding(),
+                        String.format("project3(%s) does not finish.", project3.getName()));
                 break;
             }
         }
@@ -515,11 +509,11 @@ public class TriggerBuilderTest {
         r.assertBuildStatusSuccess(project3_build);
 
         UpstreamCause c = project3_build.getCause(UpstreamCause.class);
-        assertNotNull(String.format("Failed to get UpstreamCause from project3(%s)", project3.getName()), c);
-        assertEquals("UpstreamCause is not properly set.", project1.getName(), c.getUpstreamProject());
+        assertNotNull(c, String.format("Failed to get UpstreamCause from project3(%s)", project3.getName()));
+        assertEquals(project1.getName(), c.getUpstreamProject(), "UpstreamCause is not properly set.");
     }
 
-    protected MatrixProject createMatrixProject(String name) throws IOException {
+    private static MatrixProject createMatrixProject(JenkinsRule r, String name) throws IOException {
         MatrixProject p = r.createProject(MatrixProject.class, name);
         // set up 2x2 matrix
         AxisList axes = new AxisList();
@@ -531,7 +525,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testExpansionOfMultipleProjectsInEnvVariable() throws Exception {
+    void testExpansionOfMultipleProjectsInEnvVariable(JenkinsRule r) throws Exception {
         FreeStyleProject upstream = r.createFreeStyleProject();
         upstream.addProperty(
                 new ParametersDefinitionProperty(new StringParameterDefinition("PARAM", "downstream1,downstream2")));
@@ -557,7 +551,7 @@ public class TriggerBuilderTest {
     }
 
     @Test
-    public void testProjectTriggeredOnce() throws Exception {
+    void testProjectTriggeredOnce(JenkinsRule r) throws Exception {
         r.jenkins.setQuietPeriod(0);
         Project<?, ?> triggerProject = r.createFreeStyleProject("projectA");
         Project<?, ?> triggeredProject = r.createFreeStyleProject("project1");
@@ -570,20 +564,20 @@ public class TriggerBuilderTest {
 
         triggerProject.scheduleBuild2(0).get();
         Thread.sleep(500);
-        assertEquals(triggeredProject.getBuilds().toArray().length, 1);
+        assertEquals(1, triggeredProject.getBuilds().toArray().length);
     }
 
-    private void assertLines(Run<?, ?> build, String... lines) throws IOException {
+    private static void assertLines(Run<?, ?> build, String... lines) throws IOException {
         List<String> log = build.getLog(Integer.MAX_VALUE);
         List<String> rest = log;
         for (String line : lines) {
             int where = rest.indexOf(line);
-            assertFalse("Could not find line '" + line + "' among remaining log lines " + rest, where == -1);
+            assertNotEquals(-1, where, "Could not find line '" + line + "' among remaining log lines " + rest);
             rest = rest.subList(where + 1, rest.size());
         }
     }
 
-    private void assertLinesRegex(Run<?, ?> build, String... regexs) throws IOException {
+    private static void assertLinesRegex(Run<?, ?> build, String... regexs) throws IOException {
         // Same function as above but allows regex instead of just strings
         List<String> log = build.getLog(Integer.MAX_VALUE);
         List<String> rest = log;
@@ -604,7 +598,7 @@ public class TriggerBuilderTest {
             }
             // set up rest to contain the part of the log that has not been successfully checked
             rest = log.subList(lastmatched + 1, log.size());
-            assertTrue("Could not find regex '" + regex + "' among remaining log lines " + rest, li.hasNext());
+            assertTrue(li.hasNext(), "Could not find regex '" + regex + "' among remaining log lines " + rest);
         }
     }
 }

@@ -23,9 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.EnvVars;
 import hudson.Launcher;
@@ -39,7 +37,6 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
 import hudson.model.Result;
 import hudson.model.StringParameterDefinition;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.FileBuildParameterFactory;
@@ -54,15 +51,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestBuilder;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class FileBuildParameterFactoryTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class FileBuildParameterFactoryTest {
 
     private TriggerBuilder createTriggerBuilder(AbstractProject project, NoFilesFoundEnum action) {
         return createTriggerBuilder(project, action, null);
@@ -74,19 +69,18 @@ public class FileBuildParameterFactoryTest {
                 project.getName(),
                 new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
                 Collections.singletonList(new FileBuildParameterFactory("*.txt", encoding, action)),
-                Collections.<AbstractBuildParameters>emptyList()));
+                Collections.emptyList()));
         return tBuilder;
     }
 
     @Test
-    public void testSingleFile() throws Exception {
-
+    void testSingleFile(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("TEST", "test"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
 
@@ -120,14 +114,13 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testMultipleFiles() throws Exception {
-
+    void testMultipleFiles(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("TEST", "test"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
 
@@ -162,8 +155,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testNoFilesSkip() throws Exception {
-
+    void testNoFilesSkip(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -184,8 +176,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testNoFilesNoParams() throws Exception {
-
+    void testNoFilesNoParams(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -206,8 +197,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testNoFilesFail() throws Exception {
-
+    void testNoFilesFail(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -228,8 +218,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testUtf8File() throws Exception {
-
+    void testUtf8File(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -267,8 +256,8 @@ public class FileBuildParameterFactoryTest {
 
             for (FreeStyleBuild build : builds) {
                 EnvVars buildEnvVar = builder.getEnvVars().get(build.getId());
-                System.out.println(String.format("'%s'", "こんにちは"));
-                System.out.println(String.format("'%s'", buildEnvVar.get("TEST")));
+                System.out.printf("'%s'%n", "こんにちは");
+                System.out.printf("'%s'%n", buildEnvVar.get("TEST"));
                 assertEquals("こんにちは", buildEnvVar.get("TEST"));
                 assertEquals("hello_abc", buildEnvVar.get("ＴＥＳＴ"));
             }
@@ -279,7 +268,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testShiftJISFile() throws Exception {
+    void testShiftJISFile(JenkinsRule r) throws Exception {
         // ShiftJIS is an encoding of Japanese texts.
         // I test here that a non-UTF-8 encoding also works.
 
@@ -330,8 +319,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testPlatformDefaultEncodedFile() throws Exception {
-
+    void testPlatformDefaultEncodedFile(JenkinsRule r) throws Exception {
         // create triggered build, with capture env builder
         Project projectB = r.createFreeStyleProject();
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
@@ -385,7 +373,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testDoCheckEncoding() throws Exception {
+    void testDoCheckEncoding(JenkinsRule r) {
         FileBuildParameterFactory.DescriptorImpl d = (FileBuildParameterFactory.DescriptorImpl)
                 r.jenkins.getDescriptorOrDie(FileBuildParameterFactory.class);
 
@@ -399,7 +387,7 @@ public class FileBuildParameterFactoryTest {
     }
 
     @Test
-    public void testNullifyEncoding() throws Exception {
+    void testNullifyEncoding(JenkinsRule r) {
         // to use default encoding, encoding must be null.
         {
             FileBuildParameterFactory target =

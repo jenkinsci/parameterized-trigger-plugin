@@ -23,9 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.model.FreeStyleBuild;
 import hudson.model.ParameterDefinition;
@@ -42,20 +40,17 @@ import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class PredefinedPropertiesBuildTriggerConfigTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class PredefinedPropertiesBuildTriggerConfigTest {
 
     @Test
-    public void test() throws Exception {
-
+    void test(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=value";
         projectA.getPublishersList()
@@ -67,7 +62,7 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("KEY", "key"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
@@ -75,13 +70,12 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
         projectA.scheduleBuild2(0).get();
         r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         assertEquals("value", builder.getEnvVars().get("KEY"));
     }
 
     @Test
-    public void testNonAscii() throws Exception {
-
+    void testNonAscii(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         String properties = "KEY=１２３\n" // 123 in multibytes
                 + "ＫＥＹ=value\n"; // "KEY" in multibytes
@@ -94,7 +88,7 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(1);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("KEY", "key"));
         definition.add(new StringParameterDefinition("ＫＥＹ", "otherkey"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
@@ -103,20 +97,23 @@ public class PredefinedPropertiesBuildTriggerConfigTest {
         projectA.scheduleBuild2(0).get();
         r.jenkins.getQueue().getItem(projectB).getFuture().get();
 
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         assertEquals("１２３", builder.getEnvVars().get("KEY"));
         assertEquals("value", builder.getEnvVars().get("ＫＥＹ"));
     }
 
     @Test
     @Issue("SECURITY-101")
-    public void ensureTextBasedParameterAreCorrectlyConvertedToPassword() throws Exception {
+    void ensureTextBasedParameterAreCorrectlyConvertedToPassword(JenkinsRule r) throws Exception {
         // creation
         Project parent = r.createFreeStyleProject("parent");
         Project child = r.createFreeStyleProject("child");
 
         { // configuration on parent
-            String properties = "login=derp\n" + "pwd=d3rp\n";
+            String properties = """
+                    login=derp
+                    pwd=d3rp
+                    """;
 
             parent.getPublishersList()
                     .add(new BuildTrigger(new BuildTriggerConfig(
