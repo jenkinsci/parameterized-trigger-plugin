@@ -23,8 +23,8 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import hudson.EnvVars;
 import hudson.model.Cause.UserIdCause;
@@ -40,18 +40,16 @@ import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.PredefinedBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class DefaultParametersTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class DefaultParametersTest {
 
     @Test
-    public void test() throws Exception {
+    void test(JenkinsRule r) throws Exception {
 
         Project projectA = r.createFreeStyleProject("projectA");
         projectA.getPublishersList()
@@ -75,9 +73,9 @@ public class DefaultParametersTest {
                             0, new UserIdCause(), new ParametersAction(new StringParameterValue("KEY3", "value3")))
                     .get());
             Queue.Item q = r.jenkins.getQueue().getItem(projectB);
-            assertNotNull("projectB should be triggered: " + log, q);
+            assertNotNull(q, "projectB should be triggered: " + log);
             q.getFuture().get();
-            assertNotNull("builder should record environment", builder.getEnvVars());
+            assertNotNull(builder.getEnvVars(), "builder should record environment");
             assertEquals("value1", builder.getEnvVars().get("KEY1"));
             assertEquals("value2", builder.getEnvVars().get("KEY2"));
             assertEquals("value3", builder.getEnvVars().get("KEY3"));
@@ -95,7 +93,7 @@ public class DefaultParametersTest {
     }
 
     @Test
-    public void testMergeParameters() throws Exception {
+    void testMergeParameters(JenkinsRule r) throws Exception {
         Project projectA = r.createFreeStyleProject("projectA");
         Project projectB = r.createFreeStyleProject("projectB");
         //    projectB defaults: FOO=bar  BAR=override-me
@@ -127,18 +125,15 @@ public class DefaultParametersTest {
                                     new StringParameterValue("BAZ", "override-me")))
                     .get();
             Queue.Item q = r.jenkins.getQueue().getItem(projectB);
-            assertNotNull("projectB should be triggered: " + JenkinsRule.getLog(run), q);
+            assertNotNull(q, "projectB should be triggered: " + JenkinsRule.getLog(run));
             run = (Run) q.getFuture().get();
-            assertEquals(
-                    "should be exactly one ParametersAction",
-                    1,
-                    run.getActions(ParametersAction.class).size());
+            assertEquals(1, run.getActions(ParametersAction.class).size(), "should be exactly one ParametersAction");
             EnvVars envVars = builder.getEnvVars();
-            assertNotNull("builder should record environment", envVars);
-            assertEquals("FOO", "bar", envVars.get("FOO"));
-            assertEquals("BAR", "foo", envVars.get("BAR"));
-            assertEquals("BAZ", "moo", envVars.get("BAZ"));
-            assertEquals("HOHO", "blah", envVars.get("HOHO"));
+            assertNotNull(envVars, "builder should record environment");
+            assertEquals("bar", envVars.get("FOO"), "FOO");
+            assertEquals("foo", envVars.get("BAR"), "BAR");
+            assertEquals("moo", envVars.get("BAZ"), "BAZ");
+            assertEquals("blah", envVars.get("HOHO"), "HOHO");
         } finally {
             // System.clearProperty(ParametersAction.KEEP_UNDEFINED_PARAMETERS_SYSTEM_PROPERTY_NAME);
             System.clearProperty("hudson.model.ParametersAction.keepUndefinedParameters");

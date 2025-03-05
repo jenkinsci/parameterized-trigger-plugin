@@ -4,8 +4,8 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import hudson.model.AbstractBuild;
 import hudson.model.Project;
@@ -14,23 +14,20 @@ import hudson.plugins.parameterizedtrigger.BuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.NodeParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.slaves.DumbSlave;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  *
  * @author cjohnson
  */
-public class NodeParametersTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class NodeParametersTest {
 
     @Test
-    public void test() throws Exception {
-
+    void test(JenkinsRule r) throws Exception {
         DumbSlave slave0 = r.createOnlineSlave();
         DumbSlave slave1 = r.createOnlineSlave();
 
@@ -54,14 +51,13 @@ public class NodeParametersTest {
         //		hudson.getQueue().getItem(projectB).getFuture().get();
 
         assertEquals(slave0, buildA.getBuiltOn());
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         // ProjectB will be built on slave 0 regardless of assigned node.
         assertEquals("slave0", builder.getEnvVars().get("NODE_NAME"));
     }
 
     @Test
-    public void testQueuedJobsCombined() throws Exception {
-
+    void testQueuedJobsCombined(JenkinsRule r) throws Exception {
         DumbSlave slave0 = r.createOnlineSlave();
         DumbSlave slave1 = r.createOnlineSlave();
 
@@ -88,7 +84,7 @@ public class NodeParametersTest {
 
         assertEquals(slave0, buildA.getBuiltOn());
         assertEquals(slave0, buildA2.getBuiltOn());
-        assertNotNull("builder should record environment", builder.getEnvVars());
+        assertNotNull(builder.getEnvVars(), "builder should record environment");
         // ProjectB will be built on slave 0 regardless of assigned node.
         assertEquals("slave0", builder.getEnvVars().get("NODE_NAME"));
         // should only be a single build of projectB
@@ -96,8 +92,7 @@ public class NodeParametersTest {
     }
 
     @Test
-    public void testQueuedJobsNotCombined() throws Exception {
-
+    void testQueuedJobsNotCombined(JenkinsRule r) throws Exception {
         DumbSlave slave0 = r.createOnlineSlave();
         DumbSlave slave1 = r.createOnlineSlave();
         DumbSlave slave2 = r.createOnlineSlave();
@@ -132,12 +127,12 @@ public class NodeParametersTest {
         assertEquals(2, projectB.getBuilds().size());
 
         AbstractBuild buildB = projectB.getBuildByNumber(firstBuildNumber);
-        assertNotNull("ProjectB failed to build", buildB);
+        assertNotNull(buildB, "ProjectB failed to build");
         assertEquals(slave0, buildB.getBuiltOn());
 
         // get the second build of projectB
         AbstractBuild buildB2 = buildB.getNextBuild();
-        assertNotNull("ProjectB failed to build second time", buildB2);
+        assertNotNull(buildB2, "ProjectB failed to build second time");
         assertEquals(slave2, buildB2.getBuiltOn());
     }
 }

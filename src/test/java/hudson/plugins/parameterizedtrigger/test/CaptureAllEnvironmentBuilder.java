@@ -1,5 +1,6 @@
 package hudson.plugins.parameterizedtrigger.test;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -31,10 +32,12 @@ public class CaptureAllEnvironmentBuilder extends Builder {
 
     @Extension
     public static final class DescriptorImpl extends Descriptor<Builder> {
-        public Builder newInstance(StaplerRequest2 req, JSONObject data) {
+        @Override
+        public Builder newInstance(StaplerRequest2 req, @NonNull JSONObject data) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public String getDisplayName() {
             return "Capture Environment Variables";
         }

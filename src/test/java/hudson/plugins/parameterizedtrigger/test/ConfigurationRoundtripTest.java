@@ -23,20 +23,20 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * @author Kohsuke Kawaguchi
  */
-public class ConfigurationRoundtripTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class ConfigurationRoundtripTest {
 
     @Test
-    public void testConfigRoundtrip() throws Exception {
+    @Disabled("poorly written core breaks this test, so this is not yet testable")
+    void testConfigRoundtrip(JenkinsRule r) {
         /*  poorly written core breaks this test, so this is not yet testable.
                 FreeStyleProject p = createFreeStyleProject();
                 BuildTrigger orig = new BuildTrigger(

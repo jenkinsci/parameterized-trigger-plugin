@@ -1,7 +1,6 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import hudson.model.BooleanParameterDefinition;
 import hudson.model.BooleanParameterValue;
@@ -15,18 +14,16 @@ import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.ProjectSpecificParameterValuesActionTransform;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class ProjectSpecificParameterValuesActionTransformTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class ProjectSpecificParameterValuesActionTransformTest {
 
     @Test
-    public void test() throws IOException {
+    void test(JenkinsRule r) throws IOException {
         Project project = r.createFreeStyleProject("project");
 
         project.addProperty(new ParametersDefinitionProperty(new BooleanParameterDefinition("key1", false, "derp")));
@@ -38,13 +35,13 @@ public class ProjectSpecificParameterValuesActionTransformTest {
         ParametersAction result = transform.transformParametersAction(action, project);
 
         assertEquals(1, result.getParameters().size());
-        assertTrue(result.getParameter("key1") instanceof BooleanParameterValue);
+        assertInstanceOf(BooleanParameterValue.class, result.getParameter("key1"));
         assertTrue(((BooleanParameterValue) result.getParameter("key1")).value);
     }
 
     @Test
     @Issue("SECURITY-101")
-    public void passwordParameterAreCorrectlyConvertedFromUpstreamProject() throws IOException {
+    void passwordParameterAreCorrectlyConvertedFromUpstreamProject(JenkinsRule r) throws IOException {
         FreeStyleProject project = r.createFreeStyleProject("child");
 
         project.addProperty(new ParametersDefinitionProperty(
@@ -59,8 +56,8 @@ public class ProjectSpecificParameterValuesActionTransformTest {
         ParametersAction result = transform.transformParametersAction(action, project);
 
         assertEquals(2, result.getParameters().size());
-        assertTrue(result.getParameter("login") instanceof StringParameterValue);
-        assertTrue(result.getParameter("pwd") instanceof PasswordParameterValue);
+        assertInstanceOf(StringParameterValue.class, result.getParameter("login"));
+        assertInstanceOf(PasswordParameterValue.class, result.getParameter("pwd"));
         assertEquals("derpLogin", ((StringParameterValue) result.getParameter("login")).value);
         assertEquals(
                 "pa33",

@@ -1,7 +1,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
@@ -11,17 +11,15 @@ import hudson.model.StringParameterDefinition;
 import hudson.model.StringParameterValue;
 import hudson.plugins.parameterizedtrigger.DefaultParameterValuesActionsTransform;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class DefaultParameterValuesActionsTransformTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class DefaultParameterValuesActionsTransformTest {
 
     @Test
-    public void test() throws IOException {
+    void test(JenkinsRule r) throws IOException {
         Project project = r.createFreeStyleProject("project");
 
         project.addProperty(new ParametersDefinitionProperty(
@@ -42,10 +40,7 @@ public class DefaultParameterValuesActionsTransformTest {
     }
 
     private static void assertStringParameterValueEquals(String expected, ParameterValue actual) {
-        if (actual == null) {
-            fail("ParameterValue is Null");
-        } else {
-            assertEquals(expected, ((StringParameterValue) actual).value);
-        }
+        assertNotNull(actual, "ParameterValue is Null");
+        assertEquals(expected, ((StringParameterValue) actual).value);
     }
 }

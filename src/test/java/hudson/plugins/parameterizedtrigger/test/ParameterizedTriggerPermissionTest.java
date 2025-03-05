@@ -23,7 +23,7 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -35,7 +35,6 @@ import hudson.model.Item;
 import hudson.model.Project;
 import hudson.model.Queue;
 import hudson.model.User;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameterFactory;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
@@ -48,7 +47,6 @@ import hudson.security.AuthorizationMatrixProperty;
 import hudson.security.Permission;
 import hudson.security.ProjectMatrixAuthorizationStrategy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -59,26 +57,27 @@ import jenkins.security.QueueItemAuthenticator;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import jenkins.security.QueueItemAuthenticatorDescriptor;
 import org.acegisecurity.Authentication;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockQueueItemAuthenticator;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * Provides some permission checks for {@link TriggerBuilder}.
  * @author Oleg Nenashev
  */
-public class ParameterizedTriggerPermissionTest {
+@WithJenkins
+class ParameterizedTriggerPermissionTest {
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+    private JenkinsRule r;
 
-    @Before
-    public void setUpUserAndPermissions() {
+    @BeforeEach
+    void setUpUserAndPermissions(JenkinsRule r) {
+        this.r = r;
         r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
 
         User.get("foo");
@@ -94,19 +93,19 @@ public class ParameterizedTriggerPermissionTest {
 
     @Test
     @Issue("SECURITY-201")
-    public void shouldBeUnableToTriggerWithoutPermissions_BuildStep() throws Exception {
+    void shouldBeUnableToTriggerWithoutPermissions_BuildStep() throws Exception {
         shouldBeUnableToTriggerWithoutPermissions(true);
     }
 
     @Test
     @Issue("SECURITY-201")
-    public void shouldBeUnableToTriggerWithoutPermissions_Recorder() throws Exception {
+    void shouldBeUnableToTriggerWithoutPermissions_Recorder() throws Exception {
         shouldBeUnableToTriggerWithoutPermissions(false);
     }
 
     public void shouldBeUnableToTriggerWithoutPermissions(boolean useBuildStep) throws Exception {
         // Create controller project
-        FreeStyleProject masterProject = createProjectWithPermissions("project", "foo", Arrays.asList(Item.BUILD));
+        FreeStyleProject masterProject = createProjectWithPermissions("project", "foo", List.of(Item.BUILD));
 
         if (useBuildStep) {
             addParameterizedTrigger_BuildStep(masterProject, createBlockableConfig("subproject1,subproject2"));
@@ -116,14 +115,14 @@ public class ParameterizedTriggerPermissionTest {
 
         // Create subprojects
         FreeStyleProject subproject1 = createProjectWithPermissions("subproject1", "foo", null);
-        FreeStyleProject subproject2 = createProjectWithPermissions("subproject2", "foo", Arrays.asList(Item.BUILD));
+        FreeStyleProject subproject2 = createProjectWithPermissions("subproject2", "foo", List.of(Item.BUILD));
         r.jenkins.rebuildDependencyGraph();
         FreeStyleBuild build = r.buildAndAssertSuccess(masterProject);
 
         // Assert the subproject1 has not been built
         assertTrue(
-                "The subproject1 has been triggered, but it should not happen due to the build permissions",
-                subproject1.getBuilds().isEmpty());
+                subproject1.getBuilds().isEmpty(),
+                "The subproject1 has been triggered, but it should not happen due to the build permissions");
         r.assertLogContains("has no Job.BUILD permission", build);
 
         if (!useBuildStep) {
@@ -134,20 +133,18 @@ public class ParameterizedTriggerPermissionTest {
 
         // Assert the subproject2 has been built properly
         assertEquals(
-                "The subproject2 should have been triggered once during the build",
-                1,
-                subproject2.getBuilds().size());
+                1, subproject2.getBuilds().size(), "The subproject2 should have been triggered once during the build");
         FreeStyleBuild lastBuild = subproject2.getLastBuild();
-        assertNotNull("Cannot retrieve the last build of subproject2", lastBuild);
+        assertNotNull(lastBuild, "Cannot retrieve the last build of subproject2");
         Cause.UpstreamCause cause = lastBuild.getCause(Cause.UpstreamCause.class);
-        assertNotNull("No upstream cause in subproject2", lastBuild);
+        assertNotNull(lastBuild, "No upstream cause in subproject2");
     }
 
     @NonNull
     private FreeStyleProject createProjectWithPermissions(
             @NonNull String projectName, @NonNull String userName, @CheckForNull List<Permission> permissions)
             throws Exception {
-        final TreeSet<String> userSet = new TreeSet<>(Arrays.asList(userName));
+        final TreeSet<String> userSet = new TreeSet<>(List.of(userName));
 
         FreeStyleProject project = r.createFreeStyleProject(projectName);
         HashMap<Permission, Set<String>> masterPermissions = new HashMap<>();
@@ -178,19 +175,18 @@ public class ParameterizedTriggerPermissionTest {
                 projectToTrigger,
                 ResultCondition.SUCCESS,
                 true,
-                Collections.<AbstractBuildParameterFactory>emptyList(),
-                Collections.<AbstractBuildParameters>emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList(),
                 false);
     }
 
-    private void addParameterizedTrigger_BuildStep(Project<?, ?> projectA, BlockableBuildTriggerConfig config)
-            throws Exception {
+    private void addParameterizedTrigger_BuildStep(Project<?, ?> projectA, BlockableBuildTriggerConfig config) {
         projectA.getBuildersList().add(new TriggerBuilder(config));
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         projectA.getBuildersList().add(builder);
     }
 
-    private void addParameterizedTrigger_Recorder(Project<?, ?> projectA, BuildTriggerConfig config) throws Exception {
+    private void addParameterizedTrigger_Recorder(Project<?, ?> projectA, BuildTriggerConfig config) {
         projectA.getPublishersList().add(new BuildTrigger(config));
         CaptureEnvironmentBuilder builder = new CaptureEnvironmentBuilder();
         projectA.getBuildersList().add(builder);
@@ -224,6 +220,7 @@ public class ParameterizedTriggerPermissionTest {
 
         @TestExtension("shouldBeUnableToTriggerWithoutPermissions")
         public static class DescriptorImpl extends QueueItemAuthenticatorDescriptor {
+            @NonNull
             @Override
             public String getDisplayName() {
                 return "Authenticate as a specified user";

@@ -23,23 +23,21 @@
  */
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import hudson.model.AbstractProject;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.jvnet.hudson.test.recipes.LocalData;
 
-public class CompatibilityTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class CompatibilityTest {
 
     @LocalData
     @Test
-    public void test() throws Exception {
+    void test(JenkinsRule r) {
         AbstractProject p = (AbstractProject) r.jenkins.getItem("old");
         BuildTrigger trigger = (BuildTrigger) p.getPublishersList().get(BuildTrigger.class);
         assertEquals(2, trigger.getConfigs().size());

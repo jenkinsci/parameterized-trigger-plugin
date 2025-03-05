@@ -6,11 +6,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import hudson.ExtensionList;
 import hudson.FilePath;
@@ -25,87 +22,84 @@ import java.util.Map;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
-import org.jvnet.hudson.test.JenkinsSessionRule;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class CapturedEnvironmentActionTest {
+@WithJenkins
+class CapturedEnvironmentActionTest {
 
-    @Rule
-    public JenkinsSessionRule j = new JenkinsSessionRule();
-
+    // @LocalData
     @Test
-    @Issue("SECURITY-2185") // @LocalData
-    public void onLoad() throws Throwable {
-        Assume.assumeFalse("test can not run on windows", Functions.isWindows());
-        j.then(r -> {
-            final URL url = CapturedEnvironmentActionTest.class.getResource(
-                    "/hudson/plugins/parameterizedtrigger/CapturedEnvironmentActionTest/onLoad");
-            if (url == null) {
-                fail("No test resources found!");
-            }
-            if (!url.getProtocol().equals("file"))
-                throw new AssertionError("Test data is not available in the file system: " + url);
-            File home = new File(url.toURI());
-            System.err.println("Loading $JENKINS_HOME from " + home);
-            new FilePath(home).copyRecursiveTo("**/*", r.jenkins.getRootPath());
-        });
-        j.then(r -> {
-            final OldDataMonitor monitor = ExtensionList.lookupSingleton(OldDataMonitor.class);
-            final FreeStyleProject triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
-            final FreeStyleBuild build = triggering.getLastBuild();
+    @Issue("SECURITY-2185")
+    void onLoad(JenkinsRule r) throws Throwable {
+        assumeFalse(Functions.isWindows(), "test can not run on windows");
 
-            assertTrue("OldDataMonitor should be active.", monitor.isActivated());
-            Map<Saveable, OldDataMonitor.VersionRange> data = monitor.getData();
-            assertThat(
-                    data,
-                    hasEntry(
-                            sameInstance(build),
-                            new HasExtra(
-                                    containsString("AssertionError: " + CapturedEnvironmentAction.OLD_DATA_MESSAGE))));
+        URL url = CapturedEnvironmentActionTest.class.getResource(
+                "/hudson/plugins/parameterizedtrigger/CapturedEnvironmentActionTest/onLoad");
+        assertNotNull(url, "No test resources found!");
 
-            build.save();
-            data = monitor.getData();
-            assertThat(data, anEmptyMap());
-        });
-        j.then(r -> {
-            final OldDataMonitor monitor = ExtensionList.lookupSingleton(OldDataMonitor.class);
-            final FreeStyleProject triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
+        assertEquals("file", url.getProtocol(), "Test data is not available in the file system: " + url);
+        File home = new File(url.toURI());
+        System.err.println("Loading $JENKINS_HOME from " + home);
+        new FilePath(home).copyRecursiveTo("**/*", r.jenkins.getRootPath());
 
-            assertFalse("OldDataMonitor should not be active.", monitor.isActivated());
+        r.restart();
 
-            FreeStyleBuild build = triggering.getLastBuild();
-            assertNotNull(build);
-            assertEquals(1, build.getNumber());
-            CapturedEnvironmentAction action = build.getAction(CapturedEnvironmentAction.class);
-            assertNotNull(action);
-            assertThat(action.getCapturedEnvironment(), anEmptyMap());
+        OldDataMonitor monitor = ExtensionList.lookupSingleton(OldDataMonitor.class);
+        FreeStyleProject triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
+        FreeStyleBuild build = triggering.getLastBuild();
 
-            r.buildAndAssertSuccess(triggering);
-            r.waitUntilNoActivity();
+        assertTrue(monitor.isActivated(), "OldDataMonitor should be active.");
+        Map<Saveable, OldDataMonitor.VersionRange> data = monitor.getData();
+        assertThat(
+                data,
+                hasEntry(
+                        sameInstance(build),
+                        new HasExtra(containsString("AssertionError: " + CapturedEnvironmentAction.OLD_DATA_MESSAGE))));
 
-            build = triggering.getLastBuild();
-            assertNotNull(build);
-            assertEquals(2, build.getNumber());
-            action = build.getAction(CapturedEnvironmentAction.class);
-            assertNotNull(action);
-            assertThat(action.getCapturedEnvironment(), not(anEmptyMap()));
-        });
-        j.then(r -> {
-            final OldDataMonitor monitor = ExtensionList.lookupSingleton(OldDataMonitor.class);
-            final FreeStyleProject triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
+        build.save();
+        data = monitor.getData();
+        assertThat(data, anEmptyMap());
 
-            assertFalse("OldDataMonitor should not be active.", monitor.isActivated());
+        r.restart();
 
-            FreeStyleBuild build = triggering.getLastBuild();
-            assertNotNull(build);
-            assertEquals(2, build.getNumber());
-            CapturedEnvironmentAction action = build.getAction(CapturedEnvironmentAction.class);
-            assertNotNull(action);
-            assertThat(action.getCapturedEnvironment(), anEmptyMap());
-        });
+        monitor = ExtensionList.lookupSingleton(OldDataMonitor.class);
+        triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
+
+        assertFalse(monitor.isActivated(), "OldDataMonitor should not be active.");
+
+        build = triggering.getLastBuild();
+        assertNotNull(build);
+        assertEquals(1, build.getNumber());
+        CapturedEnvironmentAction action = build.getAction(CapturedEnvironmentAction.class);
+        assertNotNull(action);
+        assertThat(action.getCapturedEnvironment(), anEmptyMap());
+
+        r.buildAndAssertSuccess(triggering);
+        r.waitUntilNoActivity();
+
+        build = triggering.getLastBuild();
+        assertNotNull(build);
+        assertEquals(2, build.getNumber());
+        action = build.getAction(CapturedEnvironmentAction.class);
+        assertNotNull(action);
+        assertThat(action.getCapturedEnvironment(), not(anEmptyMap()));
+
+        r.restart();
+
+        monitor = ExtensionList.lookupSingleton(OldDataMonitor.class);
+        triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
+
+        assertFalse(monitor.isActivated(), "OldDataMonitor should not be active.");
+
+        build = triggering.getLastBuild();
+        assertNotNull(build);
+        assertEquals(2, build.getNumber());
+        action = build.getAction(CapturedEnvironmentAction.class);
+        assertNotNull(action);
+        assertThat(action.getCapturedEnvironment(), anEmptyMap());
     }
 
     private static class HasExtra extends TypeSafeMatcher<OldDataMonitor.VersionRange> {

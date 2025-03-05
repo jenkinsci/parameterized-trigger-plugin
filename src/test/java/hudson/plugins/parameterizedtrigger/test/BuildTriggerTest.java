@@ -1,6 +1,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import hudson.AbortException;
 import hudson.FilePath;
@@ -18,7 +19,6 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParametersDefinitionProperty;
-import hudson.model.Run;
 import hudson.model.StringParameterDefinition;
 import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BuildTrigger;
@@ -27,41 +27,32 @@ import hudson.plugins.parameterizedtrigger.CurrentBuildParameters;
 import hudson.plugins.parameterizedtrigger.FileBuildParameters;
 import hudson.plugins.parameterizedtrigger.ResultCondition;
 import hudson.tasks.Builder;
-import hudson.util.FormValidation;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  *
  * @author Lucie Votypkova
  */
-public class BuildTriggerTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-
-    @Rule
-    public LoggerRule logging = new LoggerRule().record(Run.class, Level.FINE);
+@WithJenkins
+class BuildTriggerTest {
 
     @Test
-    public void testParentProjectTrigger() throws Exception {
+    void testParentProjectTrigger(JenkinsRule r) throws Exception {
         FreeStyleProject downstream = r.createFreeStyleProject("downstream");
         MatrixProject upstream = r.createProject(MatrixProject.class, "upstream");
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("parameter", "parameter-value"));
         upstream.addProperty(new ParametersDefinitionProperty(definition));
         AxisList axes = new AxisList();
         axes.add(new TextAxis("textAxis", "one", "two"));
         upstream.setAxes(axes);
-        List<AbstractBuildParameters> params = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> params = new ArrayList<>();
         params.add(new CurrentBuildParameters());
         BuildTrigger triggerBuilder = new BuildTrigger(
                 new BuildTriggerConfig("downstream", ResultCondition.SUCCESS, false, null, params, false));
@@ -79,15 +70,15 @@ public class BuildTriggerTest {
 
         String project =
                 downstream.getLastBuild().getCause(Cause.UpstreamCause.class).getUpstreamProject();
-        assertEquals("Build should be triggered by matrix project.", "upstream", project);
+        assertEquals("upstream", project, "Build should be triggered by matrix project.");
     }
 
     @Test
-    public void testChildProjectsTrigger() throws Exception {
+    void testChildProjectsTrigger(JenkinsRule r) throws Exception {
         MatrixProject upstream = r.createProject(MatrixProject.class, "upstream");
         FreeStyleProject downstream = r.createFreeStyleProject("downstream");
 
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("parameter", "parameter-value"));
         ParametersDefinitionProperty property = new ParametersDefinitionProperty(definition);
         upstream.addProperty(property);
@@ -99,9 +90,9 @@ public class BuildTriggerTest {
         DefaultMatrixExecutionStrategyImpl strategy = new DefaultMatrixExecutionStrategyImpl(true, null, null, null);
         upstream.setExecutionStrategy(strategy);
 
-        List<AbstractBuildParameters> params = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> params = new ArrayList<>();
         params.add(new CurrentBuildParameters());
-        List<AbstractBuildParameters> parameters = new ArrayList<AbstractBuildParameters>();
+        List<AbstractBuildParameters> parameters = new ArrayList<>();
         parameters.add(new FileBuildParameters("property.prop", null, false, true, null, false));
         BuildTriggerConfig config =
                 new BuildTriggerConfig("downstream", ResultCondition.SUCCESS, false, parameters, true);
@@ -115,27 +106,21 @@ public class BuildTriggerTest {
 
         FreeStyleBuild downstreamBuild2 = downstream.getLastBuild();
         FreeStyleBuild downstreamBuild1 = downstreamBuild2.getPreviousBuild();
-        assertNotNull("Downstream job should be triggered by matrix configuration", downstreamBuild1);
-        assertNotNull("Downstream job should be triggered by matrix configuration", downstreamBuild2);
+        assertNotNull(downstreamBuild1, "Downstream job should be triggered by matrix configuration");
+        assertNotNull(downstreamBuild2, "Downstream job should be triggered by matrix configuration");
 
         String project1 = downstreamBuild1.getCause(Cause.UpstreamCause.class).getUpstreamProject();
         String project2 = downstreamBuild2.getCause(Cause.UpstreamCause.class).getUpstreamProject();
         ArrayList<MatrixConfiguration> configurations = new ArrayList<>(upstream.getItems());
-        Collections.sort(configurations, new MatrixConfigurationSorterTestImpl());
-        assertEquals(
-                "Build should be triggered by matrix project.",
-                configurations.get(0).getFullName(),
-                project1);
-        assertEquals(
-                "Build should be triggered by matrix project.",
-                configurations.get(1).getFullName(),
-                project2);
+        configurations.sort(new MatrixConfigurationSorterTestImpl());
+        assertEquals(configurations.get(0).getFullName(), project1, "Build should be triggered by matrix project.");
+        assertEquals(configurations.get(1).getFullName(), project2, "Build should be triggered by matrix project.");
     }
 
     public static class MatrixConfigurationSorterTestImpl extends MatrixConfigurationSorter implements Serializable {
 
         @Override
-        public void validate(MatrixProject mp) throws FormValidation {
+        public void validate(MatrixProject mp) {
             // do nothing
         }
 

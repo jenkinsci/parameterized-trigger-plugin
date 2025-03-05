@@ -1,7 +1,7 @@
 package hudson.plugins.parameterizedtrigger.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import hudson.EnvVars;
 import hudson.model.Cause.UserIdCause;
@@ -11,7 +11,6 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Project;
 import hudson.model.Result;
 import hudson.model.StringParameterDefinition;
-import hudson.plugins.parameterizedtrigger.AbstractBuildParameters;
 import hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig;
 import hudson.plugins.parameterizedtrigger.BlockingBehaviour;
 import hudson.plugins.parameterizedtrigger.CounterBuildParameterFactory;
@@ -22,17 +21,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class CounterBuildParameterFactoryTest {
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@WithJenkins
+class CounterBuildParameterFactoryTest {
 
     @Test
-    public void testWithOneParameter() throws Exception {
+    void testWithOneParameter(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject();
         Project projectB = r.createFreeStyleProject();
         projectA.getBuildersList()
@@ -40,13 +37,13 @@ public class CounterBuildParameterFactoryTest {
                         projectB.getName(),
                         new BlockingBehaviour(Result.FAILURE, Result.UNSTABLE, Result.FAILURE),
                         Collections.singletonList(new CounterBuildParameterFactory("0", "1", "1", "TEST=COUNT$COUNT")),
-                        Collections.<AbstractBuildParameters>emptyList())));
+                        Collections.emptyList())));
 
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(0);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("TEST", "test"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
         r.jenkins.rebuildDependencyGraph();
@@ -65,7 +62,7 @@ public class CounterBuildParameterFactoryTest {
     }
 
     @Test
-    public void testWithTwoParameters() throws Exception {
+    void testWithTwoParameters(JenkinsRule r) throws Exception {
         Project<?, ?> projectA = r.createFreeStyleProject();
         Project projectB = r.createFreeStyleProject();
         projectA.getBuildersList()
@@ -75,14 +72,14 @@ public class CounterBuildParameterFactoryTest {
                         Arrays.asList(
                                 new CounterBuildParameterFactory("0", "1", "1", "TEST=COUNT$COUNT"),
                                 new CounterBuildParameterFactory("0", "2", "1", "NEWTEST=COUNT$COUNT")),
-                        Collections.<AbstractBuildParameters>emptyList())));
+                        Collections.emptyList())));
         projectB.setConcurrentBuild(true);
 
         CaptureAllEnvironmentBuilder builder = new CaptureAllEnvironmentBuilder();
         projectB.getBuildersList().add(builder);
         projectB.setQuietPeriod(0);
         // SECURITY-170: must define parameters in subjobs
-        List<ParameterDefinition> definition = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> definition = new ArrayList<>();
         definition.add(new StringParameterDefinition("TEST", "test"));
         definition.add(new StringParameterDefinition("NEWTEST", "newtest"));
         projectB.addProperty(new ParametersDefinitionProperty(definition));
