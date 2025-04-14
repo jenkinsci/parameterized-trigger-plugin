@@ -37,7 +37,7 @@
       <lastReference reference="../buildRefs/entry[2]/list/hudson.plugins.parameterizedtrigger.BuildInfoExporterAction_-BuildReference[2]"/>
     </hudson.plugins.parameterizedtrigger.BuildInfoExporterAction>
   </actions>
-  <number>1</number>
+  <timestamp>1386004362000</timestamp>
   <result>SUCCESS</result>
   <duration>1503</duration>
   <charset>UTF-8</charset>

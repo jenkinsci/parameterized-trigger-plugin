@@ -5,7 +5,7 @@
       <parameters>
         <hudson.model.StringParameterValue>
           <name>test</name>
-          <value>test3</value>
+          <value>test1</value>
         </hudson.model.StringParameterValue>
       </parameters>
     </hudson.model.ParametersAction>
@@ -23,9 +23,9 @@
       </causes>
     </hudson.model.CauseAction>
   </actions>
-  <number>2</number>
+  <timestamp>1386004362000</timestamp>
   <result>SUCCESS</result>
-  <duration>31</duration>
+  <duration>178</duration>
   <charset>UTF-8</charset>
   <keepLog>false</keepLog>
   <builtOn></builtOn>
