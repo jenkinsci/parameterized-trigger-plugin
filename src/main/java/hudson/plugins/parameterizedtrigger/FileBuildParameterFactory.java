@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -145,7 +144,7 @@ public class FileBuildParameterFactory extends AbstractBuildParameterFactory {
         }
 
         public FormValidation doCheckEncoding(@QueryParameter String encoding) {
-            if (!StringUtils.isBlank(encoding)) {
+            if (encoding != null && !encoding.isBlank()) {
                 try {
                     Charset.forName(encoding.trim());
                 } catch (UnsupportedCharsetException e) {

@@ -49,7 +49,6 @@ import jenkins.security.QueueItemAuthenticator;
 import jenkins.security.QueueItemAuthenticatorConfiguration;
 import org.acegisecurity.AccessDeniedException;
 import org.acegisecurity.Authentication;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.stapler.AncestorInPath;
@@ -708,7 +707,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 newValue.add(relativeName);
             }
         }
-        return StringUtils.join(newValue, ",");
+        return String.join(",", newValue);
     }
 
     private static String computeRelativeNameAfterRenaming(
@@ -738,7 +737,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
                 continue;
             }
         }
-        return StringUtils.join(r, '/');
+        return String.join("/", r);
     }
 
     public boolean onJobRenamed(ItemGroup context, String oldName, String newName) {
@@ -756,7 +755,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             String fullName = Items.getCanonicalName(context, relativeName);
             if (!fullName.equals(oldName)) newNames.add(relativeName);
         }
-        String newProjects = StringUtils.join(newNames, ",");
+        String newProjects = String.join(",", newNames);
         boolean changed = !projects.equals(newProjects);
         projects = newProjects;
         return changed;
@@ -808,7 +807,7 @@ public class BuildTriggerConfig implements Describable<BuildTriggerConfig> {
             boolean hasProjects = false;
             while (tokens.hasMoreTokens()) {
                 String projectName = tokens.nextToken().trim();
-                if (StringUtils.isBlank(projectName)) {
+                if (projectName.isBlank()) {
                     return FormValidation.error("Blank project name in the list");
                 }
 

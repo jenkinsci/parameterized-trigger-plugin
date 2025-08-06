@@ -31,7 +31,6 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jenkins.util.VirtualFile;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -183,7 +182,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
                         if (run == null) {
                             return false;
                         }
-                        if (StringUtils.isBlank(getCombinationFilter())) {
+                        if (combinationFilter == null || combinationFilter.isBlank()) {
                             // no combination filter stands for all children.
                             return true;
                         }
@@ -235,7 +234,7 @@ public class FileBuildParameters extends AbstractBuildParameters {
         }
 
         public FormValidation doCheckEncoding(@QueryParameter String encoding) {
-            if (!StringUtils.isBlank(encoding)) {
+            if (encoding != null && !encoding.isBlank()) {
                 try {
                     Charset.forName(encoding.trim());
                 } catch (UnsupportedCharsetException e) {
