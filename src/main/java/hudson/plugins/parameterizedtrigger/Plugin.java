@@ -1,7 +1,5 @@
 package hudson.plugins.parameterizedtrigger;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.Item;
@@ -36,8 +34,8 @@ public class Plugin extends hudson.Plugin {
     public static final class RenameListener extends ItemListener {
         @Override
         public void onRenamed(Item item, String oldName, String newName) {
-            ItemGroup context = item.getParent();
-            String full = isEmpty(context.getFullName()) ? "" : context.getFullName() + '/';
+            ItemGroup<? extends Item> context = item.getParent();
+            String full = context.getFullName().isEmpty() ? "" : context.getFullName() + "/";
             String fullOldName = full + oldName;
             String fullNewName = full + newName;
             for (Project<?, ?> p : Jenkins.get().getAllItems(Project.class)) {

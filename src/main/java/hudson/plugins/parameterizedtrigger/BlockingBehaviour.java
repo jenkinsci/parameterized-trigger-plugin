@@ -34,7 +34,6 @@ import hudson.model.Descriptor;
 import hudson.model.Result;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -55,7 +54,7 @@ public class BlockingBehaviour extends AbstractDescribableImpl<BlockingBehaviour
     }
 
     private Result parse(String t) {
-        if (StringUtils.isBlank(t) || "never".equals(t)) {
+        if (t == null || t.isBlank() || "never".equals(t)) {
             return null;
         }
         return Result.fromString(t);

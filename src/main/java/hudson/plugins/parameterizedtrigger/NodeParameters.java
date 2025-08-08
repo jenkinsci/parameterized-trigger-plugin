@@ -12,7 +12,6 @@ import hudson.model.Label;
 import hudson.model.TaskListener;
 import java.io.IOException;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -31,7 +30,7 @@ public class NodeParameters extends AbstractBuildParameters {
         Label nodeLabel;
         String nodeDisplayName;
         // Controller does not return a node name so add it explicitly.
-        if (StringUtils.isEmpty(nodeName)) {
+        if (nodeName == null || nodeName.isEmpty()) {
             nodeLabel = Jenkins.get().getSelfLabel();
             nodeDisplayName = nodeLabel.getDisplayName();
         } else {

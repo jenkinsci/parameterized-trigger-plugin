@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -139,7 +138,7 @@ public class CounterBuildParameterFactory extends AbstractBuildParameterFactory 
             // The field can contain Parameters - eliminate them first. The remaining String should
             // be empty or a number.
             String valueWithoutVariables = Util.replaceMacro(value, EMPTY_STRING_VARIABLE_RESOLVER);
-            if (StringUtils.isNotEmpty(valueWithoutVariables) && !isNumber(valueWithoutVariables)) {
+            if (valueWithoutVariables != null && !valueWithoutVariables.isEmpty() && !isNumber(valueWithoutVariables)) {
                 return FormValidation.warning(Messages.Hudson_NotANumber());
             } else {
                 return FormValidation.validateRequired(value);
