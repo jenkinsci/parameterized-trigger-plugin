@@ -16,6 +16,7 @@ import hudson.diagnosis.OldDataMonitor;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.model.Saveable;
+import hudson.util.VersionNumber;
 import java.io.File;
 import java.net.URL;
 import java.util.Map;
@@ -51,13 +52,15 @@ class CapturedEnvironmentActionTest {
         FreeStyleProject triggering = r.jenkins.getItem("triggering", r.jenkins, FreeStyleProject.class);
         FreeStyleBuild build = triggering.getLastBuild();
 
-        assertTrue(monitor.isActivated(), "OldDataMonitor should be active.");
         Map<Saveable, OldDataMonitor.VersionRange> data = monitor.getData();
-        assertThat(
-                data,
-                hasEntry(
-                        sameInstance(build),
-                        new HasExtra(containsString("AssertionError: " + CapturedEnvironmentAction.OLD_DATA_MESSAGE))));
+        if (r.jenkins.getVersion().isOlderThan(new VersionNumber("2.563"))) {
+            // Jenkins 2.563 and later do not save Runs in OldDataMonitor
+            // Pull request https://github.com/jenkinsci/jenkins/pull/26711
+            // TODO Remove this block when minimum Jenkins version is more than 2.563
+            assertTrue(monitor.isActivated(), "OldDataMonitor should be active.");
+            String expected = "AssertionError: " + CapturedEnvironmentAction.OLD_DATA_MESSAGE;
+            assertThat(data, hasEntry(sameInstance(build), new HasExtra(containsString(expected))));
+        }
 
         build.save();
         data = monitor.getData();
