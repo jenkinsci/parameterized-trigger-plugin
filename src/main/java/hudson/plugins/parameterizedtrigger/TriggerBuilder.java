@@ -150,56 +150,59 @@ public class TriggerBuilder extends Builder implements DependencyDeclarer {
                             continue;
                         }
                         for (QueueTaskFuture<AbstractBuild> future : futures.get(p)) {
+                            if (future == null) {
+                                listener.getLogger()
+                                        .println("Skipping " + ModelHyperlinkNote.encodeTo(p)
+                                                + ". The project was not triggered for some reason.");
+                                continue;
+                            }
+
+                            listener.getLogger()
+                                    .println("Waiting for the completion of "
+                                            + HyperlinkNote.encodeTo('/' + p.getUrl(), p.getFullDisplayName()));
+                            Run startedRun;
+                            Result completedResult;
                             try {
-                                if (future != null) {
-                                    listener.getLogger()
-                                            .println("Waiting for the completion of "
-                                                    + HyperlinkNote.encodeTo('/' + p.getUrl(), p.getFullDisplayName()));
-                                    Run startedRun;
-                                    try {
-                                        startedRun = future.waitForStart();
-                                    } catch (InterruptedException x) {
-                                        listener.getLogger()
-                                                .println("Build aborting: cancelling queued project "
-                                                        + HyperlinkNote.encodeTo(
-                                                                '/' + p.getUrl(), p.getFullDisplayName()));
-                                        future.cancel(true);
-                                        throw x; // rethrow so that the triggering project get flagged as cancelled
-                                    }
+                                startedRun = future.waitForStart();
+                                listener.getLogger()
+                                        .println(HyperlinkNote.encodeTo(
+                                                        '/' + startedRun.getUrl(), startedRun.getFullDisplayName())
+                                                + " started.");
 
-                                    listener.getLogger()
-                                            .println(HyperlinkNote.encodeTo(
-                                                            '/' + startedRun.getUrl(), startedRun.getFullDisplayName())
-                                                    + " started.");
+                                Run completedRun = future.get();
+                                completedResult = completedRun.getResult();
+                                listener.getLogger()
+                                        .println(HyperlinkNote.encodeTo(
+                                                        '/' + completedRun.getUrl(), completedRun.getFullDisplayName())
+                                                + " completed. Result was " + completedResult);
 
-                                    Run completedRun = future.get();
-                                    listener.getLogger()
-                                            .println(HyperlinkNote.encodeTo(
-                                                            '/' + completedRun.getUrl(),
-                                                            completedRun.getFullDisplayName())
-                                                    + " completed. Result was " + completedRun.getResult());
-                                    BuildInfoExporterAction.addBuildInfoExporterAction(
-                                            build,
-                                            completedRun.getParent().getFullName(),
-                                            completedRun.getNumber(),
-                                            completedRun.getResult());
+                                BuildInfoExporterAction.addBuildInfoExporterAction(
+                                        build,
+                                        completedRun.getParent().getFullName(),
+                                        completedRun.getNumber(),
+                                        completedResult);
 
-                                    if (buildStepResult
-                                            && config.getBlock().mapBuildStepResult(completedRun.getResult())) {
-                                        Result r = config.getBlock().mapBuildResult(completedRun.getResult());
-                                        if (r != null) { // The blocking job is not a success
-                                            build.setResult(r);
-                                        }
-                                    } else {
-                                        buildStepResult = false;
-                                    }
-                                } else {
-                                    listener.getLogger()
-                                            .println("Skipping " + ModelHyperlinkNote.encodeTo(p)
-                                                    + ". The project was not triggered by some reason.");
-                                }
+                            } catch (InterruptedException x) {
+                                listener.getLogger()
+                                        .println("Build aborting: cancelling queued project "
+                                                + HyperlinkNote.encodeTo('/' + p.getUrl(), p.getFullDisplayName()));
+                                future.cancel(true);
+                                throw x; // rethrow so that the triggering project get flagged as cancelled
                             } catch (CancellationException x) {
-                                throw new AbortException(p.getFullDisplayName() + " aborted.");
+                                listener.getLogger()
+                                        .println("Not built: " + p.getFullDisplayName()
+                                                + " has been cancelled while waiting in the queue.");
+                                completedResult = Result.NOT_BUILT;
+                            }
+
+                            if (buildStepResult && config.getBlock().mapBuildStepResult(completedResult)) {
+
+                                Result r = config.getBlock().mapBuildResult(completedResult);
+                                if (r != null) { // The blocking job is not a success
+                                    build.setResult(r);
+                                }
+                            } else {
+                                buildStepResult = false;
                             }
                         }
                     }
